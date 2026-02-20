@@ -1,0 +1,190 @@
+name: LumiROM Tools Ui 8.5
+
+on:
+  workflow_dispatch:
+    inputs:
+      STOCK_DEVICE:
+        description: "STOCK_DEVICE_MODEL"
+        required: true
+        default: "SM-A325F"
+      TARGET_DEVICE:
+        description: "TARGET_DEVICE_MODEL"
+        required: true
+        default: "SM-A346E"
+      TARGET_DEVICE_CSC:
+        description: "TARGET_DEVICE_CSC"
+        required: true
+        default: "INS"
+      TARGET_DEVICE_IMEI:
+        description: "TARGET_DEVICE_IMEI"
+        required: true
+        default: "353435774197736"
+      OUTPUT_FILESYSTEM:
+        description: "OUTPUT_FILESYSTEM (erofs / ext4)"
+        required: true
+        default: "erofs"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+  
+    - name: Cleaning junk files
+      uses: rokibhasansagar/slimhub_actions@v25.42.5
+
+    - name: Install required packages
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          p7zip-full lz4 android-sdk-libsparse-utils \
+          python3 python3-pip zipalign unzip default-jre openjdk-17-jdk e2fsprogs   >/dev/null 2>&1
+        pip3 install liblp tgcrypto pyrogram   >/dev/null 2>&1
+        pip3 install git+https://github.com/martinetd/samloader.git   >/dev/null 2>&1
+
+        chmod +x bin/ext4/make_ext4fs
+        chmod +x bin/erofs-utils/extract.erofs
+        chmod +x bin/erofs-utils/mkfs.erofs
+
+    - name: Setup directories
+      run: |
+        chmod +x scripts/setup_directories.sh
+        bash scripts/setup_directories.sh FIRMWARE WORK OUT
+    
+    - name: Set build environment
+      shell: bash
+      run: |
+        echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
+        echo "TARGET_DEVICE=${{ github.event.inputs.TARGET_DEVICE }}" >> $GITHUB_ENV
+        echo "TARGET_DEVICE_CSC=${{ github.event.inputs.TARGET_DEVICE_CSC }}" >> $GITHUB_ENV
+        echo "TARGET_DEVICE_IMEI=${{ github.event.inputs.TARGET_DEVICE_IMEI }}" >> $GITHUB_ENV
+        echo "OUTPUT_FILESYSTEM=${{ github.event.inputs.OUTPUT_FILESYSTEM }}" >> $GITHUB_ENV
+
+        echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
+        echo "WORK_DIR=$PWD/WORK" >> $GITHUB_ENV
+        echo "FIRM_DIR=$PWD/FIRMWARE" >> $GITHUB_ENV
+        echo "DEVICES_DIR=$PWD/LumiROM/Devices" >> $GITHUB_ENV
+        echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
+        echo "VNDKS_COLLECTION=$PWD/LumiROM/vndks" >> $GITHUB_ENV
+        echo "BUILD_PARTITIONS=product,system_ext,system" >> $GITHUB_ENV
+
+    - name: Download firmware
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        source "$DEVICES_DIR/$STOCK_DEVICE/config"
+        DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_DEVICE_CSC" "$TARGET_DEVICE_IMEI" "$FIRM_DIR"
+
+    - name: Extract firmware
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        EXTRACT_FIRMWARE "$FIRM_DIR/$TARGET_DEVICE"
+        PREPARE_PARTITIONS "$FIRM_DIR/$TARGET_DEVICE"
+
+    - name: Extract firmware images
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        EXTRACT_FIRMWARE_IMG "$FIRM_DIR/$TARGET_DEVICE"
+
+    - name: Apply stock config
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        APPLY_STOCK_CONFIG "$FIRM_DIR/$TARGET_DEVICE"
+
+    - name: Debloat ROM
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        DEBLOAT "$FIRM_DIR/$TARGET_DEVICE"
+
+    - name: Apply features
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        APPLY_FEATURES "$FIRM_DIR/$TARGET_DEVICE"
+
+    - name: Install stock framework-res
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        INSTALL_FRAMEWORK \
+          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
+
+    - name: Decompile framework jars
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        DECOMPILE "$APKTOOL" \
+          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/ssrm.jar" "$WORK_DIR"
+        DECOMPILE "$APKTOOL" \
+          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/services.jar" "$WORK_DIR"
+
+    - name: Patch framework
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        PATCH_SSRM "$WORK_DIR/ssrm"
+        PATCH_KNOX_GUARD "$WORK_DIR/services"
+        PATCH_FLAG_SECURE "$WORK_DIR/services"
+        PATCH_SECURE_FOLDER "$WORK_DIR/services"
+
+    - name: Recompile framework
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
+          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
+        RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
+          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
+        cp -fv "$WORK_DIR"/*.jar \
+          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
+
+    - name: Patch Bluetooth library
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        PATCH_BT_LIB "$FIRM_DIR/$TARGET_DEVICE" "$WORK_DIR"
+
+    - name: Build images
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
+
+    - name: Split large output files
+      run: |
+        GIT_SUPPORT_SIZE=2147483647
+        echo "BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_ENV
+
+        for file in OUT/*; do
+          [ -f "$file" ] || continue
+          SIZE=$(stat -c%s "$file")
+          if [ "$SIZE" -gt "$GIT_SUPPORT_SIZE" ]; then
+            split -b "$GIT_SUPPORT_SIZE" -d -a 3 "$file" "$file.part"
+            rm -f "$file"
+          fi
+        done
+
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: "build-${{ github.run_id }}"
+        name: "LumiROM Build: ${{ github.run_id }}"
+        body: |
+          ***Build Information***
+          - ➡️ Build For: ${{ github.event.inputs.STOCK_DEVICE }}
+          - ➡️ Build From: ${{ github.event.inputs.TARGET_DEVICE }}
+          - ⏰️ Build Time: ${{ env.BUILD_TIME }}
+        files: |
+          OUT/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+    - name: Cleanup
+      run: |
+        rm -rf *
