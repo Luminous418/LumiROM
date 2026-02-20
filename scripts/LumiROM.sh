@@ -957,6 +957,11 @@ APPLY_STOCK_CONFIG() {
     # Floating Feature.
     APPLY_FLOATING_FEATURE
 
+    # Fix unsupported BPF error for kernels lower than 5.10.
+    if [ "$USE_UI_8_TETHERING_APEX" = "True" ]; then
+        cp -rfa "$(pwd)/LumiROM/Mods/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
+    fi
+
 	# Replace Stock Files.
 	find "$EXTRACTED_FIRM_DIR/system/system/media" -maxdepth 1 -type f \( -iname "*.spi" -o -iname "*.qmg" -o -iname "*.txt" \) -delete
 	rm -rf $EXTRACTED_FIRM_DIR/product/overlay/framework-res*auto_generated_rro_product.apk
