@@ -27,72 +27,85 @@ REMOVE_LINE() {
 }
 
 
+# DOWNLOAD_FIRMWARE() {
+#     if [ "$#" -ne 4 ]; then
+#         echo "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY>"
+#         return 1
+#     fi
+
+#     local MODEL=$1
+#     local CSC=$2
+#     local IMEI=$3
+#     local DOWN_DIR="${4}/$MODEL"
+
+# 	rm -rf "$DOWN_DIR"
+#     mkdir -p "$DOWN_DIR"
+
+#     echo "======================================"
+#     echo "  Samsung FW Downloader   "
+#     echo "======================================"
+#     echo "MODEL: $MODEL | CSC: $CSC"
+#     echo "Fetching latest firmware..."
+#     echo
+
+#     # --- Step 1: Check Update ---
+#     version=$(python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" checkupdate 2>&1)
+#     if [ $? -ne 0 ] || [ -z "$version" ]; then
+#         echo "❌ MODEL/CSC/IMEI not valid or no update found."
+#         echo "Error: $version"
+#         return 1
+#     else
+#         echo "✅ Update found: $version"
+#     fi
+
+#     # --- Step 2: Download Firmware ---
+#     python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -v "$version" -O "$DOWN_DIR"
+#     if [ $? -ne 0 ]; then
+#         echo "❌ Download failed. Check IMEI/MODEL/CSC."
+#         return 1
+#     fi
+
+#     # --- Step 3: Decrypt Firmware ---
+#     enc_file=$(find "$DOWN_DIR" -name "*.enc*" | head -n 1)
+
+#     if [ -z "$enc_file" ]; then
+#         echo "❌ No encrypted firmware file found!"
+#         return 1
+#     fi
+
+#     python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" decrypt \
+#         -v "$version" \
+#         -i "$enc_file" \
+#         -o "${DOWN_DIR}/${MODEL}.zip" >/dev/null 2>&1
+
+#     if [ $? -ne 0 ]; then
+#         echo "❌ Decryption failed."
+#         return 1
+#     fi
+
+#     # --- Show Firmware Info ---
+#     file_size=$(du -m "${DOWN_DIR}/${MODEL}.zip" | cut -f1)
+#     echo
+#     echo "✅ Firmware decrypted successfully!. Firmware Size: ${file_size} MB"
+#     echo "Saved to: ${DOWN_DIR}/${MODEL}.zip"
+
+#     # --- Cleanup ---
+#     rm -f "$enc_file"
+# }
+
+# Im not sure if this gonna work, my head hurts trying to understand this
 DOWNLOAD_FIRMWARE() {
-    if [ "$#" -ne 4 ]; then
-        echo "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY>"
+        if [ "$#" -ne 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <MODEL> <DOWNLOAD_DIRECTORY>"
         return 1
-    fi
-
-    local MODEL=$1
-    local CSC=$2
-    local IMEI=$3
-    local DOWN_DIR="${4}/$MODEL"
-
-	rm -rf "$DOWN_DIR"
-    mkdir -p "$DOWN_DIR"
-
-    echo "======================================"
-    echo "  Samsung FW Downloader   "
-    echo "======================================"
-    echo "MODEL: $MODEL | CSC: $CSC"
-    echo "Fetching latest firmware..."
-    echo
-
-    # --- Step 1: Check Update ---
-    version=$(python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" checkupdate 2>&1)
-    if [ $? -ne 0 ] || [ -z "$version" ]; then
-        echo "❌ MODEL/CSC/IMEI not valid or no update found."
-        echo "Error: $version"
-        return 1
-    else
-        echo "✅ Update found: $version"
-    fi
-
-    # --- Step 2: Download Firmware ---
-    python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -v "$version" -O "$DOWN_DIR"
-    if [ $? -ne 0 ]; then
-        echo "❌ Download failed. Check IMEI/MODEL/CSC."
-        return 1
-    fi
-
-    # --- Step 3: Decrypt Firmware ---
-    enc_file=$(find "$DOWN_DIR" -name "*.enc*" | head -n 1)
-
-    if [ -z "$enc_file" ]; then
-        echo "❌ No encrypted firmware file found!"
-        return 1
-    fi
-
-    python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" decrypt \
-        -v "$version" \
-        -i "$enc_file" \
-        -o "${DOWN_DIR}/${MODEL}.zip" >/dev/null 2>&1
-
-    if [ $? -ne 0 ]; then
-        echo "❌ Decryption failed."
-        return 1
-    fi
-
-    # --- Show Firmware Info ---
-    file_size=$(du -m "${DOWN_DIR}/${MODEL}.zip" | cut -f1)
-    echo
-    echo "✅ Firmware decrypted successfully!. Firmware Size: ${file_size} MB"
-    echo "Saved to: ${DOWN_DIR}/${MODEL}.zip"
-
-    # --- Cleanup ---
-    rm -f "$enc_file"
+        fi
+    curl -L \
+  -o "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip" \
+  -H "Accept-Encoding: identity" \
+  -H "Accept: */*" \
+  -H "Connection: keep-alive" \
+  "https://example.com"
 }
-
 
 EXTRACT_FIRMWARE() {
 	if [ "$#" -ne 1 ]; then
@@ -107,29 +120,6 @@ EXTRACT_FIRMWARE() {
     find "$FIRM_DIR" -maxdepth 1 -name "*.zip" \
         -exec 7z x -y -bd -o"$FIRM_DIR" {} \; >/dev/null 2>&1
     rm -rf "$FIRM_DIR"/*.zip
-
-    echo "- Extracting xz file."
-    find "$FIRM_DIR" -maxdepth 1 -name "*.xz" \
-        -exec 7z x -y -bd -o"$FIRM_DIR" {} \; >/dev/null 2>&1
-    rm -rf "$FIRM_DIR"/*.xz
-
-    # ---- MD5 rename ----
-    find "$FIRM_DIR" -maxdepth 1 -name "*.md5" \
-        -exec sh -c 'mv -- "$1" "${1%.md5}"' _ {} \;
-
-    echo "- Extracting tar files..."
-    for file in "${FIRM_DIR}"/*.tar; do
-        if [ -f "$file" ]; then
-            tar -xvf "$file" -C "${FIRM_DIR}" >/dev/null 2>&1
-            rm -f "$file"
-        fi
-    done
-
-    echo "- Extracting lz4 file."
-	for file in "${FIRM_DIR}"/*.lz4; do
-        [ -f "$file" ] && lz4 -d "$file" "${file%.lz4}" >/dev/null 2>&1
-    done
-    rm -rf "${FIRM_DIR}"/*.lz4
 
     # ---- REMOVE UNWANTED FILES ----
     rm -rf \
@@ -169,7 +159,7 @@ PREPARE_PARTITIONS() {
     done
 
     echo ""
-    echo "Preparing partitinos."
+    echo "Preparing partitions."
 
     shopt -s nullglob dotglob
 
@@ -579,89 +569,89 @@ PATCH_SSRM() {
 }
 
 
-PATCH_BT_LIB() {
-    echo ""
-	if [ "$#" -ne 2 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIRECTORY> <WORK_DIR>"
-        return 1
-    fi
+# PATCH_BT_LIB() {
+#     echo ""
+# 	if [ "$#" -ne 2 ]; then
+#         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIRECTORY> <WORK_DIR>"
+#         return 1
+#     fi
 
-	local EXTRACTED_FIRM_DIR="$1"
-	local WORK_DIR="$2"
-	local BT_LIB_FILE="$WORK_DIR/libbluetooth_jni.so"
+# 	local EXTRACTED_FIRM_DIR="$1"
+# 	local WORK_DIR="$2"
+# 	local BT_LIB_FILE="$WORK_DIR/libbluetooth_jni.so"
 
-    echo "Patching Bluetooth library."
-    # Get libbluetooth_jni.so
-    unzip "$EXTRACTED_FIRM_DIR/system/system/apex/com.android.bt.apex" "apex_payload.img" -d "$WORK_DIR"
-	debugfs -R "dump /lib64/libbluetooth_jni.so $WORK_DIR/libbluetooth_jni.so" "$WORK_DIR/apex_payload.img"  >/dev/null 2>&1
-	rm -rf "$WORK_DIR/apex_payload.img"
+#     echo "Patching Bluetooth library."
+#     # Get libbluetooth_jni.so
+#     unzip "$EXTRACTED_FIRM_DIR/system/system/apex/com.android.bt.apex" "apex_payload.img" -d "$WORK_DIR"
+# 	debugfs -R "dump /lib64/libbluetooth_jni.so $WORK_DIR/libbluetooth_jni.so" "$WORK_DIR/apex_payload.img"  >/dev/null 2>&1
+# 	rm -rf "$WORK_DIR/apex_payload.img"
 
-    # local associative array (function-scoped)
-    declare -A hex=(
-        [136]=00122a0140395f01086b00020054 [1136]=00122a0140395f01086bde030014
-        [135]=480500352800805228 [1135]=530100142800805228
-        [134]=6804003528008052 [1134]=2b00001428008052
-        [133]=6804003528008052 [1133]=2a00001428008052
-        [132]=........f9031f2af3031f2a41 [1132]=1f2003d5f9031f2af3031f2a48
-        [131]=........f9031f2af3031f2a41 [1131]=1f2003d5f9031f2af3031f2a48
-        [130]=........f3031f2af4031f2a3e [1130]=1f2003d5f3031f2af4031f2a3e
-        [129]=........f4031f2af3031f2ae8030032 [1129]=1f2003d5f4031f2af3031f2ae8031f2a
-        [128]=88000034e8030032 [1128]=1f2003d5e8031f2a
-        [127]=88000034e8030032 [1127]=1f2003d5e8031f2a
-        [126]=88000034e8030032 [1126]=1f2003d5e8031f2a
-        [234]=4e7e4448bb [1234]=4e7e4437e0
-        [233]=4e7e4440bb [1233]=4e7e4432e0
-        [231]=20b14ff000084ff000095ae0 [1231]=00bf4ff000084ff0000964e0
-        [230]=18b14ff0000b00254a [1230]=00204ff0000b002554
-        [229]=..b100250120 [1229]=00bf00250020
-        [228]=..b101200028 [1228]=00bf00200028
-        [227]=09b1012032e0 [1227]=00bf002032e0
-        [226]=08b1012031e0 [1226]=00bf002031e0
-        [225]=087850bbb548 [1225]=08785ae1b548
-        [224]=007840bb6a48 [1224]=0078c4e06a48
-        [330]=88000054691180522925c81a69000037 [1330]=1f2003d5691180522925c81a1f2003d5
-        [329]=88000054691180522925c81a69000037 [1329]=1f2003d5691180522925c81a1f2003d5
-        [328]=7f1d0071e91700f9e83c0054 [1328]=7f1d0071e91700f9e7010014
-        [429]=....0034f3031f2af4031f2a....0014 [1429]=1f2003d5f3031f2af4031f2a47000014
-        [531]=10b1002500244ce0 [1531]=00bf0025002456e0
-        [530]=18b100244ff0000b4d [1530]=002000244ff0000b57
-        [529]=44387810b1002400254a [1529]=44387800200024002556
-        [629]=90387810b1002400254a [1629]=90387800200024002558
-    )
+#     # local associative array (function-scoped)
+#     declare -A hex=(
+#         [136]=00122a0140395f01086b00020054 [1136]=00122a0140395f01086bde030014
+#         [135]=480500352800805228 [1135]=530100142800805228
+#         [134]=6804003528008052 [1134]=2b00001428008052
+#         [133]=6804003528008052 [1133]=2a00001428008052
+#         [132]=........f9031f2af3031f2a41 [1132]=1f2003d5f9031f2af3031f2a48
+#         [131]=........f9031f2af3031f2a41 [1131]=1f2003d5f9031f2af3031f2a48
+#         [130]=........f3031f2af4031f2a3e [1130]=1f2003d5f3031f2af4031f2a3e
+#         [129]=........f4031f2af3031f2ae8030032 [1129]=1f2003d5f4031f2af3031f2ae8031f2a
+#         [128]=88000034e8030032 [1128]=1f2003d5e8031f2a
+#         [127]=88000034e8030032 [1127]=1f2003d5e8031f2a
+#         [126]=88000034e8030032 [1126]=1f2003d5e8031f2a
+#         [234]=4e7e4448bb [1234]=4e7e4437e0
+#         [233]=4e7e4440bb [1233]=4e7e4432e0
+#         [231]=20b14ff000084ff000095ae0 [1231]=00bf4ff000084ff0000964e0
+#         [230]=18b14ff0000b00254a [1230]=00204ff0000b002554
+#         [229]=..b100250120 [1229]=00bf00250020
+#         [228]=..b101200028 [1228]=00bf00200028
+#         [227]=09b1012032e0 [1227]=00bf002032e0
+#         [226]=08b1012031e0 [1226]=00bf002031e0
+#         [225]=087850bbb548 [1225]=08785ae1b548
+#         [224]=007840bb6a48 [1224]=0078c4e06a48
+#         [330]=88000054691180522925c81a69000037 [1330]=1f2003d5691180522925c81a1f2003d5
+#         [329]=88000054691180522925c81a69000037 [1329]=1f2003d5691180522925c81a1f2003d5
+#         [328]=7f1d0071e91700f9e83c0054 [1328]=7f1d0071e91700f9e7010014
+#         [429]=....0034f3031f2af4031f2a....0014 [1429]=1f2003d5f3031f2af4031f2a47000014
+#         [531]=10b1002500244ce0 [1531]=00bf0025002456e0
+#         [530]=18b100244ff0000b4d [1530]=002000244ff0000b57
+#         [529]=44387810b1002400254a [1529]=44387800200024002556
+#         [629]=90387810b1002400254a [1629]=90387800200024002558
+#     )
 
-    local HEXDATA
-    HEXDATA="$(xxd -p -c 0 "$BT_LIB_FILE")" || return 1
+#     local HEXDATA
+#     HEXDATA="$(xxd -p -c 0 "$BT_LIB_FILE")" || return 1
 
-    local PATCHED=0
+#     local PATCHED=0
 
-    for idx in "${!hex[@]}"; do
-        (( idx >= 1000 )) && continue
+#     for idx in "${!hex[@]}"; do
+#         (( idx >= 1000 )) && continue
 
-        local from="${hex[$idx]}"
-        local to="${hex[$((idx + 1000))]}"
+#         local from="${hex[$idx]}"
+#         local to="${hex[$((idx + 1000))]}"
 
-        [ -z "$to" ] && continue
+#         [ -z "$to" ] && continue
 
-        # convert wildcard .... → regex
-        local from_regex="${from//./[0-9a-f]}"
+#         # convert wildcard .... → regex
+#         local from_regex="${from//./[0-9a-f]}"
 
-        if echo "$HEXDATA" | grep -qiE "$from_regex"; then
-            echo "- Found Bluetooth patch pattern [$idx]"
-            HEX_PATCH "$BT_LIB_FILE" "$from" "$to" || return 1
-            PATCHED=1
-			cp -rfa "$WORK_DIR/libbluetooth_jni.so" "$EXTRACTED_FIRM_DIR/system/system/lib64/"
-            break
-        fi
-    done
+#         if echo "$HEXDATA" | grep -qiE "$from_regex"; then
+#             echo "- Found Bluetooth patch pattern [$idx]"
+#             HEX_PATCH "$BT_LIB_FILE" "$from" "$to" || return 1
+#             PATCHED=1
+# 			cp -rfa "$WORK_DIR/libbluetooth_jni.so" "$EXTRACTED_FIRM_DIR/system/system/lib64/"
+#             break
+#         fi
+#     done
 
-    if [ "$PATCHED" -eq 0 ]; then
-        echo "- No known Bluetooth patch pattern matched."
-		rm -rf "$BT_LIB_FILE"
-        return 1
-    fi
+#     if [ "$PATCHED" -eq 0 ]; then
+#         echo "- No known Bluetooth patch pattern matched."
+# 		rm -rf "$BT_LIB_FILE"
+#         return 1
+#     fi
 
-    return 0
-}
+#     return 0
+# }
 
 
 FIX_VNDK() {
@@ -1079,7 +1069,7 @@ APPLY_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.max_users" "5"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.show_multiuserui" "1"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface=" "wlan0"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "skiavk"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.telephony.sim_slots.count" "2"
@@ -1088,11 +1078,48 @@ APPLY_FEATURES() {
 	echo " Adding important apps."
 	rm -rf "$EXTRACTED_FIRM_DIR/system/system/app/ClockPackage"
 	rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
-
-	# Remove power and data usage permissions for certain apps when Power Saver and Data Saver are always enabled.
-	# sed -i '/^[[:space:]]*<allow-in-power-save/d; /^[[:space:]]*<allow-in-data-usage-save/d' "$EXTRACTED_FIRM_DIR/product/etc/sysconfig/"*.xml "$EXTRACTED_FIRM_DIR/system/system/etc/sysconfig/"*.xml
 }
 
+APPEND_DISPLAY_ID() {
+    local EXTRACTED_FIRM_DIR="$1"
+    local SUFFIX="$2"
+
+    if [ -z "$EXTRACTED_FIRM_DIR" ] || [ -z "$SUFFIX" ]; then
+        echo "Usage: APPEND_DISPLAY_ID <EXTRACTED_FIRM_DIR> <text_to_append>"
+        return 1
+    fi
+
+    local PROP_FILES=(
+        "$EXTRACTED_FIRM_DIR/product/etc/build.prop"
+        "$EXTRACTED_FIRM_DIR/system/system/build.prop"
+    )
+
+    for PROP in "${PROP_FILES[@]}"; do
+        [ -f "$PROP" ] || continue
+
+        if grep -q "^ro.build.display.id=" "$PROP"; then
+            local CURRENT
+            CURRENT=$(grep "^ro.build.display.id=" "$PROP" | cut -d= -f2-)
+
+            # Try not update it, if it was already there
+            if [[ "$CURRENT" != *"$SUFFIX"* ]]; then
+                sed -i "s|^ro.build.display.id=.*|ro.build.display.id=${CURRENT} - ${SUFFIX}|" "$PROP"
+                echo "Updated ro.build.display.id in $PROP"
+            fi
+        fi
+    done
+}
+
+APPENDING_DISPLAY_ID() {
+    if [ -z "$1" ]; then
+        echo "Usage: APPENDING_DISPLAY_ID <EXTRACTED_FIRM_DIR>"
+        return 1
+    fi
+
+	local EXTRACTED_FIRM_DIR="$1"
+
+    APPEND_DISPLAY_ID "$1" "LumiROM 8.5.0 Beta"
+}
 
 GEN_FS_CONFIG() {
     if [ "$#" -ne 1 ]; then
