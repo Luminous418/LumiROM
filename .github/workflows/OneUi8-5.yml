@@ -7,18 +7,6 @@ on:
         description: "STOCK_DEVICE_MODEL"
         required: true
         default: "SM-A325F"
-      TARGET_DEVICE:
-        description: "TARGET_DEVICE_MODEL"
-        required: true
-        default: "SM-A346E"
-      TARGET_DEVICE_CSC:
-        description: "TARGET_DEVICE_CSC"
-        required: true
-        default: "INS"
-      TARGET_DEVICE_IMEI:
-        description: "TARGET_DEVICE_IMEI"
-        required: true
-        default: "353435774197736"
       OUTPUT_FILESYSTEM:
         description: "OUTPUT_FILESYSTEM (erofs / ext4)"
         required: true
@@ -108,6 +96,12 @@ jobs:
         source scripts/LumiROM.sh
         APPLY_FEATURES "$FIRM_DIR/$TARGET_DEVICE"
 
+    - name: Update Build ID
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        APPENDING_DISPLAY_ID "$FIRM_DIR/$TARGET_DEVICE"
+
     - name: Install stock framework-res
       shell: bash
       run: |
@@ -144,12 +138,6 @@ jobs:
         cp -fv "$WORK_DIR"/*.jar \
           "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
 
-    - name: Patch Bluetooth library
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        PATCH_BT_LIB "$FIRM_DIR/$TARGET_DEVICE" "$WORK_DIR"
-
     - name: Build images
       shell: bash
       run: |
@@ -174,12 +162,13 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: "build-${{ github.run_id }}"
-        name: "LumiROM Build: ${{ github.run_id }}"
+        name: "LumiROM Build: 8.5.0 Beta"
         body: |
           ***Build Information***
           - ➡️ Build For: ${{ github.event.inputs.STOCK_DEVICE }}
           - ➡️ Build From: ${{ github.event.inputs.TARGET_DEVICE }}
           - ⏰️ Build Time: ${{ env.BUILD_TIME }}
+          - One UI 8.5 test by Lumi
         files: |
           OUT/*
       env:
