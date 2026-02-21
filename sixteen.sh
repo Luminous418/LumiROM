@@ -19,16 +19,13 @@ trap '{
 
 
 if [ "$#" -lt 5 ]; then
-    echo "Usage: $0 <STOCK_DEVICE> <TARGET_DEVICE> <TARGET_DEVICE_CSC> <TARGET_DEVICE_IMEI> <OUTPUT_FILESYSTEM>"
+    echo "Usage: $0 <STOCK_DEVICE> <OUTPUT_FILESYSTEM>"
     exit 1
 fi
 
 # Device info
 export STOCK_DEVICE="$1"
-export TARGET_DEVICE="$2"
-export TARGET_DEVICE_CSC="$3"
-export TARGET_DEVICE_IMEI="$4"
-export OUTPUT_FILESYSTEM="$5"
+export OUTPUT_FILESYSTEM="$2"
 
 # Directories
 export OUT_DIR="$(pwd)/OUT"
@@ -44,7 +41,7 @@ export BUILD_PARTITIONS="product,system_ext,system"
 source "$(pwd)/scripts/LumiROM.sh"
 source "$DEVICES_DIR/$STOCK_DEVICE/config"
 
-DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_DEVICE_CSC" "$TARGET_DEVICE_IMEI" "$FIRM_DIR"
+DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$FIRM_DIR"
 
 EXTRACT_FIRMWARE "$FIRM_DIR/$TARGET_DEVICE"
 PREPARE_PARTITIONS "$FIRM_DIR/$TARGET_DEVICE"
@@ -68,7 +65,5 @@ PATCH_SECURE_FOLDER "$WORK_DIR/services"
 RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
 RECOMPILE "$APKTOOL" "$WORK_DIR/services" "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
 cp -fv "$WORK_DIR"/*.jar "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
-
-PATCH_BT_LIB "$FIRM_DIR/$TARGET_DEVICE" "$WORK_DIR"
 
 BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
