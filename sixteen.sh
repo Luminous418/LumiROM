@@ -18,14 +18,15 @@ trap '{
 }' ERR
 
 
-if [ "$#" -lt 5 ]; then
-    echo "Usage: $0 <STOCK_DEVICE> <OUTPUT_FILESYSTEM>"
+if [ "$#" -lt 3 ]; then
+    echo "Usage: $0 <STOCK_DEVICE> <USE_UI_8_TETHERING_APEX> <OUTPUT_FILESYSTEM>"
     exit 1
 fi
 
 # Device info
 export STOCK_DEVICE="$1"
-export OUTPUT_FILESYSTEM="$2"
+export USE_UI_8_TETHERING_APEX="$2"
+export OUTPUT_FILESYSTEM="$3"
 
 # Directories
 export OUT_DIR="$(pwd)/OUT"
