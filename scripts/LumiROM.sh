@@ -120,22 +120,6 @@ EXTRACT_FIRMWARE() {
     find "$FIRM_DIR" -maxdepth 1 -name "*.zip" \
         -exec 7z x -y -bd -o"$FIRM_DIR" {} \; >/dev/null 2>&1
     rm -rf "$FIRM_DIR"/*.zip
-
-    # ---- REMOVE UNWANTED FILES ----
-    rm -rf \
-        "$FIRM_DIR"/*.txt \
-        "$FIRM_DIR"/*.pit \
-        "$FIRM_DIR"/*.bin \
-        "$FIRM_DIR"/meta-data
-
-    if [ -f "$FIRM_DIR/super.img" ]; then
-        echo "- Extracting super.img"
-        simg2img "$FIRM_DIR/super.img" "$FIRM_DIR/super_raw.img"
-        rm -f "$FIRM_DIR/super.img"
-        lpunpack -o "$FIRM_DIR" "$FIRM_DIR/super_raw.img"
-        rm -f "$FIRM_DIR/super_raw.img"
-        echo "- Extraction complete"
-    fi
 }
 
 
