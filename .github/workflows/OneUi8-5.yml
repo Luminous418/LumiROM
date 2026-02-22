@@ -145,7 +145,7 @@ jobs:
         source scripts/LumiROM.sh
         BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
 
-      - name: Sending ROM to GoFile.
+    - name: Sending ROM to GoFile.
       run: |
           chmod +x ./upload.sh 
           bash ./upload.sh OUT/system.img
