@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       STOCK_DEVICE:
-        description: "Put the Model of your phone"
+        description: "Put the Model of your phone, remember it starts with SM-"
         required: true
         default: "SM-A325F"
       USE_UI_8_TETHERING_APEX:
@@ -163,13 +163,13 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: "build-${{ github.run_id }}"
-        name: "LumiROM Build: 8.5.0 Beta"
+        name: "LumiROM Build: 8.5.1 Stable"
         body: |
           ***Build Information***
           - ➡️ Build For: ${{ github.event.inputs.STOCK_DEVICE }}
           - ➡️ Build From: ${{ github.event.inputs.TARGET_DEVICE }}
           - ⏰️ Build Time: ${{ env.BUILD_TIME }}
-          - One UI 8.5 test by Lumi
+          - One UI 8.5 by Lumi
         files: |
           OUT/*
       env:
