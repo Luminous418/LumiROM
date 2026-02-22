@@ -179,7 +179,7 @@ jobs:
 
         echo "Updating updater-script for version $ROM_VERSION, date $BUILD_DATE and phone $DEVICE..."
 
-        sed -i "s/ui_print(\"        8.0.0-01012000 for Galaxy Axx 4G\");/ui_print(\"        $ROM_VERSION-$BUILD_DATE for $DISPLAY_NAME\");/" "$UPDATER_PATH"
+        sed -i "s|ui_print(\"        .* for .*\");|ui_print(\"        $ROM_VERSION-$BUILD_DATE for $DISPLAY_NAME\");|" "$UPDATER_PATH"
 
     - name: Prepare flashable zip
       shell: bash
