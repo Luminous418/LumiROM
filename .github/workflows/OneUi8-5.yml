@@ -145,19 +145,11 @@ jobs:
         source scripts/LumiROM.sh
         BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
 
-    - name: Split large output files
+      - name: Sending ROM to GoFile.
       run: |
-        GIT_SUPPORT_SIZE=2147483647
-        echo "BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_ENV
-
-        for file in OUT/*; do
-          [ -f "$file" ] || continue
-          SIZE=$(stat -c%s "$file")
-          if [ "$SIZE" -gt "$GIT_SUPPORT_SIZE" ]; then
-            split -b "$GIT_SUPPORT_SIZE" -d -a 3 "$file" "$file.part"
-            rm -f "$file"
-          fi
-        done
+          chmod +x ./upload.sh 
+          bash ./upload.sh OUT/system.img
+          bash ./upload.sh OUT/product.img
 
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v2
