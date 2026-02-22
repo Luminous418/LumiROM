@@ -145,13 +145,14 @@ jobs:
         BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
         IMG_TO_SDAT_AND_COMPRESS "$OUT_DIR" "TMP"
 
-    - name: Update updater-script dynamically
+    - name: Update updater-script
       shell: bash
       run: |
         # Variables
         ROM_VERSION="8.5.1"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="${{ github.event.inputs.STOCK_DEVICE }}"
+        UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
 
         if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" || "$DEVICE" == "SM-A325N" ]]; then
             DEVICE_CODENAME="a32"
@@ -172,12 +173,11 @@ jobs:
             DEVICE_CODENAME="unknown"
             DISPLAY_NAME="Unknown Device"
         fi
-        
-        UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
+
 
         sed -i "s|getprop(\"ro.boot.em.model\") == \".*\" || abort|getprop(\"ro.boot.em.model\") == \"$DEVICE\" || abort(\"E3004: This package is for \\\"$DEVICE_CODENAME\\\" devices; this is a \\\"\" + getprop(\"ro.boot.em.model\") + \"\\\".\");|" "$UPDATER_PATH"
 
-        echo "Updating updater-script for version $ROM_VERSION, date $BUILD_DATE and phone $DEVICE..."
+        echo "Updating updater-script for version $ROM_VERSION, date $BUILD_DATE and phone $DISPLAY_NAME..."
 
         sed -i "s|ui_print(\"        .* for .*\");|ui_print(\"        $ROM_VERSION-$BUILD_DATE for $DISPLAY_NAME\");|" "$UPDATER_PATH"
 
