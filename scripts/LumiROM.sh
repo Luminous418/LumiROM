@@ -95,16 +95,22 @@ REMOVE_LINE() {
 
 # Im not sure if this gonna work, my head hurts trying to understand this
 DOWNLOAD_FIRMWARE() {
-        if [ "$#" -ne 2 ]; then
+    if [ "$#" -ne 2 ]; then
         echo "Usage: ${FUNCNAME[0]} <MODEL> <DOWNLOAD_DIRECTORY>"
         return 1
-        fi
+    fi
+
+    MODEL="$1"
+    DOWN_DIR="$2"
+
+    mkdir -p "$DOWN_DIR" || return 1
+
     curl -L \
-  -o "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip" \
-  -H "Accept-Encoding: identity" \
-  -H "Accept: */*" \
-  -H "Connection: keep-alive" \
-  "https://drive.usercontent.google.com/download?id=1AEvZGN3QRv_OrkaiBfi_7BZ_Kx64Pk5q&export=download&confirm=t&uuid=5f88ab75-38e6-4472-8f94-7b048cad2806"
+      -o "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip" \
+      -H "Accept-Encoding: identity" \
+      -H "Accept: */*" \
+      -H "Connection: keep-alive" \
+      "https://drive.usercontent.google.com/download?id=1AEvZGN3QRv_OrkaiBfi_7BZ_Kx64Pk5q&export=download"
 }
 
 EXTRACT_FIRMWARE() {
