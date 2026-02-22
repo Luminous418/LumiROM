@@ -151,22 +151,6 @@ jobs:
           bash ./upload.sh OUT/system.img
           bash ./upload.sh OUT/product.img
 
-    - name: Upload to GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: "build-${{ github.run_id }}"
-        name: "LumiROM Build: 8.5.1 Stable"
-        body: |
-          ***Build Information***
-          - ➡️ Build For: ${{ github.event.inputs.STOCK_DEVICE }}
-          - ➡️ Build From: ${{ github.event.inputs.TARGET_DEVICE }}
-          - ⏰️ Build Time: ${{ env.BUILD_TIME }}
-          - One UI 8.5 by Lumi
-        files: |
-          OUT/*
-      env:
-        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
-
     - name: Cleanup
       run: |
         rm -rf *
