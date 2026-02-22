@@ -176,7 +176,7 @@ jobs:
 
         NEW_CHECK="getprop(\"ro.boot.em.model\") == \"$DEVICE\" || abort(\"E3004: This package is for $DEVICE_CODENAME\");"
 
-        echo "Updating banner for $DISPLAY_NAME..."
+        echo "Updating device on updater-script for $DISPLAY_NAME..."
       
         sed -i "s!^getprop(\"ro.boot.em.model\").*!$NEW_CHECK!" "$UPDATER_PATH"
 

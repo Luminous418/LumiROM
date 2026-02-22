@@ -105,7 +105,7 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
 
-    wget -q https://pixeldrain.com/u/wW8WCjky -O "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip"
+    wget -q https://pixeldrain.com/u/7yna2EH7 -O "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip"
 }
 
 EXTRACT_FIRMWARE() {
@@ -1234,6 +1234,7 @@ BUILD_IMG() {
         local OUT_IMG="$OUT_DIR/${PARTITION}.img"
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
+        local OP_LIST="$(pwd)/template/dynamic_partitions_op_list"
         local SIZE=$(du -sb --apparent-size "$SRC_DIR" | awk '{printf "%.0f", $1 * 1.2}')
 		MOUNT_POINT="/$PARTITION"
 
@@ -1256,6 +1257,17 @@ BUILD_IMG() {
         else
             echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
             continue
+        fi
+
+        if [[ -f "$OUT_IMG" ]]; then
+            local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
+            echo "Updating size of $PARTITION in op_list: $ACTUAL_SIZE bytes"
+            
+            if [[ -f "$OP_LIST" ]]; then
+                sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
+            else
+                echo "Warning: $OP_LIST hasn't been found."
+            fi
         fi
     done
 }

@@ -10,11 +10,11 @@ add vendor samsung_dynamic_partitions
 add product samsung_dynamic_partitions
 # Add partition odm to group samsung_dynamic_partitions
 add odm samsung_dynamic_partitions
-# Grow partition system from 0 to 5556122792
+# Grow partition system
 resize system 5556122792
-# Grow partition vendor from 0 to 507531264
+# Grow partition vendor
 resize vendor 507531264
-# Grow partition product from 0 to 1182139820
+# Grow partition product
 resize product 1182139820
-# Grow partition odm from 0 to 2021313
+# Grow partition odm
 resize odm 2021313
