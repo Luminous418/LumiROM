@@ -1259,3 +1259,68 @@ BUILD_IMG() {
         fi
     done
 }
+
+IMG_TO_SDAT_AND_COMPRESS() {
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <IMG_DIR> <TMP_DIR>"
+        return 1
+    fi
+
+    local IMG_DIR="$1"
+    local TMP_DIR="$2"
+    local IMG2SDAT_BIN="$(pwd)/bin/img2sdat/img2sdat"
+
+    mkdir -p "$TMP_DIR"
+
+    # Check if img2sdat binary exists
+    if [[ ! -f "$IMG2SDAT_BIN" ]]; then
+        echo "Error: img2sdat binary not found at $IMG2SDAT_BIN"
+        return 1
+    fi
+
+    chmod +x "$IMG2SDAT_BIN"
+
+    echo "=== Converting IMG to SDAT ==="
+
+    for f in "$IMG_DIR"/*.img; do
+        [[ -f "$f" ]] || continue
+
+        PARTITION="$(basename "$f" .img)"
+
+        echo "Converting $PARTITION.img..."
+
+        "$IMG2SDAT_BIN" \
+            -o "$TMP_DIR" \
+            -B "$TMP_DIR/$PARTITION.map" \
+            "$f"
+
+        if [ $? -ne 0 ]; then
+            echo "Error converting $PARTITION"
+            return 1
+        fi
+    done
+
+    echo ""
+    echo "=== Compressing DAT files with Brotli ==="
+
+    for DAT in "$TMP_DIR"/*.new.dat; do
+        [[ -f "$DAT" ]] || continue
+
+        PARTITION="$(basename "$DAT" .new.dat)"
+        OUT_FILE="$TMP_DIR/$PARTITION.new.dat.br"
+
+        echo "Compressing $PARTITION.new.dat..."
+
+        brotli -f --quality=6 \
+               --output="$OUT_FILE" \
+               "$DAT"
+
+        if [ $? -ne 0 ]; then
+            echo "Error compressing $PARTITION"
+            return 1
+        fi
+    done
+
+    echo ""
+    echo "All partitions converted and compressed successfully."
+}

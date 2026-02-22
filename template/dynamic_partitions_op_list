@@ -1,0 +1,20 @@
+# Remove all existing dynamic partitions and groups before applying full OTA
+remove_all_groups
+# Add group samsung_dynamic_partitions with maximum size 7839154176
+add_group samsung_dynamic_partitions 7839154176
+# Add partition system to group samsung_dynamic_partitions
+add system samsung_dynamic_partitions
+# Add partition vendor to group samsung_dynamic_partitions
+add vendor samsung_dynamic_partitions
+# Add partition product to group samsung_dynamic_partitions
+add product samsung_dynamic_partitions
+# Add partition odm to group samsung_dynamic_partitions
+add odm samsung_dynamic_partitions
+# Grow partition system from 0 to 5556122792
+resize system 5556122792
+# Grow partition vendor from 0 to 507531264
+resize vendor 507531264
+# Grow partition product from 0 to 1182139820
+resize product 1182139820
+# Grow partition odm from 0 to 2021313
+resize odm 2021313
