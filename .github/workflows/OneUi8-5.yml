@@ -145,9 +145,64 @@ jobs:
         BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
         IMG_TO_SDAT_AND_COMPRESS "$OUT_DIR" "TMP"
 
-    - name: Prepare template and zip
+    - name: Update updater-script dynamically
       shell: bash
       run: |
+        # Variables
+        ROM_VERSION="8.5.1"
+        BUILD_DATE=$(date +'%d%m%Y')
+        DEVICE="${{ github.event.inputs.STOCK_DEVICE }}"
+
+        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" || "$DEVICE" == "SM-A325N" ]]; then
+            DEVICE_CODENAME="a32"
+            DISPLAY_NAME="Galaxy A32 4G"
+        elif [[ "$DEVICE" == "SM-A225F" ]]; then
+            DEVICE_CODENAME="a22"
+            DISPLAY_NAME="Galaxy A22 4G"
+        elif [[ "$DEVICE" == "SM-M325F" ]]; then
+            DEVICE_CODENAME="m32"
+            DISPLAY_NAME="Galaxy M32 4G"
+        elif [[ "$DEVICE" == "SM-E225F" ]]; then
+            DEVICE_CODENAME="f22"
+            DISPLAY_NAME="Galaxy F22 4G"
+        elif [[ "$DEVICE" == "SM-M225F" ]]; then
+            DEVICE_CODENAME="m22"
+            DISPLAY_NAME="Galaxy M22 4G"
+        else
+            DEVICE_CODENAME="unknown"
+            DISPLAY_NAME="Unknown Device"
+        fi
+        
+        UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
+
+        sed -i "s|getprop(\"ro.boot.em.model\") == \".*\" || abort|getprop(\"ro.boot.em.model\") == \"$DEVICE\" || abort(\"E3004: This package is for \\\"$DEVICE_CODENAME\\\" devices; this is a \\\"\" + getprop(\"ro.boot.em.model\") + \"\\\".\");|" "$UPDATER_PATH"
+
+        echo "Updating updater-script for version $ROM_VERSION, date $BUILD_DATE and phone $DEVICE..."
+
+        sed -i "s/ui_print(\"        8.0.0-01012000 for Galaxy Axx 4G\");/ui_print(\"        $ROM_VERSION-$BUILD_DATE for $DISPLAY_NAME\");/" "$UPDATER_PATH"
+
+    - name: Prepare flashable zip
+      shell: bash
+      run: |
+        # Variables
+        ROM_VERSION="8.5.1"
+        BUILD_DATE=$(date +'%d%m%Y')
+        DEVICE="${{ github.event.inputs.STOCK_DEVICE }}"
+
+        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" || "$DEVICE" == "SM-A325N" ]]; then
+            DEVICE_CODENAME="a32"
+        elif [[ "$DEVICE" == "SM-A225F" ]]; then
+            DEVICE_CODENAME="a22"
+        elif [[ "$DEVICE" == "SM-M325F" ]]; then
+            DEVICE_CODENAME="m32"
+        elif [[ "$DEVICE" == "SM-E225F" ]]; then
+            DEVICE_CODENAME="f22"
+        elif [[ "$DEVICE" == "SM-M225F" ]]; then
+            DEVICE_CODENAME="m22"
+        else
+            DEVICE_CODENAME="unknown"
+        fi
+
         TEMPLATE_DIR="$(pwd)/template"
         mkdir -p "$TEMPLATE_DIR"
 
@@ -156,7 +211,7 @@ jobs:
         cp TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
 
         echo "Creating ZIP package..."
-        ZIP_FILE="LumiROM_test.zip"
+        ZIP_FILE="LumiROM_${ROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
         [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
 
         # ZIP the rom
@@ -164,11 +219,12 @@ jobs:
         zip -r "$ZIP_FILE" ./*
 
         echo "ZIP package created: $ZIP_FILE"
+        echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
 
     - name: Sending ROM to GoFile.
       run: |
           chmod +x ./upload.sh 
-          bash ./upload.sh $(pwd)/template/LumiROM_test.zip
+          bash ./upload.sh "$(pwd)/template/${{ env.ZIP_NAME }}"
 
     - name: Cleanup
       run: |

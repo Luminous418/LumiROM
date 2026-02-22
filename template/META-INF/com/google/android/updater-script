@@ -1,7 +1,4 @@
-getprop("ro.boot.em.model") == "SM-A325F" || getprop("ro.boot.em.model") == "SM-A325M" || getprop("ro.boot.em.model") == "SM-A325N" || abort("E3004: This package is for \"a32\" devices; this is a \"" + getprop("ro.boot.em.model") + "\".");
-if (getprop("ro.boot.bootloader") != "A325FXXSCDYB2" && getprop("ro.boot.bootloader") != "A325FXXSCDXL2" && getprop("ro.boot.bootloader") != "A325MUBSBDYC2" && getprop("ro.boot.bootloader") != "A325FXXS7DWL1") then
-abort("E3003: This bootloader isn't supported for this ROM, your bootloader is \"" + getprop("ro.boot.bootloader") + "\".");
-endif;
+getprop("ro.boot.em.model") == "SM-A325F" || abort("E3004: This package is for \"a32\" devices; this is a \"" + getprop("ro.boot.em.model") + "\".");
 ui_print(" ");
 ui_print("************************************************");
 ui_print(" ");
@@ -12,41 +9,11 @@ ui_print(" / /___/ /_/ / / / / / / / _, _/ /_/ / / / / / / ");
 ui_print("/_____/\__,_/_/ /_/ /_/_/_/ |_|\____/_/ /_/ /_/  ");
 ui_print("                                                 ");
 ui_print(" ");
-ui_print("        8.5.1-09022026 for Galaxy A32 4G");
+ui_print("        8.0.0-01012000 for Galaxy Axx 4G");
 ui_print(" ");
 ui_print("************************************************");
 ui_print("One UI version: 8.5");
 ui_print("Source: samsung/a34xdxx/a34x:16/BP4A.251205.006/A346EXXUCFZA4:user/release-keys");
-
-if getprop("ro.boot.bootloader") == "A325FXXSCDYB2" then
-ui_print("Target: samsung/a32xx/a32:12/SP1A.210812.016/A325FXXSCDYB2:user/release-keys");
-else
-
-if getprop("ro.boot.bootloader") == "A325FXXSCDXL2" then
-ui_print("Target: samsung/a32xx/a32:12/SP1A.210812.016/A325FXXSCDXL2:user/release-keys");
-else
-
-if getprop("ro.boot.bootloader") == "A325MUBSBDYC2" then
-ui_print("Target: samsung/a32ub/a32:12/SP1A.210812.016/A325MUBSBDYC2:user/release-keys");
-else
-
-if getprop("ro.boot.bootloader") == "A325FXXS7DWL1" then
-ui_print("Target: samsung/a32xx/a32:12/SP1A.210812.016/A325FXXS7DWL1:user/release-keys");
-else
-
-ui_print("This bootloader wont have vendor and kernel support");
-
-# --- End A325F_C2 ---
-endif;
-
-# --- End A325F_C1 ---
-endif;
-
-# --- End A325M ---
-endif;
-
-# --- End A325F_U7 ---
-endif;
 ui_print("************************************************");
 
 # --- Start patching dynamic partitions ---
