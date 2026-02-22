@@ -36,7 +36,7 @@ export DEVICES_DIR="$(pwd)/LumiROM/Devices"
 export APKTOOL="$(pwd)/bin/apktool/apktool.jar"
 export VNDKS_COLLECTION="$(pwd)/LumiROM/vndks"
 
-export BUILD_PARTITIONS="product,system_ext,system"
+export BUILD_PARTITIONS="product,odm,system_ext,system"
 
 # Source
 source "$(pwd)/scripts/LumiROM.sh"
