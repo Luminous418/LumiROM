@@ -206,6 +206,15 @@ jobs:
         TEMPLATE_DIR="$(pwd)/template"
         mkdir -p "$TEMPLATE_DIR"
 
+        SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$DEVICE/boot.img"
+
+        if [ -f "$SPECIFIC_BOOT" ]; then
+            echo "-> Copying boot.img from $DEVICE..."
+            cp "$SPECIFIC_BOOT" "$TEMPLATE_DIR/boot.img"
+        else
+            echo "There is no boot.img for $DEVICE"
+        fi
+
         echo "Copying compressed DAT files to template..."
         cp TMP/*.new.dat.br "$TEMPLATE_DIR"/
         cp TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
