@@ -1,4 +1,4 @@
-getprop("ro.boot.em.model") == "SM-A325F" || abort("E3004: This package is for \"a32\" devices; this is a \"" + getprop("ro.boot.em.model") + "\".");
+getprop("ro.boot.em.model") == "SM-A325F" || abort("E3004: This package is for "a32");
 ui_print(" ");
 ui_print("************************************************");
 ui_print(" ");
