@@ -1313,6 +1313,7 @@ IMG_TO_SDAT_AND_COMPRESS() {
         fi
         
         touch "$TMP_DIR/$PARTITION.patch.dat"
+        echo "Created patch.dat for $PARTITION"
     done
 
     echo ""
