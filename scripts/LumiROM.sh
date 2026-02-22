@@ -104,7 +104,7 @@ DOWNLOAD_FIRMWARE() {
   -H "Accept-Encoding: identity" \
   -H "Accept: */*" \
   -H "Connection: keep-alive" \
-  "https://example.com"
+  "https://drive.usercontent.google.com/download?id=1AEvZGN3QRv_OrkaiBfi_7BZ_Kx64Pk5q&export=download&confirm=t&uuid=5f88ab75-38e6-4472-8f94-7b048cad2806"
 }
 
 EXTRACT_FIRMWARE() {
