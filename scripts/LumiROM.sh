@@ -1306,10 +1306,13 @@ IMG_TO_SDAT_AND_COMPRESS() {
             -B "$TMP_DIR/$PARTITION.map" \
             "$f"
 
+        
         if [ $? -ne 0 ]; then
             echo "Error converting $PARTITION"
             return 1
         fi
+        
+        touch "$TMP_DIR/$PARTITION.patch.dat"
     done
 
     echo ""
