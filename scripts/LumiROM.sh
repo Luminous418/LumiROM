@@ -105,12 +105,7 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
 
-    curl -L \
-      -o "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip" \
-      -H "Accept-Encoding: identity" \
-      -H "Accept: */*" \
-      -H "Connection: keep-alive" \
-      "https://drive.usercontent.google.com/download?id=1AEvZGN3QRv_OrkaiBfi_7BZ_Kx64Pk5q&export=download"
+    wget https://pixeldrain.com/u/5TuKzEk7 -O "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip"
 }
 
 EXTRACT_FIRMWARE() {
