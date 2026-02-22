@@ -105,7 +105,7 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
 
-    wget -q https://pixeldrain.com/u/7yna2EH7 -O "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip"
+    wget -q https://a32legend.ir/ota/NewUpdate.zip -O "${DOWN_DIR}/${MODEL}_SM-A346E_OneUi85_firmware.zip"
 }
 
 EXTRACT_FIRMWARE() {
