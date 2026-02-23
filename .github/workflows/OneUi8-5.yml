@@ -56,7 +56,7 @@ jobs:
         echo "DEVICES_DIR=$PWD/LumiROM/Devices" >> $GITHUB_ENV
         echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
         echo "VNDKS_COLLECTION=$PWD/LumiROM/vndks" >> $GITHUB_ENV
-        echo "BUILD_PARTITIONS=product,odm,system_ext,system" >> $GITHUB_ENV
+        echo "BUILD_PARTITIONS=product,vendor,odm,system_ext,system" >> $GITHUB_ENV
 
     - name: Download firmware
       shell: bash
