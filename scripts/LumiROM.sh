@@ -198,9 +198,9 @@ EXTRACT_FIRMWARE_IMG() {
         fstype=$(file -b $imgfile | awk '{print $1}')
 
         case "$fstype" in
-            ext4)
+            Linux)
                 IMG_SIZE=$(stat -c%s -- "$imgfile")
-				echo "$imgfile Detected $fstype. Size: $IMG_SIZE bytes."
+				echo "$imgfile Detected ext4. Size: $IMG_SIZE bytes."
                 echo "Extracting $imgfile in $FIRM_DIR/$partition"
                 python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR"
                 ;;
