@@ -218,6 +218,7 @@ jobs:
 
         echo "Copying compressed DAT files to template..."
         cp TMP/*.new.dat.br "$TEMPLATE_DIR"/
+        cp TMP/*.patch.dat "$TEMPLATE_DIR"/
         cp TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
 
         echo "Creating ZIP package..."
