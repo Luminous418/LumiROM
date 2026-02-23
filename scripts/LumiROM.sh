@@ -202,7 +202,7 @@ EXTRACT_FIRMWARE_IMG() {
                 IMG_SIZE=$(stat -c%s -- "$imgfile")
 				echo "$imgfile Detected ext4. Size: $IMG_SIZE bytes."
                 echo "Extracting $imgfile in $FIRM_DIR/$partition"
-                python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR"
+                sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR"
                 ;;
             EROFS)
                 echo ""
