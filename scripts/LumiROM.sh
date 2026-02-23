@@ -1221,6 +1221,22 @@ BUILD_IMG() {
     local EXTRACTED_FIRM_DIR="$1"
     local FILE_SYSTEM="$2"
 	local OUT_DIR="$3"
+    local DEVICE_CONFIG="$(pwd)/LumiROM/Devices/${STOCK_DEVICE}/config"
+    local OP_LIST="$(pwd)/template/dynamic_partitions_op_list"
+
+    if [[ -f "$DEVICE_CONFIG" ]]; then
+        local SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')
+        
+        if [[ -n "$SUPER_SIZE" && -f "$OP_LIST" ]]; then
+            echo -e "\e[32mUpdating super size on op_list: $SUPER_SIZE bytes\e[0m"
+            sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
+        else
+            echo "Warning: STOCK_SUPER_SIZE hasn't been found on $DEVICE_CONFIG"
+        fi
+    else
+        echo "Error: config file not found"
+    fi
+
 
     GEN_FS_CONFIG "$EXTRACTED_FIRM_DIR"
 	GEN_FILE_CONTEXTS "$EXTRACTED_FIRM_DIR"
@@ -1234,9 +1250,9 @@ BUILD_IMG() {
         local OUT_IMG="$OUT_DIR/${PARTITION}.img"
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        local OP_LIST="$(pwd)/template/dynamic_partitions_op_list"
         local SIZE=$(du -sb --apparent-size "$SRC_DIR" | awk '{printf "%.0f", $1 * 1.2}')
 		MOUNT_POINT="/$PARTITION"
+
 
         echo ""
         [[ -f "$FS_CONFIG" ]] || { echo "Warning: $FS_CONFIG missing, skipping $PARTITION"; continue; }
