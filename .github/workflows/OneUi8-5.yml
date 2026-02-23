@@ -78,6 +78,15 @@ jobs:
         source scripts/LumiROM.sh
         EXTRACT_FIRMWARE_IMG "$FIRM_DIR/$TARGET_DEVICE"
 
+    - name: Apply vendor patches
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        EXTRACT_FIRMWARE_IMG "$FIRM_DIR/$TARGET_DEVICE"
+        DISABLE_FBE "$FIRM_DIR/$TARGET_DEVICE"
+        DISABLE_FDE "$FIRM_DIR/$TARGET_DEVICE"
+        DELETE_ICCC "$FIRM_DIR/$TARGET_DEVICE"
+
     - name: Apply stock config
       shell: bash
       run: |

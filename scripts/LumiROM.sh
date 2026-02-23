@@ -283,6 +283,73 @@ DISABLE_FDE() {
     done
 }
 
+DELETE_ICCC() {
+    local EXTRACTED_FIRM_DIR="$1"
+    echo "Starting wipe..."
+
+    local targets=(
+        "$EXTRACTED_FIRM_DIR/vendor/bin/hw/vendor.samsung.hardware.tlc.iccc@1.0-service"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/init/vendor.samsung.hardware.tlc.iccc@1.0-service.rc"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/vintf/manifest/vendor.samsung.hardware.tlc.iccc@1.0-manifest.xml"
+        "$EXTRACTED_FIRM_DIR/vendor/lib64/vendor.samsung.hardware.tlc.iccc@1.0-impl.so"
+        "$EXTRACTED_FIRM_DIR/vendor/lib64/vendor.samsung.hardware.tlc.iccc@1.0.so"
+        "$EXTRACTED_FIRM_DIR/vendor/recovery-from-boot.p"
+    )
+
+    for file in "${targets[@]}"; do
+        if [ -e "$file" ] || [ -L "$file" ]; then
+            rm -rf "$file"
+            echo "Deleted $file"
+        else
+            echo "[Omitted] $file not found"
+        fi
+    done
+
+    echo "Wipe iccc completed"
+}
+
+PATCH_FSTAB_EROFS() {
+    local EXTRACTED_FIRM_DIR="$1"
+    
+    if [ -z "$EXTRACTED_FIRM_DIR" ]; then
+        echo "Error: FIRM directory not specified."
+        return 1
+    fi
+
+    echo "Applying patches EROFS to fstab..."
+
+    local fstab_files="
+        vendor/etc/fstab.mt6768
+        vendor/etc/fstab.mt6769t
+    "
+
+    for fstab in $fstab_files; do
+        local target="$EXTRACTED_FIRM_DIR/$fstab"
+
+        if [ -f "$target" ]; then
+            echo "- Processing: $fstab"
+            
+            # system
+            sed -i '/^system \/system ext4/a system\t/system\terofs\tro\twait,,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey' "$target"
+            
+            # vendor
+            sed -i '/^vendor \/vendor ext4/a vendor\t/vendor\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+            
+            # product
+            sed -i '/^product \/product ext4/a product\t/product\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+            
+            # odm
+            sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+            
+            echo "Done, now $STOCK_DEVICE is EROFS-enabled."
+        else
+            echo "- Omitted: $fstab not found"
+        fi
+    done
+
+    echo "--- EROFS patching completed ---"
+}
+
 
 INSTALL_FRAMEWORK() {
     if [ "$#" -ne 1 ]; then
