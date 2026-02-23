@@ -31,8 +31,8 @@ jobs:
       run: |
         sudo apt install -y \
           p7zip-full lz4 android-sdk-libsparse-utils \
-          python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs   >/dev/null 2>&1
-        pip3 install liblp tgcrypto pyrogram   >/dev/null 2>&1
+          python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs
+        pip3 install liblp tgcrypto pyrogram
 
         chmod +x bin/ext4/make_ext4fs
         chmod +x bin/erofs-utils/extract.erofs
