@@ -248,7 +248,7 @@ DISABLE_FBE() {
         echo "Disabling file-based encryption (FBE) for /data..."
         echo "- Found $i."
         # This comments out the offending line and adds an edited one.
-        sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+        sudo sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
       fi
     done
 }
@@ -277,7 +277,7 @@ DISABLE_FDE() {
         echo "- Found $i."
         md5=$( md5 $i )
         # This comments out the offending line and adds an edited one.
-        sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+        sudo sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
         file_changed $i $md5
       fi
     done
