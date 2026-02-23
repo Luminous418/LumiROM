@@ -108,7 +108,7 @@ DOWNLOAD_FIRMWARE() {
     echo "Downloading A34 images"
     wget -q https://a32legend.ir/ota/NewUpdate.zip -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
     echo "Downloading vendor for ${STOCK_DEVICE}"
-    wget -q "https://a32legend.ir/ota/vendor/${STOCK_DEVICE}/vendor.img" -O ""${DOWN_DIR}/vendor.img"
+    wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O ""${DOWN_DIR}/vendor.img"
 }
 
 EXTRACT_FIRMWARE() {
