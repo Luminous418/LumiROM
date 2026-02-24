@@ -65,7 +65,7 @@ jobs:
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
         DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$FIRM_DIR"
 
-    - name: Extract firmware
+    - name: Extract firmware from zip
       shell: bash
       run: |
         source scripts/LumiROM.sh
