@@ -245,7 +245,7 @@ DISABLE_FBE() {
       echo "Disabling full-based encryption (FBE) for /data..."
       echo "- Found $i."
       # If found file-encryption, comments it
-      sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+      sudo sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
       echo "Disabled file-encryption on $i"
     fi
   done
@@ -271,7 +271,7 @@ DISABLE_FDE() {
       echo "Disabling full-disk encryption (FDE) for /data..."
       echo "- Found $i."
       # If found force-encryption, comments it
-      sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+      sudo sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
       echo "Disabled force-encryption on $i"
     fi
   done
