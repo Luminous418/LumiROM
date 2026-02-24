@@ -243,4 +243,4 @@ jobs:
 
     - name: Cleanup
       run: |
-        rm -rf *
+        sudo rm -rf *
