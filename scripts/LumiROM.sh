@@ -1324,10 +1324,12 @@ BUILD_IMG() {
 
         sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
+        sudo chown -R $(whoami):$(whoami)
 
         if [[ "$FILE_SYSTEM" == "erofs" ]]; then
             echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1199145600 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
+            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1199145600 "$OUT_IMG" "$SRC_DIR"
+            sudo chown $(whoami):$(whoami) "$OUT_IMG"
 
         elif [[ "$FILE_SYSTEM" == "Linux" && "$FILE_SYSTEM" == "ext4" ]]; then
             echo -e "\e[33mBuilding ext4 image:\e[0m $OUT_IMG"
