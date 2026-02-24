@@ -1324,7 +1324,7 @@ BUILD_IMG() {
 
         sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-        sudo chown -R $(whoami):$(whoami) "${OUT_IMG}/vendor/*"
+        sudo chown -R $(whoami):$(whoami) "${OUT_DIR}"/vendor/*
 
         if [[ "$FILE_SYSTEM" == "erofs" ]]; then
             echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
