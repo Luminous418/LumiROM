@@ -1327,7 +1327,7 @@ BUILD_IMG() {
 
         if [[ "$FILE_SYSTEM" == "erofs" ]]; then
             echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-            $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1199145600 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
+            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1199145600 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
 
         elif [[ "$FILE_SYSTEM" == "Linux" && "$FILE_SYSTEM" == "ext4" ]]; then
             echo -e "\e[33mBuilding ext4 image:\e[0m $OUT_IMG"
