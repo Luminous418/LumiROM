@@ -228,7 +228,7 @@ EXTRACT_FIRMWARE_IMG() {
 
 DISABLE_FBE() {
     local EXTRACTED_FIRM_DIR="$1"
-    
+ 	
 	if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIRECTORY>"
         return 1
@@ -236,22 +236,22 @@ DISABLE_FBE() {
 
     local md5
     local i
-    fstab_files=`grep -lr 'fileencryption' $EXTRACTED_FIRM_DIR/vendor/etc`
+    # fstab_files=`grep -lr 'forceencrypt' $EXTRACTED_FIRM_DIR/vendor/etc`
 
-    #
     # Exynos devices = fstab.exynos*.
     # MediaTek devices = fstab.mt*.
     # Snapdragon devices = fstab.qcom, fstab.emmc, fstab.default
-    #
-    for i in $fstab_files; do
-      if [ -f $i ]; then
-        echo "Disabling file-based encryption (FBE) for /data..."
-        echo "- Found $i."
-        sudo chmod 644 "$i"
-        # This comments out the offending line and adds an edited one.
-        sudo sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-      fi
-    done
+
+    for i in "$EXTRACTED_FIRM_DIR/vendor/etc/fstab.mt*"; do
+    if [ -f $i ]; then
+      echo "Disabling full-based encryption (FBE) for /data..."
+      echo "- Found $i."
+      md5=$( md5 $i )
+      # If found file-encryption, comments it
+      sudo sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+      file_changed $i $md5
+    fi
+  done
 }
 
 
@@ -265,23 +265,21 @@ DISABLE_FDE() {
 
     local md5
     local i
-    fstab_files=`grep -lr 'forceencrypt' $EXTRACTED_FIRM_DIR/vendor/etc`
+    # fstab_files=`grep -lr 'forceencrypt' $EXTRACTED_FIRM_DIR/vendor/etc`
 
-    #
     # Exynos devices = fstab.exynos*.
     # MediaTek devices = fstab.mt*.
     # Snapdragon devices = fstab.qcom, fstab.emmc, fstab.default
-    #
-    for i in $fstab_files; do
-      if [ -f $i ]; then
+
+    for i in "$EXTRACTED_FIRM_DIR/vendor/etc/fstab.mt*"; do
+    if [ -f $i ]; then
         echo "Disabling full-disk encryption (FDE) for /data..."
         echo "- Found $i."
         md5=$( md5 $i )
-        sudo chmod 644 "$i"
-        # This comments out the offending line and adds an edited one.
+      # If found force-encryption, comments it
         sudo sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
         file_changed $i $md5
-      fi
+    fi
     done
 }
 
