@@ -234,22 +234,19 @@ DISABLE_FBE() {
         return 1
     fi
 
-    local md5
     local i
-    # fstab_files=`grep -lr 'forceencrypt' $EXTRACTED_FIRM_DIR/vendor/etc`
 
     # Exynos devices = fstab.exynos*.
     # MediaTek devices = fstab.mt*.
     # Snapdragon devices = fstab.qcom, fstab.emmc, fstab.default
 
-    for i in "$EXTRACTED_FIRM_DIR/vendor/etc/fstab.mt*"; do
+    for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
     if [ -f $i ]; then
       echo "Disabling full-based encryption (FBE) for /data..."
       echo "- Found $i."
-      md5=$( md5 $i )
       # If found file-encryption, comments it
-      sudo sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-      file_changed $i $md5
+      sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+      echo "Disabled file-encryption on $i"
     fi
   done
 }
@@ -263,24 +260,21 @@ DISABLE_FDE() {
         return 1
     fi
 
-    local md5
     local i
-    # fstab_files=`grep -lr 'forceencrypt' $EXTRACTED_FIRM_DIR/vendor/etc`
 
     # Exynos devices = fstab.exynos*.
     # MediaTek devices = fstab.mt*.
     # Snapdragon devices = fstab.qcom, fstab.emmc, fstab.default
 
-    for i in "$EXTRACTED_FIRM_DIR/vendor/etc/fstab.mt*"; do
+    for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
     if [ -f $i ]; then
-        echo "Disabling full-disk encryption (FDE) for /data..."
-        echo "- Found $i."
-        md5=$( md5 $i )
+      echo "Disabling full-disk encryption (FDE) for /data..."
+      echo "- Found $i."
       # If found force-encryption, comments it
-        sudo sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-        file_changed $i $md5
+      sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+      echo "Disabled force-encryption on $i"
     fi
-    done
+  done
 }
 
 DELETE_ICCC() {
