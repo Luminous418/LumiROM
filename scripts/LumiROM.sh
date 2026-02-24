@@ -1228,11 +1228,6 @@ APPENDING_DISPLAY_ID() {
 # }
 
 GEN_FS_CONFIG() {
-    if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
-        return 1
-    fi
-
     local EXTRACTED_FIRM_DIR="$1"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
@@ -1241,30 +1236,29 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-        
-        echo "Generating clean fs_config for: $PARTITION"
+        echo "Generating canned fs_config for: $PARTITION"
 
-        
-        echo "/ 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
+        {
+            echo "/ 0 0 0755"
+            echo "${PARTITION} 0 0 0755"
+            echo "${PARTITION}/ 0 0 0755"
+        } | sudo tee "$FS_CONFIG" > /dev/null
 
-        
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
-            local REL_PATH="${item#$ROOT}"
-            local PATH_ENTRY="/${REL_PATH#/}"
+            local REL_PATH="${item#$ROOT/}"
+            local PATH_ENTRY="${PARTITION}/${REL_PATH}"
 
             if [ -d "$item" ]; then
-                
-                echo "$PATH_ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
+                echo "$PATH_ENTRY 0 0 0755"
             else
-                echo "$PATH_ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
+                echo "$PATH_ENTRY 0 0 0644"
             fi
-        done
+        done | sudo tee -a "$FS_CONFIG" > /dev/null
 
-        
         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
 
-        echo "- $PARTITION fs_config generated successfully"
+        echo "- $PARTITION fs_config generated"
     done
 }
 
@@ -1369,7 +1363,7 @@ BUILD_IMG() {
 
         if [[ "$FILE_SYSTEM" == "erofs" ]]; then
             echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1199145600 "$OUT_IMG" "$SRC_DIR"
+            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1199145600 "$OUT_IMG" "$SRC_DIR"
             sudo chown $(whoami):$(whoami) "$OUT_IMG"
 
         elif [[ "$FILE_SYSTEM" == "Linux" && "$FILE_SYSTEM" == "ext4" ]]; then
