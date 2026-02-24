@@ -107,7 +107,7 @@ DOWNLOAD_FIRMWARE() {
     
     echo "Downloading A34 images - 4329MB"
     wget -q https://a32legend.ir/ota/NewUpdate.zip -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
-    
+
     echo "Downloading vendor for ${STOCK_DEVICE} - 700-800MB"
     wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
 
@@ -1205,24 +1205,24 @@ GEN_FS_CONFIG() {
         #echo "- Source : $ROOT"
         #echo "- Output : $FS_CONFIG"
 
-        awk '{print $1}' "$FS_CONFIG" | sort -u > "$TMP_EXISTING"
+        sudo awk '{print $1}' "$FS_CONFIG" | sort -u > "$TMP_EXISTING"
 
-        find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
+        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
             local REL_PATH="${item#$ROOT/}"
             local PATH_ENTRY="$PARTITION/$REL_PATH"
 
-            grep -qxF "$PATH_ENTRY" "$TMP_EXISTING" && continue
+            sudo grep -qxF "$PATH_ENTRY" "$TMP_EXISTING" && continue
 
             if [ -d "$item" ]; then
                 # echo "- Dir  : $PATH_ENTRY (0755)"
-                printf "%s 0 0 0755\n" "$PATH_ENTRY" >> "$FS_CONFIG"
+                sudo printf "%s 0 0 0755\n" "$PATH_ENTRY" >> "$FS_CONFIG"
             else
                 # echo "- File : $PATH_ENTRY (0644)"
-                printf "%s 0 0 0644\n" "$PATH_ENTRY" >> "$FS_CONFIG"
+                sudo printf "%s 0 0 0644\n" "$PATH_ENTRY" >> "$FS_CONFIG"
             fi
         done
 
-        rm -f "$TMP_EXISTING"
+        sudo rm -f "$TMP_EXISTING"
         echo "- $PARTITION fs_config generated"
     done
 }
@@ -1256,7 +1256,7 @@ GEN_FILE_CONTEXTS() {
             EXISTING["$PATH_ONLY"]=1
         done < "$FILE_CONTEXTS"
 
-        find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
+        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
             local REL_PATH="${item#$ROOT}"
             local PATH_ENTRY="/$PARTITION$REL_PATH"
 
@@ -1265,7 +1265,7 @@ GEN_FILE_CONTEXTS() {
 
             [ "${EXISTING[$ESCAPED_PATH]+exists}" ] && continue
 
-            printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" >> "$FILE_CONTEXTS"
+            sudo printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" >> "$FILE_CONTEXTS"
 
             EXISTING["$ESCAPED_PATH"]=1
         done
