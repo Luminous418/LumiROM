@@ -2,7 +2,7 @@
 
 # Linux setup.
 # Installing necessary packages.
-sudo apt install -y p7zip-full lz4 android-sdk-libsparse-utils python3 python3-pip zipalign unzip default-jre openjdk-17-jdk pv brotli e2fsprogs
+sudo apt install -y p7zip-full lz4 android-sdk-libsparse-utils python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs
 
 # Installing Python packages.
 pip3 install liblp tgcrypto pyrogram
