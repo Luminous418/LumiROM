@@ -1196,7 +1196,7 @@ GEN_FS_CONFIG() {
         local TMP_EXISTING
         TMP_EXISTING="$(mktemp)"
 
-        touch "$FS_CONFIG"
+        sudo touch "$FS_CONFIG"
 
         echo ""
         echo "Generating fs_config for partition: $PARTITION"
