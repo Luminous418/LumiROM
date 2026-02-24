@@ -1236,29 +1236,28 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-        echo "Generating canned fs_config for: $PARTITION"
+        echo "Generating relative fs_config for: $PARTITION"
 
         {
             echo "/ 0 0 0755"
-            echo "${PARTITION} 0 0 0755"
-            echo "${PARTITION}/ 0 0 0755"
+            echo ". 0 0 0755"
+            echo "./ 0 0 0755"
         } | sudo tee "$FS_CONFIG" > /dev/null
 
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
             local REL_PATH="${item#$ROOT/}"
-            local PATH_ENTRY="${PARTITION}/${REL_PATH}"
-
+            
             if [ -d "$item" ]; then
-                echo "$PATH_ENTRY 0 0 0755"
+                echo "$REL_PATH 0 0 0755"
             else
-                echo "$PATH_ENTRY 0 0 0644"
+                echo "$REL_PATH 0 0 0644"
             fi
         done | sudo tee -a "$FS_CONFIG" > /dev/null
 
         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
 
-        echo "- $PARTITION fs_config generated"
+        echo "- $PARTITION fs_config generated (relative format)"
     done
 }
 
