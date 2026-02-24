@@ -1249,18 +1249,18 @@ GEN_FS_CONFIG() {
 
         
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
-            
             local REL_PATH="${item#$ROOT}"
-            
+            local PATH_ENTRY="/${REL_PATH#/}"
 
             if [ -d "$item" ]; then
-                sudo printf "/%s 0 0 0755\n" "${REL_PATH#/}" >> "$FS_CONFIG"
+                
+                echo "$PATH_ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
             else
-                sudo printf "/%s 0 0 0644\n" "${REL_PATH#/}" >> "$FS_CONFIG"
+                echo "$PATH_ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
             fi
         done
 
-
+        
         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
 
