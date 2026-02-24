@@ -292,7 +292,7 @@ DELETE_ICCC() {
 
     for file in "${targets[@]}"; do
         if [ -e "$file" ] || [ -L "$file" ]; then
-            rm -rf "$file"
+            sudo rm -rf "$file"
             echo "Deleted $file"
         else
             echo "[Omitted] $file not found"
@@ -324,16 +324,16 @@ PATCH_FSTAB_EROFS() {
             echo "- Processing: $fstab"
             
             # system
-            sed -i '/^system \/system ext4/a system\t/system\terofs\tro\twait,,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey' "$target"
+            sudo sed -i '/^system \/system ext4/a system\t/system\terofs\tro\twait,,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey' "$target"
             
             # vendor
-            sed -i '/^vendor \/vendor ext4/a vendor\t/vendor\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+            sudo sed -i '/^vendor \/vendor ext4/a vendor\t/vendor\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
             
             # product
-            sed -i '/^product \/product ext4/a product\t/product\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+            sudo sed -i '/^product \/product ext4/a product\t/product\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
             
             # odm
-            sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+            sudo sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
             
             echo "Done, now $STOCK_DEVICE is EROFS-enabled."
         else
