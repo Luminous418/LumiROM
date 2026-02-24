@@ -1242,7 +1242,7 @@ GEN_FILE_CONTEXTS() {
         [ "$PARTITION" = "config" ] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        touch "$FILE_CONTEXTS"
+        sudo touch "$FILE_CONTEXTS"
 
         echo ""
         echo "Generating file_contexts for partition: $PARTITION"
