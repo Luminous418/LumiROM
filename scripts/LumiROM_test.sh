@@ -1174,7 +1174,6 @@ APPENDING_DISPLAY_ID() {
 GEN_FILE_CONTEXTS() {
     local EXTRACTED_FIRM_DIR="$1"
     local CONFIG_DIR="$EXTRACTED_FIRM_DIR/config"
-    mkdir -p "$CONFIG_DIR"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
@@ -1182,18 +1181,18 @@ GEN_FILE_CONTEXTS() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local OUT_FC="$CONFIG_DIR/${PARTITION}_file_contexts"
-        local SRC_FC="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
+        # Ruta donde residen tus archivos originales de dump
+        local SRC_FC="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts" 
 
         echo "Generating file_contexts for: $PARTITION"
 
         if [[ -f "$SRC_FC" ]]; then
             echo "- Limpiando contextos originales para $PARTITION"
-            # mkfs.erofs con --mount-point /PARTICION espera que las reglas
-            # en el archivo empiecen con /PARTICION o sean relativas.
-            # Vamos a asegurar que todas empiecen con /PARTITION/
-            sed -E "s|^/?${PARTITION}/|/${PARTITION}/|g; s|^/|/${PARTITION}/|g; s|//|/|g" "$SRC_FC" | sudo tee "$OUT_FC" > /dev/null
+            # Creamos un temporal para no editar el original mientras se lee
+            sudo sed -E "s|^/?${PARTITION}/|/${PARTITION}/|g; s|^/|/${PARTITION}/|g; s|//|/|g" "$SRC_FC" | sudo tee "${OUT_FC}.tmp" > /dev/null
+            sudo mv "${OUT_FC}.tmp" "$OUT_FC"
         else
-            echo "- Generando contextos base..."
+            echo "- Generando contextos base para $PARTITION"
             echo "/($PARTITION)?(/.*)? u:object_r:${PARTITION}_file:s0" | sudo tee "$OUT_FC" > /dev/null
         fi
     done
@@ -1209,22 +1208,24 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local OUT_FS="$CONFIG_DIR/${PARTITION}_fs_config"
-        local SRC_FS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+        local SRC_FS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config" 
 
         echo "Generating fs_config for: $PARTITION"
 
         if [[ -f "$SRC_FS" ]]; then
             echo "- Limpiando fs_config original para $PARTITION"
-            # IMPORTANTE: Para fs_config, mkfs.erofs espera rutas RELATIVAS 
-            # (sin / al principio y sin el nombre de la partición si estamos dentro de ella)
-            # Ejemplo: "bin/sh 0 0 0755" en lugar de "vendor/bin/sh"
-            sed -E "s|^/?${PARTITION}/||g; s|^/||g" "$SRC_FS" | sudo tee "$OUT_FS" > /dev/null
+            # ESTA ES LA PARTE CRÍTICA:
+            # Eliminamos cualquier rastro de "odm/", "/odm/", "vendor/", etc.
+            # mkfs.erofs DEBE ver "lib 0 0 0755" y NO "odm/lib 0 0 0755"
+            sudo sed -E "s|^/?${PARTITION}/||g; s|^/||g" "$SRC_FS" | sudo tee "${OUT_FS}.tmp" > /dev/null
+            sudo mv "${OUT_FS}.tmp" "$OUT_FS"
         else
-            echo "- Generando fs_config genérico"
+            echo "- Generando fs_config genérico para $PARTITION"
             sudo find "$ROOT" -mindepth 1 -printf "%P 0 0 %m\n" | sudo tee "$OUT_FS" > /dev/null
         fi
         
-        # Eliminar duplicados y líneas vacías que rompen el parser
+        # Limpieza final: quitar líneas vacías y ordenar para mkfs.erofs
+        sudo sed -i '/^$/d' "$OUT_FS"
         sudo sort -u "$OUT_FS" -o "$OUT_FS"
     done
 }
