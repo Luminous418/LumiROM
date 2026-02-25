@@ -1181,26 +1181,24 @@ GEN_FILE_CONTEXTS() {
         PARTITION="$(basename "$ROOT")"
         [[ "$PARTITION" == "config" ]] && continue
 
-        local FILE_CONTEXTS="$CONFIG_DIR/${PARTITION}_file_contexts"
-        echo "Generating file_contexts para: $PARTITION"
+        local OUT_FC="$CONFIG_DIR/${PARTITION}_file_contexts"
+        local SRC_FC="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
 
-        local ORIG_FC=$(sudo find "$ROOT" -name "*file_contexts*" -type f | head -n 1)
+        echo "Generating file_contexts for: $PARTITION"
 
-        if [[ -f "$ORIG_FC" ]]; then
-            echo "- Copying original contexts from: $(basename "$ORIG_FC")"
-            sudo cp "$ORIG_FC" "$FILE_CONTEXTS"
+        if [[ -f "$SRC_FC" ]]; then
+            echo "- Usando contextos originales de dump para $PARTITION"
+            # Limpieza: 
+            # 1. Quitar el prefijo /vendor/ o vendor/ para que sea relativo a la partición
+            # 2. Asegurar que empiece por / como espera mkfs.erofs --mount-point
+            sed -E "s|^/?${PARTITION}/|/|g" "$SRC_FC" | sudo tee "$OUT_FC" > /dev/null
         else
-            echo "- Original not found, doing a base one..."
+            echo "- Generando contextos genéricos (No se encontró dump)"
             {
                 echo "/($PARTITION)?(/.*)? u:object_r:${PARTITION}_file:s0"
-                echo "/($PARTITION)?/bin(/.*)? u:object_r:${PARTITION}_exec:s0"
                 [[ "$PARTITION" == "system" ]] && echo "/system/bin/init u:object_r:init_exec:s0"
-            } | sudo tee "$FILE_CONTEXTS" > /dev/null
-            
-            sudo find "$ROOT" -mindepth 1 -printf "/$PARTITION/%P u:object_r:${PARTITION}_file:s0\n" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
+            } | sudo tee "$OUT_FC" > /dev/null
         fi
-        
-        sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
     done
 }
 
@@ -1213,32 +1211,20 @@ GEN_FS_CONFIG() {
         PARTITION="$(basename "$ROOT")"
         [[ "$PARTITION" == "config" ]] && continue
 
-        local FS_CONFIG="$CONFIG_DIR/${PARTITION}_fs_config"
+        local OUT_FS="$CONFIG_DIR/${PARTITION}_fs_config"
+        local SRC_FS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+
         echo "Generating fs_config for: $PARTITION"
 
-        local ORIG_FS=$(sudo find "$ROOT" -name "*fs_config*" -type f | head -n 1)
-
-        if [[ -f "$ORIG_FS" ]]; then
-            echo "- Copying orginal fs_config for: $(basename "$ORIG_FS")"
-            sudo cp "$ORIG_FS" "$FS_CONFIG"
+        if [[ -f "$SRC_FS" ]]; then
+            echo "- Usando fs_config original de dump para $PARTITION"
+            # Limpieza para fs_config:
+            # mkfs.erofs espera rutas relativas SIN la barra inicial (ej: bin/sh)
+            sed -E "s|^/?${PARTITION}/||g; s|^/||g" "$SRC_FS" | sudo tee "$OUT_FS" > /dev/null
         else
-            echo "- Generating fs_config..."
-            {
-                echo "/ 0 0 0755"
-                echo ". 0 0 0755"
-                echo "./ 0 0 0755"
-                sudo find "$ROOT" -mindepth 1 | while read -r item; do
-                    local REL_PATH="${item#$ROOT/}"
-                    local MODE="0644"
-                    [[ -d "$item" ]] && MODE="0755"
-                    if [[ "$REL_PATH" == "bin/"* || "$REL_PATH" == "xbin/"* || "$REL_PATH" == *"init" || "$REL_PATH" == *"sh" ]]; then
-                        MODE="0755"
-                    fi
-                    echo "$REL_PATH 0 0 $MODE"
-                done
-            } | sudo tee "$FS_CONFIG" > /dev/null
+            echo "- Generando fs_config básico"
+            sudo find "$ROOT" -mindepth 1 -printf "%P 0 0 %m\n" | sudo tee "$OUT_FS" > /dev/null
         fi
-        sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
     done
 }
 
