@@ -1185,10 +1185,7 @@ GEN_FILE_CONTEXTS() {
         echo "Processing file_contexts for: $PARTITION"
 
         if [[ -f "$OUT_FC" ]]; then
-            # REGLA SELINUX: Necesita la ruta completa con la partición
-            # Nos aseguramos de que cada línea empiece por /PARTITION
-            sudo sed -i -E "s|^/?${PARTITION}/|/${PARTITION}/|g; s|^/|/${PARTITION}/|g; s|//|/|g" "$OUT_FC"
-            # Ejemplo resultado: /vendor/etc/audio_param/...
+            sudo sed -i -E "s|^/?(${PARTITION}/)?|/${PARTITION}/|g; s|//|/|g" "$OUT_FC"
         else
             echo "/${PARTITION}(/.*)? u:object_r:${PARTITION}_file:s0" | sudo tee "$OUT_FC" > /dev/null
         fi
@@ -1209,15 +1206,11 @@ GEN_FS_CONFIG() {
         echo "Processing fs_config for: $PARTITION"
 
         if [[ -f "$OUT_FS" ]]; then
-            # REGLA MKFS: Necesita rutas RELATIVAS (sin el nombre de la partición)
-            # Eliminamos "vendor/", "/vendor/" o "/" al inicio
             sudo sed -i -E "s|^/?${PARTITION}/||g; s|^/||g" "$OUT_FS"
-            # Ejemplo resultado: etc/audio_param/...
         else
             sudo find "$ROOT" -mindepth 1 -printf "%P 0 0 %m\n" | sudo tee "$OUT_FS" > /dev/null
         fi
         
-        # Limpieza de seguridad
         sudo sed -i '/^$/d' "$OUT_FS"
         sudo sort -u "$OUT_FS" -o "$OUT_FS"
     done
