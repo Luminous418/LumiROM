@@ -1187,17 +1187,14 @@ GEN_FILE_CONTEXTS() {
         echo "Generating file_contexts for: $PARTITION"
 
         if [[ -f "$SRC_FC" ]]; then
-            echo "- Usando contextos originales de dump para $PARTITION"
-            # Limpieza: 
-            # 1. Quitar el prefijo /vendor/ o vendor/ para que sea relativo a la partición
-            # 2. Asegurar que empiece por / como espera mkfs.erofs --mount-point
-            sed -E "s|^/?${PARTITION}/|/|g" "$SRC_FC" | sudo tee "$OUT_FC" > /dev/null
+            echo "- Limpiando contextos originales para $PARTITION"
+            # mkfs.erofs con --mount-point /PARTICION espera que las reglas
+            # en el archivo empiecen con /PARTICION o sean relativas.
+            # Vamos a asegurar que todas empiecen con /PARTITION/
+            sed -E "s|^/?${PARTITION}/|/${PARTITION}/|g; s|^/|/${PARTITION}/|g; s|//|/|g" "$SRC_FC" | sudo tee "$OUT_FC" > /dev/null
         else
-            echo "- Generando contextos genéricos (No se encontró dump)"
-            {
-                echo "/($PARTITION)?(/.*)? u:object_r:${PARTITION}_file:s0"
-                [[ "$PARTITION" == "system" ]] && echo "/system/bin/init u:object_r:init_exec:s0"
-            } | sudo tee "$OUT_FC" > /dev/null
+            echo "- Generando contextos base..."
+            echo "/($PARTITION)?(/.*)? u:object_r:${PARTITION}_file:s0" | sudo tee "$OUT_FC" > /dev/null
         fi
     done
 }
@@ -1217,14 +1214,18 @@ GEN_FS_CONFIG() {
         echo "Generating fs_config for: $PARTITION"
 
         if [[ -f "$SRC_FS" ]]; then
-            echo "- Usando fs_config original de dump para $PARTITION"
-            # Limpieza para fs_config:
-            # mkfs.erofs espera rutas relativas SIN la barra inicial (ej: bin/sh)
+            echo "- Limpiando fs_config original para $PARTITION"
+            # IMPORTANTE: Para fs_config, mkfs.erofs espera rutas RELATIVAS 
+            # (sin / al principio y sin el nombre de la partición si estamos dentro de ella)
+            # Ejemplo: "bin/sh 0 0 0755" en lugar de "vendor/bin/sh"
             sed -E "s|^/?${PARTITION}/||g; s|^/||g" "$SRC_FS" | sudo tee "$OUT_FS" > /dev/null
         else
-            echo "- Generando fs_config básico"
+            echo "- Generando fs_config genérico"
             sudo find "$ROOT" -mindepth 1 -printf "%P 0 0 %m\n" | sudo tee "$OUT_FS" > /dev/null
         fi
+        
+        # Eliminar duplicados y líneas vacías que rompen el parser
+        sudo sort -u "$OUT_FS" -o "$OUT_FS"
     done
 }
 
