@@ -1181,19 +1181,16 @@ GEN_FILE_CONTEXTS() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local OUT_FC="$CONFIG_DIR/${PARTITION}_file_contexts"
-        # Ruta donde residen tus archivos originales de dump
-        local SRC_FC="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts" 
+        
+        echo "Processing file_contexts for: $PARTITION"
 
-        echo "Generating file_contexts for: $PARTITION"
-
-        if [[ -f "$SRC_FC" ]]; then
-            echo "- Limpiando contextos originales para $PARTITION"
-            # Creamos un temporal para no editar el original mientras se lee
-            sudo sed -E "s|^/?${PARTITION}/|/${PARTITION}/|g; s|^/|/${PARTITION}/|g; s|//|/|g" "$SRC_FC" | sudo tee "${OUT_FC}.tmp" > /dev/null
-            sudo mv "${OUT_FC}.tmp" "$OUT_FC"
+        if [[ -f "$OUT_FC" ]]; then
+            # REGLA SELINUX: Necesita la ruta completa con la partición
+            # Nos aseguramos de que cada línea empiece por /PARTITION
+            sudo sed -i -E "s|^/?${PARTITION}/|/${PARTITION}/|g; s|^/|/${PARTITION}/|g; s|//|/|g" "$OUT_FC"
+            # Ejemplo resultado: /vendor/etc/audio_param/...
         else
-            echo "- Generando contextos base para $PARTITION"
-            echo "/($PARTITION)?(/.*)? u:object_r:${PARTITION}_file:s0" | sudo tee "$OUT_FC" > /dev/null
+            echo "/${PARTITION}(/.*)? u:object_r:${PARTITION}_file:s0" | sudo tee "$OUT_FC" > /dev/null
         fi
     done
 }
@@ -1208,23 +1205,19 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local OUT_FS="$CONFIG_DIR/${PARTITION}_fs_config"
-        local SRC_FS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config" 
 
-        echo "Generating fs_config for: $PARTITION"
+        echo "Processing fs_config for: $PARTITION"
 
-        if [[ -f "$SRC_FS" ]]; then
-            echo "- Limpiando fs_config original para $PARTITION"
-            # ESTA ES LA PARTE CRÍTICA:
-            # Eliminamos cualquier rastro de "odm/", "/odm/", "vendor/", etc.
-            # mkfs.erofs DEBE ver "lib 0 0 0755" y NO "odm/lib 0 0 0755"
-            sudo sed -E "s|^/?${PARTITION}/||g; s|^/||g" "$SRC_FS" | sudo tee "${OUT_FS}.tmp" > /dev/null
-            sudo mv "${OUT_FS}.tmp" "$OUT_FS"
+        if [[ -f "$OUT_FS" ]]; then
+            # REGLA MKFS: Necesita rutas RELATIVAS (sin el nombre de la partición)
+            # Eliminamos "vendor/", "/vendor/" o "/" al inicio
+            sudo sed -i -E "s|^/?${PARTITION}/||g; s|^/||g" "$OUT_FS"
+            # Ejemplo resultado: etc/audio_param/...
         else
-            echo "- Generando fs_config genérico para $PARTITION"
             sudo find "$ROOT" -mindepth 1 -printf "%P 0 0 %m\n" | sudo tee "$OUT_FS" > /dev/null
         fi
         
-        # Limpieza final: quitar líneas vacías y ordenar para mkfs.erofs
+        # Limpieza de seguridad
         sudo sed -i '/^$/d' "$OUT_FS"
         sudo sort -u "$OUT_FS" -o "$OUT_FS"
     done
