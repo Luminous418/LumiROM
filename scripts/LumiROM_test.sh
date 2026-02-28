@@ -111,11 +111,11 @@ DOWNLOAD_FIRMWARE() {
     HTML=$(wget --quiet --save-cookies cookies.txt --keep-session-cookies "https://docs.google.com/uc?export=download&id=$FILE_ID" -O-); \
     CONFIRM=$(echo "$HTML" | sed -rn 's/.*name="confirm" value="([^"]+)".*/\1/p'); \
     UUID=$(echo "$HTML" | sed -rn 's/.*name="uuid" value="([^"]+)".*/\1/p'); \
-    wget --load-cookies cookies.txt "https://drive.usercontent.google.com/download?id=$FILE_ID&export=download&confirm=$CONFIRM&uuid=$UUID" -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"; \
-    rm cookies.txt
+    wget -q --load-cookies cookies.txt "https://drive.usercontent.google.com/download?id=$FILE_ID&export=download&confirm=$CONFIRM&uuid=$UUID" -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"; \
+    rm -f cookies.txt
 
     echo "Downloading vendor for ${STOCK_DEVICE} - 700-800MB"
-    wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
+    wget --show-progress "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
 
 }
 
