@@ -1236,7 +1236,13 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-        echo "Generating relative fs_config for: $PARTITION"
+
+        if [[ -f "$FS_CONFIG" ]]; then
+            echo "- $PARTITION fs_config exits."
+            continue
+        fi
+
+        echo "Generating fs_config for: $PARTITION"
 
         {
             echo "/ 0 0 0755"
@@ -1257,7 +1263,7 @@ GEN_FS_CONFIG() {
         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
 
-        echo "- $PARTITION fs_config generated (relative format)"
+        echo "- $PARTITION fs_config generated"
     done
 }
 
@@ -1278,17 +1284,16 @@ GEN_FILE_CONTEXTS() {
         [ "$PARTITION" = "config" ] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        sudo touch "$FILE_CONTEXTS"
 
-        echo ""
+        if [[ -f "$FILE_CONTEXTS" ]]; then
+            echo "- $PARTITION file_contexts exits."
+            continue
+        fi
+
+        sudo touch "$FILE_CONTEXTS"
         echo "Generating file_contexts for partition: $PARTITION"
 
         declare -A EXISTING=()
-        while IFS= read -r line; do
-            [ -z "$line" ] && continue
-            PATH_ONLY=$(echo "$line" | awk '{print $1}')
-            EXISTING["$PATH_ONLY"]=1
-        done < "$FILE_CONTEXTS"
 
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
             local REL_PATH="${item#$ROOT}"
