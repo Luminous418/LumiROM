@@ -1177,6 +1177,46 @@ APPENDING_DISPLAY_ID() {
 }
 
 
+# GEN_FS_CONFIG() {
+#     local EXTRACTED_FIRM_DIR="$1"
+
+#     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
+#         [[ -d "$ROOT" ]] || continue
+#         PARTITION="$(basename "$ROOT")"
+#         [[ "$PARTITION" == "config" ]] && continue
+
+#         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+
+#         if [[ -f "$FS_CONFIG" ]]; then
+#             echo "- $PARTITION fs_config exits."
+#             continue
+#         fi
+
+#         echo "Generating fs_config for: $PARTITION"
+
+#         {
+#             echo "/ 0 0 0755"
+#             echo ". 0 0 0755"
+#             echo "./ 0 0 0755"
+#         } | sudo tee "$FS_CONFIG" > /dev/null
+
+#         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
+#             local REL_PATH="${item#$ROOT/}"
+            
+#             if [ -d "$item" ]; then
+#                 echo "$REL_PATH 0 0 0755"
+#             else
+#                 echo "$REL_PATH 0 0 0644"
+#             fi
+#         done | sudo tee -a "$FS_CONFIG" > /dev/null
+
+#         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
+#         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
+
+#         echo "- $PARTITION fs_config generated"
+#     done
+# }
+
 GEN_FS_CONFIG() {
     local EXTRACTED_FIRM_DIR="$1"
 
@@ -1186,81 +1226,56 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-
-        if [[ -f "$FS_CONFIG" ]]; then
-            echo "- $PARTITION fs_config exits."
-            continue
+        
+        if [[ ! -f "$FS_CONFIG" ]]; then
+            echo "Generating NEW fs_config for: $PARTITION"
+            { echo "/ 0 0 0755"; echo ". 0 0 0755"; echo "./ 0 0 0755"; } | sudo tee "$FS_CONFIG" > /dev/null
         fi
 
-        echo "Generating fs_config for: $PARTITION"
-
-        {
-            echo "/ 0 0 0755"
-            echo ". 0 0 0755"
-            echo "./ 0 0 0755"
-        } | sudo tee "$FS_CONFIG" > /dev/null
+        echo "Checking for new files in: $PARTITION"
 
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
             local REL_PATH="${item#$ROOT/}"
             
-            if [ -d "$item" ]; then
-                echo "$REL_PATH 0 0 0755"
-            else
-                echo "$REL_PATH 0 0 0644"
+            if ! grep -q "^$REL_PATH " "$FS_CONFIG"; then
+                echo "  [+] Adding missing entry: $REL_PATH"
+                if [ -d "$item" ]; then
+                    echo "$REL_PATH 0 0 0755"
+                else
+                    echo "$REL_PATH 0 0 0644"
+                fi
             fi
         done | sudo tee -a "$FS_CONFIG" > /dev/null
 
         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
-        sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-
-        echo "- $PARTITION fs_config generated"
     done
 }
 
 
 GEN_FILE_CONTEXTS() {
-    if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
-        return 1
-    fi
-
     local EXTRACTED_FIRM_DIR="$1"
-    [ ! -d "$EXTRACTED_FIRM_DIR" ] && { echo "- $EXTRACTED_FIRM_DIR not found."; return 1; }
-    [ ! -d "$EXTRACTED_FIRM_DIR/config" ] && { echo "[ERROR] config directory missing"; return 1; }
-
+    
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [ ! -d "$ROOT" ] && continue
         PARTITION="$(basename "$ROOT")"
         [ "$PARTITION" = "config" ] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
+        [ ! -f "$FILE_CONTEXTS" ] && sudo touch "$FILE_CONTEXTS"
 
-        if [[ -f "$FILE_CONTEXTS" ]]; then
-            echo "- $PARTITION file_contexts exits."
-            continue
-        fi
-
-        sudo touch "$FILE_CONTEXTS"
-        echo "Generating file_contexts for partition: $PARTITION"
-
-        declare -A EXISTING=()
+        echo "Syncing contexts for: $PARTITION"
 
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
             local REL_PATH="${item#$ROOT}"
             local PATH_ENTRY="/$PARTITION$REL_PATH"
+            local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
 
-            local ESCAPED_PATH
-            ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
-
-            [ "${EXISTING[$ESCAPED_PATH]+exists}" ] && continue
-
-            sudo printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" >> "$FILE_CONTEXTS"
-
-            EXISTING["$ESCAPED_PATH"]=1
+            # Si el path no está en el archivo de contextos, lo agregamos como system_file
+            if ! grep -q "^$ESCAPED_PATH" "$FILE_CONTEXTS"; then
+                echo "  [+] Context for: $PATH_ENTRY"
+                sudo printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" >> "$FILE_CONTEXTS"
+            fi
         done
-
-        echo "- $PARTITION file_contexts generated"
-        unset EXISTING
     done
 }
 
