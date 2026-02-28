@@ -1,4 +1,4 @@
-name: LumiROM Tools Ui 8.5
+name: LumiROM Tools Ui 8.5 Test
 
 on:
   workflow_dispatch:
@@ -61,14 +61,14 @@ jobs:
     - name: Download firmware
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
         DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$FIRM_DIR"
 
     - name: Extract firmware
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         EXTRACT_FIRMWARE "$FIRM_DIR/$TARGET_DEVICE"
         PREPARE_PARTITIONS "$FIRM_DIR/$TARGET_DEVICE"
         EXTRACT_FIRMWARE_IMG "$FIRM_DIR/$TARGET_DEVICE"
@@ -76,7 +76,7 @@ jobs:
     - name: Apply vendor patches
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         DISABLE_FBE "$FIRM_DIR/$TARGET_DEVICE"
         DISABLE_FDE "$FIRM_DIR/$TARGET_DEVICE"
         DELETE_ICCC "$FIRM_DIR/$TARGET_DEVICE"
@@ -85,38 +85,38 @@ jobs:
     - name: Apply stock config
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         APPLY_STOCK_CONFIG "$FIRM_DIR/$TARGET_DEVICE"
 
     - name: Debloat ROM
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         DEBLOAT "$FIRM_DIR/$TARGET_DEVICE"
 
     - name: Apply features
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         APPLY_FEATURES "$FIRM_DIR/$TARGET_DEVICE"
 
     - name: Update Build ID
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         APPENDING_DISPLAY_ID "$FIRM_DIR/$TARGET_DEVICE"
 
     - name: Install stock framework-res
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         INSTALL_FRAMEWORK \
           "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
 
     - name: Decompile framework jars
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         DECOMPILE "$APKTOOL" \
           "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/ssrm.jar" "$WORK_DIR"
         DECOMPILE "$APKTOOL" \
@@ -125,7 +125,7 @@ jobs:
     - name: Patch framework
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         PATCH_SSRM "$WORK_DIR/ssrm"
         PATCH_KNOX_GUARD "$WORK_DIR/services"
         PATCH_FLAG_SECURE "$WORK_DIR/services"
@@ -134,7 +134,7 @@ jobs:
     - name: Recompile framework
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
           "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
         RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
@@ -145,7 +145,7 @@ jobs:
     - name: Build images
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/LumiROM_test.sh
         BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
         IMG_TO_SDAT_AND_COMPRESS "$OUT_DIR" "TMP"
 

@@ -1171,90 +1171,48 @@ APPENDING_DISPLAY_ID() {
 }
 
 
-GEN_FS_CONFIG() {
+GEN_FILE_CONTEXTS() {
     local EXTRACTED_FIRM_DIR="$1"
+    local CONFIG_DIR="$EXTRACTED_FIRM_DIR/config"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
         PARTITION="$(basename "$ROOT")"
         [[ "$PARTITION" == "config" ]] && continue
 
-        local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+        local OUT_FC="$CONFIG_DIR/${PARTITION}_file_contexts"
+        
+        echo "Processing file_contexts for: $PARTITION"
 
-        if [[ -f "$FS_CONFIG" ]]; then
-            echo "- $PARTITION fs_config exits."
-            continue
+        if [[ -f "$OUT_FC" ]]; then
+            sudo sed -i -E "s|^/?(${PARTITION}/)?|/${PARTITION}/|g; s|//|/|g" "$OUT_FC"
+        else
+            echo "/${PARTITION}(/.*)? u:object_r:${PARTITION}_file:s0" | sudo tee "$OUT_FC" > /dev/null
         fi
-
-        echo "Generating fs_config for: $PARTITION"
-
-        {
-            echo "/ 0 0 0755"
-            echo ". 0 0 0755"
-            echo "./ 0 0 0755"
-        } | sudo tee "$FS_CONFIG" > /dev/null
-
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
-            local REL_PATH="${item#$ROOT/}"
-            
-            if [ -d "$item" ]; then
-                echo "$REL_PATH 0 0 0755"
-            else
-                echo "$REL_PATH 0 0 0644"
-            fi
-        done | sudo tee -a "$FS_CONFIG" > /dev/null
-
-        sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
-        sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-
-        echo "- $PARTITION fs_config generated"
     done
 }
 
-
-GEN_FILE_CONTEXTS() {
-    if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
-        return 1
-    fi
-
+GEN_FS_CONFIG() {
     local EXTRACTED_FIRM_DIR="$1"
-    [ ! -d "$EXTRACTED_FIRM_DIR" ] && { echo "- $EXTRACTED_FIRM_DIR not found."; return 1; }
-    [ ! -d "$EXTRACTED_FIRM_DIR/config" ] && { echo "[ERROR] config directory missing"; return 1; }
+    local CONFIG_DIR="$EXTRACTED_FIRM_DIR/config"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
-        [ ! -d "$ROOT" ] && continue
+        [[ -d "$ROOT" ]] || continue
         PARTITION="$(basename "$ROOT")"
-        [ "$PARTITION" = "config" ] && continue
+        [[ "$PARTITION" == "config" ]] && continue
 
-        local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
+        local OUT_FS="$CONFIG_DIR/${PARTITION}_fs_config"
 
-        if [[ -f "$FILE_CONTEXTS" ]]; then
-            echo "- $PARTITION file_contexts exits."
-            continue
+        echo "Processing fs_config for: $PARTITION"
+
+        if [[ -f "$OUT_FS" ]]; then
+            sudo sed -i -E "s|^/?${PARTITION}/||g; s|^/||g" "$OUT_FS"
+        else
+            sudo find "$ROOT" -mindepth 1 -printf "%P 0 0 %m\n" | sudo tee "$OUT_FS" > /dev/null
         fi
-
-        sudo touch "$FILE_CONTEXTS"
-        echo "Generating file_contexts for partition: $PARTITION"
-
-        declare -A EXISTING=()
-
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
-            local REL_PATH="${item#$ROOT}"
-            local PATH_ENTRY="/$PARTITION$REL_PATH"
-
-            local ESCAPED_PATH
-            ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
-
-            [ "${EXISTING[$ESCAPED_PATH]+exists}" ] && continue
-
-            sudo printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" >> "$FILE_CONTEXTS"
-
-            EXISTING["$ESCAPED_PATH"]=1
-        done
-
-        echo "- $PARTITION file_contexts generated"
-        unset EXISTING
+        
+        sudo sed -i '/^$/d' "$OUT_FS"
+        sudo sort -u "$OUT_FS" -o "$OUT_FS"
     done
 }
 
@@ -1298,7 +1256,7 @@ BUILD_IMG() {
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
         local SIZE=$(sudo du -sb --apparent-size "$SRC_DIR" | awk '{printf "%.0f", $1 * 1.2}')
-		MOUNT_POINT="/$PARTITION"
+		local MOUNT_POINT="/$PARTITION"
 
 
         echo ""
@@ -1311,8 +1269,8 @@ BUILD_IMG() {
 
         if [[ "$FILE_SYSTEM" == "erofs" ]]; then
             echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1199145600 "$OUT_IMG" "$SRC_DIR"
-            sudo chown $(whoami):$(whoami) "$OUT_IMG"
+            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR"
+            sudo chown $(id -u):$(id -g) "$OUT_IMG"
 
         elif [[ "$FILE_SYSTEM" == "Linux" && "$FILE_SYSTEM" == "ext4" ]]; then
             echo -e "\e[33mBuilding ext4 image:\e[0m $OUT_IMG"
