@@ -1170,6 +1170,62 @@ APPENDING_DISPLAY_ID() {
     APPEND_DISPLAY_ID "$1" "LumiROM 8.5.1 Stable"
 }
 
+# GEN_FS_CONFIG() {
+#     if [ "$#" -ne 1 ]; then
+#         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
+#         return 1
+#     fi
+
+#     local EXTRACTED_FIRM_DIR="$1"
+
+#     [ ! -d "$EXTRACTED_FIRM_DIR" ] && {
+#         echo "- $EXTRACTED_FIRM_DIR not found."
+#         return 1
+#     }
+
+#     [ ! -d "$EXTRACTED_FIRM_DIR/config" ] && {
+#         echo "[ERROR] config directory missing"
+#         return 1
+#     }
+
+#     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
+#         [ ! -d "$ROOT" ] && continue
+
+#         PARTITION="$(basename "$ROOT")"
+#         [ "$PARTITION" = "config" ] && continue
+
+#         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+#         local TMP_EXISTING
+#         TMP_EXISTING="$(mktemp)"
+
+#         sudo touch "$FS_CONFIG"
+
+#         echo ""
+#         echo "Generating fs_config for partition: $PARTITION"
+#         #echo "- Source : $ROOT"
+#         #echo "- Output : $FS_CONFIG"
+
+#         sudo awk '{print $1}' "$FS_CONFIG" | sort -u > "$TMP_EXISTING"
+
+#         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
+#             local REL_PATH="${item#$ROOT/}"
+#             local PATH_ENTRY="$PARTITION/$REL_PATH"
+
+#             sudo grep -qxF "$PATH_ENTRY" "$TMP_EXISTING" && continue
+
+#             if [ -d "$item" ]; then
+#                 # echo "- Dir  : $PATH_ENTRY (0755)"
+#                 sudo printf "%s 0 0 0755\n" "$PATH_ENTRY" >> "$FS_CONFIG"
+#             else
+#                 # echo "- File : $PATH_ENTRY (0644)"
+#                 sudo printf "%s 0 0 0644\n" "$PATH_ENTRY" >> "$FS_CONFIG"
+#             fi
+#         done
+
+#         sudo rm -f "$TMP_EXISTING"
+#         echo "- $PARTITION fs_config generated"
+#     done
+# }
 
 GEN_FS_CONFIG() {
     local EXTRACTED_FIRM_DIR="$1"
@@ -1180,13 +1236,7 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-
-        if [[ -f "$FS_CONFIG" ]]; then
-            echo "- $PARTITION fs_config exits."
-            continue
-        fi
-
-        echo "Generating fs_config for: $PARTITION"
+        echo "Generating relative fs_config for: $PARTITION"
 
         {
             echo "/ 0 0 0755"
@@ -1207,7 +1257,7 @@ GEN_FS_CONFIG() {
         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
 
-        echo "- $PARTITION fs_config generated"
+        echo "- $PARTITION fs_config generated (relative format)"
     done
 }
 
@@ -1228,16 +1278,17 @@ GEN_FILE_CONTEXTS() {
         [ "$PARTITION" = "config" ] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-
-        if [[ -f "$FILE_CONTEXTS" ]]; then
-            echo "- $PARTITION file_contexts exits."
-            continue
-        fi
-
         sudo touch "$FILE_CONTEXTS"
+
+        echo ""
         echo "Generating file_contexts for partition: $PARTITION"
 
         declare -A EXISTING=()
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            PATH_ONLY=$(echo "$line" | awk '{print $1}')
+            EXISTING["$PATH_ONLY"]=1
+        done < "$FILE_CONTEXTS"
 
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
             local REL_PATH="${item#$ROOT}"
