@@ -1124,7 +1124,8 @@ GEN_FS_CONFIG() {
 
         sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
             [[ -z "$ENTRY" ]] && continue
-            if ! grep -q "^$ENTRY " "$FS_CONFIG"; then
+            
+            if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
                 local REL_PATH="${ENTRY#$PARTITION/}"
                 if [[ -d "$ROOT/$REL_PATH" ]]; then
                     echo "  [+] Adding DIR: $ENTRY"
@@ -1151,14 +1152,16 @@ GEN_FILE_CONTEXTS() {
 
         echo "--- Syncing contexts for: $PARTITION ---"
 
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
-            local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
+        local EXISTING_PATHS=$(sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}')
 
-            if ! grep -qF "^$ESCAPED_PATH " "$FILE_CONTEXTS" 2>/dev/null; then
-                if ! grep -xF "$ESCAPED_PATH u:object_r:system_file:s0" "$FILE_CONTEXTS" > /dev/null; then
-                    echo "  [+] Context for: $PATH_ENTRY"
-                    echo "$ESCAPED_PATH u:object_r:system_file:s0" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
-                fi
+        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
+            
+            if ! echo "$EXISTING_PATHS" | grep -qx "$PATH_ENTRY" 2>/dev/null; then
+                echo "  [+] Context for: $PATH_ENTRY"
+                local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
+                echo "$ESCAPED_PATH u:object_r:system_file:s0" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
+                
+                EXISTING_PATHS+=$'\n'"$PATH_ENTRY"
             fi
         done
     done
