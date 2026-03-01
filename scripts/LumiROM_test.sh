@@ -26,74 +26,6 @@ REMOVE_LINE() {
     grep -vxF "$LINE" "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
 }
 
-
-# DOWNLOAD_FIRMWARE() {
-#     if [ "$#" -ne 4 ]; then
-#         echo "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY>"
-#         return 1
-#     fi
-
-#     local MODEL=$1
-#     local CSC=$2
-#     local IMEI=$3
-#     local DOWN_DIR="${4}/$MODEL"
-
-# 	rm -rf "$DOWN_DIR"
-#     mkdir -p "$DOWN_DIR"
-
-#     echo "======================================"
-#     echo "  Samsung FW Downloader   "
-#     echo "======================================"
-#     echo "MODEL: $MODEL | CSC: $CSC"
-#     echo "Fetching latest firmware..."
-#     echo
-
-#     # --- Step 1: Check Update ---
-#     version=$(python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" checkupdate 2>&1)
-#     if [ $? -ne 0 ] || [ -z "$version" ]; then
-#         echo "❌ MODEL/CSC/IMEI not valid or no update found."
-#         echo "Error: $version"
-#         return 1
-#     else
-#         echo "✅ Update found: $version"
-#     fi
-
-#     # --- Step 2: Download Firmware ---
-#     python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -v "$version" -O "$DOWN_DIR"
-#     if [ $? -ne 0 ]; then
-#         echo "❌ Download failed. Check IMEI/MODEL/CSC."
-#         return 1
-#     fi
-
-#     # --- Step 3: Decrypt Firmware ---
-#     enc_file=$(find "$DOWN_DIR" -name "*.enc*" | head -n 1)
-
-#     if [ -z "$enc_file" ]; then
-#         echo "❌ No encrypted firmware file found!"
-#         return 1
-#     fi
-
-#     python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" decrypt \
-#         -v "$version" \
-#         -i "$enc_file" \
-#         -o "${DOWN_DIR}/${MODEL}.zip" >/dev/null 2>&1
-
-#     if [ $? -ne 0 ]; then
-#         echo "❌ Decryption failed."
-#         return 1
-#     fi
-
-#     # --- Show Firmware Info ---
-#     file_size=$(du -m "${DOWN_DIR}/${MODEL}.zip" | cut -f1)
-#     echo
-#     echo "✅ Firmware decrypted successfully!. Firmware Size: ${file_size} MB"
-#     echo "Saved to: ${DOWN_DIR}/${MODEL}.zip"
-
-#     # --- Cleanup ---
-#     rm -f "$enc_file"
-# }
-
-# Im not sure if this gonna work, my head hurts trying to understand this
 DOWNLOAD_FIRMWARE() {
     if [ "$#" -ne 2 ]; then
         echo "Usage: ${FUNCNAME[0]} <MODEL> <DOWNLOAD_DIRECTORY>"
@@ -105,7 +37,7 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
     
-    echo "Downloading A34 images - 4329MB"
+    echo "Downloading A34 images - 4.54GB"
     #wget -q https://a32legend.ir/ota/NewUpdate.zip -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
     FILE_ID="1AEvZGN3QRv_OrkaiBfi_7BZ_Kx64Pk5q"; \
     HTML=$(wget --quiet --save-cookies cookies.txt --keep-session-cookies "https://docs.google.com/uc?export=download&id=$FILE_ID" -O-); \
@@ -1229,7 +1161,9 @@ GEN_FS_CONFIG() {
         
         if [[ ! -f "$FS_CONFIG" ]]; then
             echo "Generating NEW fs_config for: $PARTITION"
-            { echo "/ 0 0 0755"; echo ". 0 0 0755"; echo "./ 0 0 0755"; } | sudo tee "$FS_CONFIG" > /dev/null
+            echo "/ 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
+            echo ". 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
+            echo "./ 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
         fi
 
         echo "Checking for new files in: $PARTITION"
@@ -1240,12 +1174,12 @@ GEN_FS_CONFIG() {
             if ! grep -q "^$REL_PATH " "$FS_CONFIG"; then
                 echo "  [+] Adding missing entry: $REL_PATH"
                 if [ -d "$item" ]; then
-                    echo "$REL_PATH 0 0 0755"
+                    echo "$REL_PATH 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
                 else
-                    echo "$REL_PATH 0 0 0644"
+                    echo "$REL_PATH 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
                 fi
             fi
-        done | sudo tee -a "$FS_CONFIG" > /dev/null
+        done
 
         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
     done
@@ -1270,12 +1204,12 @@ GEN_FILE_CONTEXTS() {
             local PATH_ENTRY="/$PARTITION$REL_PATH"
             local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
 
-            # Si el path no está en el archivo de contextos, lo agregamos como system_file
             if ! grep -q "^$ESCAPED_PATH" "$FILE_CONTEXTS"; then
                 echo "  [+] Context for: $PATH_ENTRY"
-                sudo printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" >> "$FILE_CONTEXTS"
+                sudo printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
             fi
         done
+        sudo sed -i '/^$/d' "$FILE_CONTEXTS"
     done
 }
 
