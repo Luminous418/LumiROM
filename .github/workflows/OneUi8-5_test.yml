@@ -153,7 +153,7 @@ jobs:
       shell: bash
       run: |
         # Variables
-        ROM_VERSION="8.5.1"
+        ROM_VERSION="8.5.5"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="${{ github.event.inputs.STOCK_DEVICE }}"
         UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
