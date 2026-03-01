@@ -37,7 +37,7 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
     
-    echo "Downloading A34 images - 4.54GB"
+    echo "Downloading A34 images - 4.88GB"
     gdown 1PpC1YS52Snlg7-OgLXFdB_2WyQYREfqv -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
 
     echo "Downloading vendor for ${STOCK_DEVICE} - 700-800MB"
