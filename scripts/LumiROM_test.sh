@@ -47,7 +47,7 @@ DOWNLOAD_FIRMWARE() {
     rm -f cookies.txt
 
     echo "Downloading vendor for ${STOCK_DEVICE} - 700-800MB"
-    wget --show-progress "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
+    wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
 
 }
 
@@ -1176,36 +1176,6 @@ GEN_FS_CONFIG() {
                 fi
             fi
         done
-
-        echo "  [*] Checking for deleted files in $PARTITION..."
-        
-        local TMP_CONFIG=$(mktemp)
-        
-        while read -r LINE; do
-            [[ -z "$LINE" ]] && continue
-            
-            local FILE_PATH=$(echo "$LINE" | awk '{print $1}')
-            
-            if [[ "$FILE_PATH" == "$PARTITION" || "$FILE_PATH" == "$PARTITION/lost+found" ]]; then
-                echo "$LINE" >> "$TMP_CONFIG"
-                continue
-            fi
-
-            local REL_PART="${FILE_PATH#$PARTITION/}"
-            local FULL_PATH="$ROOT/$REL_PART"
-
-            if [[ -e "$FULL_PATH" ]]; then
-                echo "$LINE" >> "$TMP_CONFIG"
-            else
-                echo "  [-] Removing entry (deleted on disk): $FILE_PATH"
-            fi
-        done < "$FS_CONFIG"
-
-        sudo cp "$TMP_CONFIG" "$FS_CONFIG"
-        rm "$TMP_CONFIG"
-
-        sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
-    done
 }
 
 
@@ -1233,32 +1203,6 @@ GEN_FILE_CONTEXTS() {
                 fi
             fi
         done
-
-        echo "  [*] Cleaning up deleted contexts in $PARTITION..."
-        local TMP_CONTEXTS=$(mktemp)
-        
-        while read -r LINE; do
-            [[ -z "$LINE" ]] && continue
-            local PATTERN=$(echo "$LINE" | awk '{print $1}')
-            local UNESCAPED=$(echo "$PATTERN" | sed 's/\\//g')
-            
-            if [[ "$UNESCAPED" == "/$PARTITION" || "$UNESCAPED" == "/$PARTITION/lost+found" ]]; then
-                echo "$LINE" >> "$TMP_CONTEXTS"
-                continue
-            fi
-
-            local REL_PATH="${UNESCAPED#/$PARTITION/}"
-            if [[ -e "$ROOT/$REL_PATH" ]]; then
-                echo "$LINE" >> "$TMP_CONTEXTS"
-            else
-                echo "  [-] Removing context: $UNESCAPED"
-            fi
-        done < "$FILE_CONTEXTS"
-
-        sudo cp "$TMP_CONTEXTS" "$FILE_CONTEXTS"
-        rm "$TMP_CONTEXTS"
-        sudo sed -i '/^$/d' "$FILE_CONTEXTS"
-    done
 }
 
 BUILD_IMG() {
