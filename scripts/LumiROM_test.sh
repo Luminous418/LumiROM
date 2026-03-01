@@ -1105,47 +1105,6 @@ APPENDING_DISPLAY_ID() {
     APPEND_DISPLAY_ID "$1" "LumiROM 8.5.5 Stable"
 }
 
-
-# GEN_FS_CONFIG() {
-#     local EXTRACTED_FIRM_DIR="$1"
-
-#     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
-#         [[ -d "$ROOT" ]] || continue
-#         PARTITION="$(basename "$ROOT")"
-#         [[ "$PARTITION" == "config" ]] && continue
-
-#         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-
-#         if [[ -f "$FS_CONFIG" ]]; then
-#             echo "- $PARTITION fs_config exits."
-#             continue
-#         fi
-
-#         echo "Generating fs_config for: $PARTITION"
-
-#         {
-#             echo "/ 0 0 0755"
-#             echo ". 0 0 0755"
-#             echo "./ 0 0 0755"
-#         } | sudo tee "$FS_CONFIG" > /dev/null
-
-#         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
-#             local REL_PATH="${item#$ROOT/}"
-            
-#             if [ -d "$item" ]; then
-#                 echo "$REL_PATH 0 0 0755"
-#             else
-#                 echo "$REL_PATH 0 0 0644"
-#             fi
-#         done | sudo tee -a "$FS_CONFIG" > /dev/null
-
-#         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
-#         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-
-#         echo "- $PARTITION fs_config generated"
-#     done
-# }
-
 GEN_FS_CONFIG() {
     local EXTRACTED_FIRM_DIR="${1%/}"
 
@@ -1177,8 +1136,6 @@ GEN_FS_CONFIG() {
             fi
         done
 }
-
-
 
 GEN_FILE_CONTEXTS() {
     local EXTRACTED_FIRM_DIR="${1%/}"
