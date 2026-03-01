@@ -54,7 +54,8 @@ block_image_update(map_partition("odm"), package_extract_file("odm.transfer.list
 # --- End patching dynamic partitions ---
 
 # --- Wiping cache ---
-
+ui_print("Installing boot image...");
+package_extract_file("boot.img", "/dev/block/by-name/boot");
 ifelse(is_mounted("/cache"), unmount("/cache"));
 ui_print("Wiping cache...");
 format("ext4", "EMMC", "/dev/block/by-name/cache", "0", "/cache");
