@@ -1135,6 +1135,7 @@ GEN_FS_CONFIG() {
                 fi
             fi
         done
+    done
 }
 
 GEN_FILE_CONTEXTS() {
@@ -1160,6 +1161,7 @@ GEN_FILE_CONTEXTS() {
                 fi
             fi
         done
+    done
 }
 
 BUILD_IMG() {
