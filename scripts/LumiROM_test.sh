@@ -1128,14 +1128,13 @@ GEN_FS_CONFIG() {
                 }
             }' "$FS_CONFIG" > "$TMP_CLEAN"
             
-            sudo echo "/ 0 2000 755" >> "$TMP_CLEAN"
-            sudo echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
-
-            sudo echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
+            echo "/ 0 2000 755" >> "$TMP_CLEAN"
+            echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
+            echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
             
-            sudo sort -k1,1 -u "$TMP_CLEAN" > sudo tee "$FS_CONFIG" > /dev/null
+            sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" > /dev/null
             
-            sudo rm "$TMP_CLEAN"
+            rm "$TMP_CLEAN"
             echo "  [+] vendor_fs_config fixed."
         fi
         
