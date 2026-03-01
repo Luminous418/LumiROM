@@ -1133,7 +1133,7 @@ GEN_FS_CONFIG() {
 
             sudo echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
             
-            sudo sort -k1,1 -u "$TMP_CLEAN" > "$FS_CONFIG"
+            sudo sort -k1,1 -u "$TMP_CLEAN" > sudo tee "$FS_CONFIG" > /dev/null
             
             sudo rm "$TMP_CLEAN"
             echo "  [+] vendor_fs_config fixed."
