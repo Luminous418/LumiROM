@@ -1114,6 +1114,30 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+
+        if [[ "$PARTITION" == "vendor" ]]; then
+            echo "  [*] Fixing vendor_fs_config..."
+            
+            local TMP_CLEAN=$(mktemp)
+            
+            awk '{
+                gsub(/^\//, "", $1);
+                if (length($4) == 4 && substr($4, 1, 1) == "0") $4 = substr($4, 2);
+                if ($1 ~ /^(vendor|lost)/ && NF >= 4) {
+                    print $1, $2, $3, $4
+                }
+            }' "$FS_CONFIG" > "$TMP_CLEAN"
+            
+            echo "/ 0 2000 755" >> "$TMP_CLEAN"
+            echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
+
+            echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
+            
+            sort -k1,1 -u "$TMP_CLEAN" > "$FS_CONFIG"
+            
+            rm "$TMP_CLEAN"
+            echo "  [+] vendor_fs_config fixed."
+        fi
         
         if [[ ! -f "$FS_CONFIG" ]]; then
             echo "--- Creating new fs_config for $PARTITION ---"
@@ -1148,22 +1172,22 @@ GEN_FILE_CONTEXTS() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        [[ ! -f "$FILE_CONTEXTS" ]] && sudo touch "$FILE_CONTEXTS"
+        [[ ! -f "$FILE_CONTEXTS" ]] && touch "$FILE_CONTEXTS"
 
         echo "--- Syncing contexts for: $PARTITION ---"
-
-        local EXISTING_PATHS=$(sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}')
+        
+        local TMP_EXISTING=$(mktemp)
+        sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
 
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
-            
-            if ! echo "$EXISTING_PATHS" | grep -qx "$PATH_ENTRY" 2>/dev/null; then
+            if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
                 echo "  [+] Context for: $PATH_ENTRY"
                 local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
-                echo "$ESCAPED_PATH u:object_r:system_file:s0" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
-                
-                EXISTING_PATHS+=$'\n'"$PATH_ENTRY"
+                echo "$ESCAPED_PATH u:object_r:vendor_file:s0" >> "$FILE_CONTEXTS"
+                echo "$PATH_ENTRY" >> "$TMP_EXISTING"
             fi
         done
+        rm "$TMP_EXISTING"
     done
 }
 
@@ -1216,29 +1240,6 @@ BUILD_IMG() {
         sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
         sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
         sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/
-        if [[ "$PARTITION" == "vendor" ]]; then
-            echo "  [*] Fixing vendor_fs_config..."
-            
-            local TMP_CLEAN=$(mktemp)
-            
-            awk '{
-                gsub(/^\//, "", $1);
-                if (length($4) == 4 && substr($4, 1, 1) == "0") $4 = substr($4, 2);
-                if ($1 ~ /^(vendor|lost)/ && NF >= 4) {
-                    print $1, $2, $3, $4
-                }
-            }' "$FS_CONFIG" > "$TMP_CLEAN"
-            
-            echo "/ 0 2000 755" >> "$TMP_CLEAN"
-            echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
-
-            echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
-            
-            sort -k1,1 -u "$TMP_CLEAN" > "$FS_CONFIG"
-            
-            rm "$TMP_CLEAN"
-            echo "  [+] vendor_fs_config fixed."
-        fi
 
         if [[ "$FILE_SYSTEM" == "erofs" ]]; then
             echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
