@@ -1,4 +1,4 @@
-name: LumiROM Tools Ui 8.5 Test
+name: LumiROM Tools Ui 8.5
 
 on:
   workflow_dispatch:
