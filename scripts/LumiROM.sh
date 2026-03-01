@@ -26,74 +26,6 @@ REMOVE_LINE() {
     grep -vxF "$LINE" "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
 }
 
-
-# DOWNLOAD_FIRMWARE() {
-#     if [ "$#" -ne 4 ]; then
-#         echo "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY>"
-#         return 1
-#     fi
-
-#     local MODEL=$1
-#     local CSC=$2
-#     local IMEI=$3
-#     local DOWN_DIR="${4}/$MODEL"
-
-# 	rm -rf "$DOWN_DIR"
-#     mkdir -p "$DOWN_DIR"
-
-#     echo "======================================"
-#     echo "  Samsung FW Downloader   "
-#     echo "======================================"
-#     echo "MODEL: $MODEL | CSC: $CSC"
-#     echo "Fetching latest firmware..."
-#     echo
-
-#     # --- Step 1: Check Update ---
-#     version=$(python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" checkupdate 2>&1)
-#     if [ $? -ne 0 ] || [ -z "$version" ]; then
-#         echo "❌ MODEL/CSC/IMEI not valid or no update found."
-#         echo "Error: $version"
-#         return 1
-#     else
-#         echo "✅ Update found: $version"
-#     fi
-
-#     # --- Step 2: Download Firmware ---
-#     python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -v "$version" -O "$DOWN_DIR"
-#     if [ $? -ne 0 ]; then
-#         echo "❌ Download failed. Check IMEI/MODEL/CSC."
-#         return 1
-#     fi
-
-#     # --- Step 3: Decrypt Firmware ---
-#     enc_file=$(find "$DOWN_DIR" -name "*.enc*" | head -n 1)
-
-#     if [ -z "$enc_file" ]; then
-#         echo "❌ No encrypted firmware file found!"
-#         return 1
-#     fi
-
-#     python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" decrypt \
-#         -v "$version" \
-#         -i "$enc_file" \
-#         -o "${DOWN_DIR}/${MODEL}.zip" >/dev/null 2>&1
-
-#     if [ $? -ne 0 ]; then
-#         echo "❌ Decryption failed."
-#         return 1
-#     fi
-
-#     # --- Show Firmware Info ---
-#     file_size=$(du -m "${DOWN_DIR}/${MODEL}.zip" | cut -f1)
-#     echo
-#     echo "✅ Firmware decrypted successfully!. Firmware Size: ${file_size} MB"
-#     echo "Saved to: ${DOWN_DIR}/${MODEL}.zip"
-
-#     # --- Cleanup ---
-#     rm -f "$enc_file"
-# }
-
-# Im not sure if this gonna work, my head hurts trying to understand this
 DOWNLOAD_FIRMWARE() {
     if [ "$#" -ne 2 ]; then
         echo "Usage: ${FUNCNAME[0]} <MODEL> <DOWNLOAD_DIRECTORY>"
@@ -105,8 +37,8 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
     
-    echo "Downloading A34 images - 4329MB"
-    wget -q https://a32legend.ir/ota/NewUpdate.zip -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
+    echo "Downloading A34 images - 4.88GB"
+    gdown 1PpC1YS52Snlg7-OgLXFdB_2WyQYREfqv -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
 
     echo "Downloading vendor for ${STOCK_DEVICE} - 700-800MB"
     wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
@@ -1124,9 +1056,6 @@ APPLY_FEATURES() {
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.telephony.sim_slots.count" "2"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.protected_contents" "true"
 
-	echo " Adding important apps."
-	rm -rf "$EXTRACTED_FIRM_DIR/system/system/app/ClockPackage"
-	rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
 }
 
 APPEND_DISPLAY_ID() {
@@ -1167,148 +1096,93 @@ APPENDING_DISPLAY_ID() {
 
 	local EXTRACTED_FIRM_DIR="$1"
 
-    APPEND_DISPLAY_ID "$1" "LumiROM 8.5.1 Stable"
+    APPEND_DISPLAY_ID "$1" "LumiROM 8.5.5 Stable"
 }
 
-# GEN_FS_CONFIG() {
-#     if [ "$#" -ne 1 ]; then
-#         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
-#         return 1
-#     fi
-
-#     local EXTRACTED_FIRM_DIR="$1"
-
-#     [ ! -d "$EXTRACTED_FIRM_DIR" ] && {
-#         echo "- $EXTRACTED_FIRM_DIR not found."
-#         return 1
-#     }
-
-#     [ ! -d "$EXTRACTED_FIRM_DIR/config" ] && {
-#         echo "[ERROR] config directory missing"
-#         return 1
-#     }
-
-#     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
-#         [ ! -d "$ROOT" ] && continue
-
-#         PARTITION="$(basename "$ROOT")"
-#         [ "$PARTITION" = "config" ] && continue
-
-#         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-#         local TMP_EXISTING
-#         TMP_EXISTING="$(mktemp)"
-
-#         sudo touch "$FS_CONFIG"
-
-#         echo ""
-#         echo "Generating fs_config for partition: $PARTITION"
-#         #echo "- Source : $ROOT"
-#         #echo "- Output : $FS_CONFIG"
-
-#         sudo awk '{print $1}' "$FS_CONFIG" | sort -u > "$TMP_EXISTING"
-
-#         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
-#             local REL_PATH="${item#$ROOT/}"
-#             local PATH_ENTRY="$PARTITION/$REL_PATH"
-
-#             sudo grep -qxF "$PATH_ENTRY" "$TMP_EXISTING" && continue
-
-#             if [ -d "$item" ]; then
-#                 # echo "- Dir  : $PATH_ENTRY (0755)"
-#                 sudo printf "%s 0 0 0755\n" "$PATH_ENTRY" >> "$FS_CONFIG"
-#             else
-#                 # echo "- File : $PATH_ENTRY (0644)"
-#                 sudo printf "%s 0 0 0644\n" "$PATH_ENTRY" >> "$FS_CONFIG"
-#             fi
-#         done
-
-#         sudo rm -f "$TMP_EXISTING"
-#         echo "- $PARTITION fs_config generated"
-#     done
-# }
-
 GEN_FS_CONFIG() {
-    local EXTRACTED_FIRM_DIR="$1"
+    local EXTRACTED_FIRM_DIR="${1%/}"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
-        PARTITION="$(basename "$ROOT")"
+        PARTITION=$(basename "$ROOT")
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-        echo "Generating relative fs_config for: $PARTITION"
 
-        {
-            echo "/ 0 0 0755"
-            echo ". 0 0 0755"
-            echo "./ 0 0 0755"
-        } | sudo tee "$FS_CONFIG" > /dev/null
-
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
-            local REL_PATH="${item#$ROOT/}"
+        if [[ "$PARTITION" == "vendor" ]]; then
+            echo "  [*] Fixing vendor_fs_config..."
             
-            if [ -d "$item" ]; then
-                echo "$REL_PATH 0 0 0755"
-            else
-                echo "$REL_PATH 0 0 0644"
+            local TMP_CLEAN=$(mktemp)
+            
+            sudo awk '{
+                gsub(/^\//, "", $1);
+                if (length($4) == 4 && substr($4, 1, 1) == "0") $4 = substr($4, 2);
+                if ($1 ~ /^(vendor|lost)/ && NF >= 4) {
+                    print $1, $2, $3, $4
+                }
+            }' "$FS_CONFIG" > "$TMP_CLEAN"
+            
+            echo "/ 0 2000 755" >> "$TMP_CLEAN"
+            echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
+            echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
+            
+            sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" > /dev/null
+            
+            rm "$TMP_CLEAN"
+            echo "  [+] vendor_fs_config fixed."
+        fi
+        
+        if [[ ! -f "$FS_CONFIG" ]]; then
+            echo "--- Creating new fs_config for $PARTITION ---"
+            echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
+        fi
+
+        echo "--- Synchronizing $PARTITION ---"
+
+        sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
+            [[ -z "$ENTRY" ]] && continue
+            
+            if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
+                local REL_PATH="${ENTRY#$PARTITION/}"
+                if [[ -d "$ROOT/$REL_PATH" ]]; then
+                    echo "  [+] Adding DIR: $ENTRY"
+                    echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
+                else
+                    echo "  [+] Adding FILE: $ENTRY"
+                    echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
+                fi
             fi
-        done | sudo tee -a "$FS_CONFIG" > /dev/null
-
-        sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
-        sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-
-        echo "- $PARTITION fs_config generated (relative format)"
+        done
     done
 }
-
 
 GEN_FILE_CONTEXTS() {
-    if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
-        return 1
-    fi
-
-    local EXTRACTED_FIRM_DIR="$1"
-    [ ! -d "$EXTRACTED_FIRM_DIR" ] && { echo "- $EXTRACTED_FIRM_DIR not found."; return 1; }
-    [ ! -d "$EXTRACTED_FIRM_DIR/config" ] && { echo "[ERROR] config directory missing"; return 1; }
+    local EXTRACTED_FIRM_DIR="${1%/}"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
-        [ ! -d "$ROOT" ] && continue
-        PARTITION="$(basename "$ROOT")"
-        [ "$PARTITION" = "config" ] && continue
+        [[ -d "$ROOT" ]] || continue
+        PARTITION=$(basename "$ROOT")
+        [[ "$PARTITION" == "config" ]] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        sudo touch "$FILE_CONTEXTS"
+        [[ ! -f "$FILE_CONTEXTS" ]] && touch "$FILE_CONTEXTS"
 
-        echo ""
-        echo "Generating file_contexts for partition: $PARTITION"
+        echo "--- Syncing contexts for: $PARTITION ---"
+        
+        local TMP_EXISTING=$(mktemp)
+        sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
 
-        declare -A EXISTING=()
-        while IFS= read -r line; do
-            [ -z "$line" ] && continue
-            PATH_ONLY=$(echo "$line" | awk '{print $1}')
-            EXISTING["$PATH_ONLY"]=1
-        done < "$FILE_CONTEXTS"
-
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
-            local REL_PATH="${item#$ROOT}"
-            local PATH_ENTRY="/$PARTITION$REL_PATH"
-
-            local ESCAPED_PATH
-            ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
-
-            [ "${EXISTING[$ESCAPED_PATH]+exists}" ] && continue
-
-            sudo printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" >> "$FILE_CONTEXTS"
-
-            EXISTING["$ESCAPED_PATH"]=1
+        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
+            if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
+                echo "  [+] Context for: $PATH_ENTRY"
+                local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
+                echo "$ESCAPED_PATH u:object_r:vendor_file:s0" >> "$FILE_CONTEXTS"
+                echo "$PATH_ENTRY" >> "$TMP_EXISTING"
+            fi
         done
-
-        echo "- $PARTITION file_contexts generated"
-        unset EXISTING
+        rm "$TMP_EXISTING"
     done
 }
-
 
 BUILD_IMG() {
     if [ "$#" -ne 3 ]; then
@@ -1349,7 +1223,7 @@ BUILD_IMG() {
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
         local SIZE=$(sudo du -sb --apparent-size "$SRC_DIR" | awk '{printf "%.0f", $1 * 1.2}')
-		MOUNT_POINT="/$PARTITION"
+		local MOUNT_POINT="/$PARTITION"
 
 
         echo ""
@@ -1362,13 +1236,13 @@ BUILD_IMG() {
 
         if [[ "$FILE_SYSTEM" == "erofs" ]]; then
             echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1199145600 "$OUT_IMG" "$SRC_DIR"
-            sudo chown $(whoami):$(whoami) "$OUT_IMG"
+            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
+            sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
 
         elif [[ "$FILE_SYSTEM" == "Linux" && "$FILE_SYSTEM" == "ext4" ]]; then
             echo -e "\e[33mBuilding ext4 image:\e[0m $OUT_IMG"
             sudo $(pwd)/bin/ext4/make_ext4fs -l "$(awk "BEGIN {printf \"%.0f\", $SIZE * 1.1}")" -J -b 4096 -S "$FILE_CONTEXTS" -C "$FS_CONFIG"  -a "$MOUNT_POINT" -L "$PARTITION" "$OUT_IMG" "$SRC_DIR"
-			# Resize img to reduce size.
+            # Resize img to reduce size.
 			sudo resize2fs -M "$OUT_IMG"
         else
             echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"

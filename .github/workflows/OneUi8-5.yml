@@ -1,4 +1,4 @@
-name: LumiROM Tools Ui 8.5
+name: LumiROM Tools Ui 8.5 Test
 
 on:
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
         sudo apt install -y \
           p7zip-full lz4 android-sdk-libsparse-utils \
           python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs
-        pip3 install liblp tgcrypto pyrogram
+        pip3 install liblp tgcrypto pyrogram gdown
 
         chmod +x bin/ext4/make_ext4fs
         chmod +x bin/erofs-utils/extract.erofs
@@ -153,7 +153,7 @@ jobs:
       shell: bash
       run: |
         # Variables
-        ROM_VERSION="8.5.1"
+        ROM_VERSION="8.5.5"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="${{ github.event.inputs.STOCK_DEVICE }}"
         UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
@@ -190,7 +190,7 @@ jobs:
       shell: bash
       run: |
         # Variables
-        ROM_VERSION="8.5.1"
+        ROM_VERSION="8.5.5"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="${{ github.event.inputs.STOCK_DEVICE }}"
 
