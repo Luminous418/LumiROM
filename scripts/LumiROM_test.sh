@@ -1120,7 +1120,7 @@ GEN_FS_CONFIG() {
             
             local TMP_CLEAN=$(mktemp)
             
-            awk '{
+            sudo awk '{
                 gsub(/^\//, "", $1);
                 if (length($4) == 4 && substr($4, 1, 1) == "0") $4 = substr($4, 2);
                 if ($1 ~ /^(vendor|lost)/ && NF >= 4) {
@@ -1128,14 +1128,14 @@ GEN_FS_CONFIG() {
                 }
             }' "$FS_CONFIG" > "$TMP_CLEAN"
             
-            echo "/ 0 2000 755" >> "$TMP_CLEAN"
-            echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
+            sudo echo "/ 0 2000 755" >> "$TMP_CLEAN"
+            sudo echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
 
-            echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
+            sudo echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
             
-            sort -k1,1 -u "$TMP_CLEAN" > "$FS_CONFIG"
+            sudo sort -k1,1 -u "$TMP_CLEAN" > "$FS_CONFIG"
             
-            rm "$TMP_CLEAN"
+            sudo rm "$TMP_CLEAN"
             echo "  [+] vendor_fs_config fixed."
         fi
         
