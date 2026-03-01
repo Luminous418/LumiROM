@@ -1062,9 +1062,6 @@ APPLY_FEATURES() {
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.telephony.sim_slots.count" "2"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.protected_contents" "true"
 
-	echo " Adding important apps."
-	rm -rf "$EXTRACTED_FIRM_DIR/system/system/app/ClockPackage"
-	rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
 }
 
 APPEND_DISPLAY_ID() {
@@ -1105,7 +1102,7 @@ APPENDING_DISPLAY_ID() {
 
 	local EXTRACTED_FIRM_DIR="$1"
 
-    APPEND_DISPLAY_ID "$1" "LumiROM 8.5.1 Stable"
+    APPEND_DISPLAY_ID "$1" "LumiROM 8.5.5 Stable"
 }
 
 
@@ -1150,65 +1147,116 @@ APPENDING_DISPLAY_ID() {
 # }
 
 GEN_FS_CONFIG() {
-    local EXTRACTED_FIRM_DIR="$1"
+    local EXTRACTED_FIRM_DIR="${1%/}"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
-        PARTITION="$(basename "$ROOT")"
+        PARTITION=$(basename "$ROOT")
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
         
         if [[ ! -f "$FS_CONFIG" ]]; then
-            echo "Generating NEW fs_config for: $PARTITION"
-            echo "/ 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
-            echo ". 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
-            echo "./ 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
+            echo "--- Creating new fs_config for $PARTITION ---"
+            echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
         fi
 
-        echo "Checking for new files in: $PARTITION"
+        echo "--- Synchronizing $PARTITION ---"
 
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d -o -type l \) | while IFS= read -r item; do
-            local REL_PATH="${item#$ROOT/}"
-            
-            if ! grep -q "^$REL_PATH " "$FS_CONFIG"; then
-                echo "  [+] Adding missing entry: $REL_PATH"
-                if [ -d "$item" ]; then
-                    echo "$REL_PATH 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
+        sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
+            [[ -z "$ENTRY" ]] && continue
+            if ! grep -q "^$ENTRY " "$FS_CONFIG"; then
+                local REL_PATH="${ENTRY#$PARTITION/}"
+                if [[ -d "$ROOT/$REL_PATH" ]]; then
+                    echo "  [+] Adding DIR: $ENTRY"
+                    echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
                 else
-                    echo "$REL_PATH 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
+                    echo "  [+] Adding FILE: $ENTRY"
+                    echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
                 fi
             fi
         done
+
+        echo "  [*] Checking for deleted files in $PARTITION..."
+        
+        local TMP_CONFIG=$(mktemp)
+        
+        while read -r LINE; do
+            [[ -z "$LINE" ]] && continue
+            
+            local FILE_PATH=$(echo "$LINE" | awk '{print $1}')
+            
+            if [[ "$FILE_PATH" == "$PARTITION" || "$FILE_PATH" == "$PARTITION/lost+found" ]]; then
+                echo "$LINE" >> "$TMP_CONFIG"
+                continue
+            fi
+
+            local REL_PART="${FILE_PATH#$PARTITION/}"
+            local FULL_PATH="$ROOT/$REL_PART"
+
+            if [[ -e "$FULL_PATH" ]]; then
+                echo "$LINE" >> "$TMP_CONFIG"
+            else
+                echo "  [-] Removing entry (deleted on disk): $FILE_PATH"
+            fi
+        done < "$FS_CONFIG"
+
+        sudo cp "$TMP_CONFIG" "$FS_CONFIG"
+        rm "$TMP_CONFIG"
 
         sudo sed -i '/^$/d; s/[[:space:]]*$//' "$FS_CONFIG"
     done
 }
 
 
+
 GEN_FILE_CONTEXTS() {
-    local EXTRACTED_FIRM_DIR="$1"
-    
+    local EXTRACTED_FIRM_DIR="${1%/}"
+
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
-        [ ! -d "$ROOT" ] && continue
-        PARTITION="$(basename "$ROOT")"
-        [ "$PARTITION" = "config" ] && continue
+        [[ -d "$ROOT" ]] || continue
+        PARTITION=$(basename "$ROOT")
+        [[ "$PARTITION" == "config" ]] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        [ ! -f "$FILE_CONTEXTS" ] && sudo touch "$FILE_CONTEXTS"
+        [[ ! -f "$FILE_CONTEXTS" ]] && sudo touch "$FILE_CONTEXTS"
 
-        echo "Syncing contexts for: $PARTITION"
+        echo "--- Syncing contexts for: $PARTITION ---"
 
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) | while IFS= read -r item; do
-            local REL_PATH="${item#$ROOT}"
-            local PATH_ENTRY="/$PARTITION$REL_PATH"
+        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
             local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
 
-            if ! grep -q "^$ESCAPED_PATH" "$FILE_CONTEXTS"; then
-                echo "  [+] Context for: $PATH_ENTRY"
-                sudo printf "%s u:object_r:system_file:s0\n" "$ESCAPED_PATH" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
+            if ! grep -qF "^$ESCAPED_PATH " "$FILE_CONTEXTS" 2>/dev/null; then
+                if ! grep -xF "$ESCAPED_PATH u:object_r:system_file:s0" "$FILE_CONTEXTS" > /dev/null; then
+                    echo "  [+] Context for: $PATH_ENTRY"
+                    echo "$ESCAPED_PATH u:object_r:system_file:s0" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
+                fi
             fi
         done
+
+        echo "  [*] Cleaning up deleted contexts in $PARTITION..."
+        local TMP_CONTEXTS=$(mktemp)
+        
+        while read -r LINE; do
+            [[ -z "$LINE" ]] && continue
+            local PATTERN=$(echo "$LINE" | awk '{print $1}')
+            local UNESCAPED=$(echo "$PATTERN" | sed 's/\\//g')
+            
+            if [[ "$UNESCAPED" == "/$PARTITION" || "$UNESCAPED" == "/$PARTITION/lost+found" ]]; then
+                echo "$LINE" >> "$TMP_CONTEXTS"
+                continue
+            fi
+
+            local REL_PATH="${UNESCAPED#/$PARTITION/}"
+            if [[ -e "$ROOT/$REL_PATH" ]]; then
+                echo "$LINE" >> "$TMP_CONTEXTS"
+            else
+                echo "  [-] Removing context: $UNESCAPED"
+            fi
+        done < "$FILE_CONTEXTS"
+
+        sudo cp "$TMP_CONTEXTS" "$FILE_CONTEXTS"
+        rm "$TMP_CONTEXTS"
         sudo sed -i '/^$/d' "$FILE_CONTEXTS"
     done
 }
