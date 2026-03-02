@@ -11,10 +11,6 @@ on:
         description: "Set True if your kernel BPF version is lower than 5.10"
         required: true
         default: "True"
-      OUTPUT_FILESYSTEM:
-        description: "OUTPUT_FILESYSTEM (erofs / ext4)"
-        required: true
-        default: "erofs"
 
 jobs:
   build:
@@ -48,7 +44,7 @@ jobs:
       run: |
         echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
-        echo "OUTPUT_FILESYSTEM=${{ github.event.inputs.OUTPUT_FILESYSTEM }}" >> $GITHUB_ENV
+        echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
 
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
         echo "WORK_DIR=$PWD/WORK" >> $GITHUB_ENV
