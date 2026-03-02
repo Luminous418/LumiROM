@@ -30,7 +30,6 @@ jobs:
           python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs
         pip3 install liblp tgcrypto pyrogram gdown
 
-        chmod +x bin/ext4/make_ext4fs
         chmod +x bin/erofs-utils/extract.erofs
         chmod +x bin/erofs-utils/mkfs.erofs
 
