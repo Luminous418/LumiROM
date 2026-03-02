@@ -38,7 +38,7 @@ DOWNLOAD_FIRMWARE() {
     mkdir -p "$DOWN_DIR" || return 1
     
     echo "Downloading A34 images - 4.88GB"
-    gdown 1PpC1YS52Snlg7-OgLXFdB_2WyQYREfqv -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
+    gdown 1AEvZGN3QRv_OrkaiBfi_7BZ_Kx64Pk5q -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
 
     echo "Downloading vendor for ${STOCK_DEVICE} - 700-800MB"
     wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
