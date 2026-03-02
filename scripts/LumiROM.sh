@@ -1109,6 +1109,8 @@ GEN_FS_CONFIG() {
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
 
+        echo "--- Synchronizing $PARTITION ---"
+
         if [[ "$PARTITION" == "vendor" ]]; then
             echo "  [*] Fixing vendor_fs_config..."
             
@@ -1136,8 +1138,6 @@ GEN_FS_CONFIG() {
             echo "--- Creating new fs_config for $PARTITION ---"
             echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
         fi
-
-        echo "--- Synchronizing $PARTITION ---"
 
         sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
             [[ -z "$ENTRY" ]] && continue
