@@ -1181,10 +1181,27 @@ GEN_FILE_CONTEXTS() {
         sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
 
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
+            
             if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
                 echo "  [+] Context for: $PATH_ENTRY"
+                
+                local CONTEXT="u:object_r:system_file:s0"
+
+                if [[ "$PARTITION" == "vendor" ]]; then
+                    CONTEXT="u:object_r:vendor_file:s0"
+                
+                elif [[ "$PARTITION" == "system" || "$PARTITION" == "product" ]]; then
+                    if [[ "$PATH_ENTRY" == *.so ]]; then
+                        CONTEXT="u:object_r:system_lib_file:s0"
+                    else
+                        CONTEXT="u:object_r:system_file:s0"
+                    fi
+                fi
+
                 local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
-                echo "$ESCAPED_PATH u:object_r:vendor_file:s0" >> "$FILE_CONTEXTS"
+                
+                echo "$ESCAPED_PATH $CONTEXT" >> "$FILE_CONTEXTS"
+                
                 echo "$PATH_ENTRY" >> "$TMP_EXISTING"
             fi
         done
