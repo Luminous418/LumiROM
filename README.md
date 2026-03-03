@@ -31,6 +31,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 
 
-Right Now on beta, as i'm including things yet
-
 **P.S: This is hard, very hard because I dont use AI to do the script**
