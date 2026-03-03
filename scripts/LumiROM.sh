@@ -1002,7 +1002,7 @@ DEBLOAT() {
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/mediasearch"
 	rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/MediaSearch"
 
-    if [[ "$DEVICE" == "SM-A225F" ]]; then
+    if [[ "$STOCK_DEVICE" == "SM-A225F" ]]; then
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc-sec.so"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc_sec_jni.so"
         echo "Removed NFC from stock image"
