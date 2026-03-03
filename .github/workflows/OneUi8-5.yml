@@ -234,7 +234,7 @@ jobs:
     - name: Sending ROM to GoFile.
       run: |
           chmod +x ./upload.sh 
-          bash ./upload.sh "$(pwd)/template/${{ env.ZIP_NAME }}"
+          bash ./upload.sh "$(pwd)/template/${ZIP_NAME}"
 
     - name: Cleanup
       run: |
