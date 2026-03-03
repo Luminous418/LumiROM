@@ -1005,6 +1005,7 @@ DEBLOAT() {
     if [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" ]]; then
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc-sec.so"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc_sec_jni.so"
+        rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib/libnfc_sec_jni.so"
         echo "Removed NFC from stock image"
     fi
     
