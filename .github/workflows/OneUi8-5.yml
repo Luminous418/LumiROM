@@ -150,7 +150,7 @@ jobs:
         # Variables
         ROM_VERSION="8.5.5"
         BUILD_DATE=$(date +'%d%m%Y')
-        DEVICE="${{ github.event.inputs.STOCK_DEVICE }}"
+        DEVICE="$STOCK_DEVICE"
         UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
 
         if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" || "$DEVICE" == "SM-A325N" ]]; then
@@ -187,7 +187,7 @@ jobs:
         # Variables
         ROM_VERSION="8.5.5"
         BUILD_DATE=$(date +'%d%m%Y')
-        DEVICE="${{ github.event.inputs.STOCK_DEVICE }}"
+        DEVICE="$STOCK_DEVICE"
 
         if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" || "$DEVICE" == "SM-A325N" ]]; then
             DEVICE_CODENAME="a32"
