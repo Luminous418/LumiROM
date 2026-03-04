@@ -44,6 +44,7 @@ jobs:
         echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
+        echo "LUMIROM_VERSION=8.5.6" >> $GITHUB_ENV
 
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
         echo "WORK_DIR=$PWD/WORK" >> $GITHUB_ENV
@@ -148,7 +149,7 @@ jobs:
       shell: bash
       run: |
         # Variables
-        ROM_VERSION="8.5.5"
+        ROM_VERSION="$LUMIROM_VERSION"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="$STOCK_DEVICE"
         UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
@@ -185,7 +186,7 @@ jobs:
       shell: bash
       run: |
         # Variables
-        ROM_VERSION="8.5.5"
+        ROM_VERSION="$LUMIROM_VERSION"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="$STOCK_DEVICE"
 
