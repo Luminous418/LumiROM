@@ -1270,7 +1270,7 @@ BUILD_IMG() {
 
         if [[ -f "$OUT_IMG" ]]; then
             local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
-            echo "Updating size of $PARTITION in op_list: $ACTUAL_SIZE bytes"
+            echo -e "\e[32mUpdating size of $PARTITION in op_list: $ACTUAL_SIZE bytes\e[0m"
             
             if [[ -f "$OP_LIST" ]]; then
                 sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
