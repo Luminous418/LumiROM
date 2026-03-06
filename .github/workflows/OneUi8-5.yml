@@ -154,7 +154,7 @@ jobs:
         DEVICE="$STOCK_DEVICE"
         UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
 
-        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" || "$DEVICE" == "SM-A325N" ]]; then
+        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
             DEVICE_CODENAME="a32"
             DISPLAY_NAME="Galaxy A32 4G"
         elif [[ "$DEVICE" == "SM-A225F" ]]; then
@@ -193,7 +193,7 @@ jobs:
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="$STOCK_DEVICE"
 
-        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" || "$DEVICE" == "SM-A325N" ]]; then
+        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
             DEVICE_CODENAME="a32"
         elif [[ "$DEVICE" == "SM-A225F" ]]; then
             DEVICE_CODENAME="a22"
