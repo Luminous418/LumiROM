@@ -131,6 +131,9 @@ EXTRACT_FIRMWARE_IMG() {
         partition="$(basename "${imgfile%.img}")"
         fstype=$(file -b $imgfile | awk '{print $1}')
 
+        # Why Linux below? Because ext4 isnt a thing when you put file -b to an ext4 file
+        # First line says Linux, later on says it is ext2 somehow, so thats quite the fix
+
         case "$fstype" in
             Linux)
                 IMG_SIZE=$(stat -c%s -- "$imgfile")
@@ -154,9 +157,6 @@ EXTRACT_FIRMWARE_IMG() {
 
     # Remove all original .img
     rm -rf "$FIRM_DIR"/*.img
-
-    # sudo chown -R "$REAL_USER:$REAL_USER" "$FIRM_DIR/config"
-    # chmod -R u+rwX "$FIRM_DIR/config"
 }
 
 
@@ -214,6 +214,7 @@ DISABLE_FDE() {
 DELETE_ICCC() {
     local EXTRACTED_FIRM_DIR="$1"
     echo "Starting wipe..."
+    # Delete iccc to prevent soft-bootloop
 
     local targets=(
         "$EXTRACTED_FIRM_DIR/vendor/bin/hw/vendor.samsung.hardware.tlc.iccc@1.0-service"
@@ -250,7 +251,7 @@ PATCH_FSTAB_EROFS() {
         vendor/etc/fstab.mt6768
         vendor/etc/fstab.mt6769t
     "
-
+    # Patch fstab to add EROFS
     for fstab in $fstab_files; do
         local target="$EXTRACTED_FIRM_DIR/$fstab"
 
@@ -285,6 +286,7 @@ INSTALL_FRAMEWORK() {
         return 1
     fi
 
+    # Installing stock overlay
     echo ""
     local framework_res_apk="$1"
     echo "Installing Framework."
@@ -411,6 +413,7 @@ PATCH_FLAG_SECURE() {
         return 1
     fi
 
+    # Remove screenshot secure flag
 	echo "Patching flag secure."
 	local FILE="${1}/smali_classes2/com/android/server/wm/WindowState.smali"
     local METHOD_NAME_1=".method public final isSecureLocked()Z"
@@ -473,6 +476,7 @@ PATCH_SECURE_FOLDER() {
         return 1
     fi
 
+    # Patch secure folder
     echo "Patching secure folder."
     local FILE="${1}/smali/com/android/server/knox/dar/DarManagerService.smali"
     # patch isDeviceRootKeyInstalled
@@ -506,6 +510,7 @@ PATCH_KNOX_GUARD() {
         return 1
     fi
 
+    # Patch knox related services
     echo "Patching knox guard."
     local FILE="${1}/smali_classes2/com/samsung/android/knoxguard/service/KnoxGuardSeService.smali"
     # patch .method public constructor <init>(Landroid/content/Context;)V
@@ -540,6 +545,7 @@ PATCH_SSRM() {
         return 1
     fi
 
+    # Fix for SSRM Warning when powering on the phone
     local SSRM_DIR="$1"
 	local FILE="$SSRM_DIR/smali/com/android/server/ssrm/Feature.smali"
 
@@ -662,6 +668,7 @@ FIX_SYSTEM_EXT() {
         export TARGET_ROM_SYSTEM_EXT_DIR="$EXTRACTED_FIRM_DIR/system/system/system_ext"
 	fi
 
+    # Make system_ext merged with system
     if [[ "$STOCK_HAS_SEPARATE_SYSTEM_EXT" == FALSE && -d "$EXTRACTED_FIRM_DIR/system_ext" ]]; then
 	    echo "Fixing system_ext according to $STOCK_DEVICE"
         echo "- Copying system_ext content into system root"
@@ -719,6 +726,7 @@ FIX_SELINUX() {
     echo ""
     local SELINUX_FILE="$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/mapping/${STOCK_VNDK_VERSION}.0.cil"
 
+    # Self explanatory, fixes selinux that prevents booting
     if [ ! -f "$SELINUX_FILE" ]; then
         echo "Error: SELinux file not found at $SELINUX_FILE"
         return 1
@@ -865,6 +873,7 @@ REMOVE_ESIM_FILES() {
         return 1
     fi
 
+    # Remove ESIM files as we dont need it
 	local EXTRACTED_FIRM_DIR="$1"
     echo "- Removing ESIM files."
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/EsimClient"
@@ -884,6 +893,7 @@ REMOVE_FABRIC_CRYPTO() {
         return 1
     fi
 
+    # Yes, we dont need that, it spams logs
 	local EXTRACTED_FIRM_DIR="$1"
     echo "- Removing fabric crypto."
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/bin/fabric_crypto"
@@ -1102,6 +1112,7 @@ APPENDING_DISPLAY_ID() {
         return 1
     fi
 
+    # Add a name to build ID, doesnt delete, it adds on final 
 	local EXTRACTED_FIRM_DIR="$1"
 
     APPEND_DISPLAY_ID "$1" "LumiROM $ROM_VERSION Stable"
@@ -1132,6 +1143,7 @@ GEN_FS_CONFIG() {
                 }
             }' "$FS_CONFIG" > "$TMP_CLEAN"
             
+            # Script removes, so hardcoded to be added again
             echo "/ 0 2000 755" >> "$TMP_CLEAN"
             echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
             echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
@@ -1224,6 +1236,7 @@ BUILD_IMG() {
     if [[ -f "$DEVICE_CONFIG" ]]; then
         local SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')
         
+        # Update the super size on the list according to the device
         if [[ -n "$SUPER_SIZE" && -f "$OP_LIST" ]]; then
             echo -e "\e[32mUpdating super size on op_list: $SUPER_SIZE bytes\e[0m"
             sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
@@ -1268,10 +1281,12 @@ BUILD_IMG() {
             continue
         fi
 
+        # Updates the img size on the list 
         if [[ -f "$OUT_IMG" ]]; then
             local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
             echo -e "\e[32mUpdating size of $PARTITION in op_list: $ACTUAL_SIZE bytes\e[0m"
             
+            # Updates the img size on the resize lines to be able to be flashed
             if [[ -f "$OP_LIST" ]]; then
                 sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
             else
@@ -1301,6 +1316,7 @@ IMG_TO_SDAT_AND_COMPRESS() {
 
     chmod +x "$IMG2SDAT_BIN"
 
+    # This is for compress to .new.dat
     echo "=== Converting IMG to SDAT ==="
 
     for f in "$IMG_DIR"/*.img; do
@@ -1324,7 +1340,8 @@ IMG_TO_SDAT_AND_COMPRESS() {
         touch "$TMP_DIR/$PARTITION.patch.dat"
         echo "Created patch.dat for $PARTITION"
     done
-
+    
+    # Compress it to .new.dat.br to make later a .zip file
     echo ""
     echo "=== Compressing DAT files with Brotli ==="
 
