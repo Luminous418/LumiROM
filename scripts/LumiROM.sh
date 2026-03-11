@@ -1076,6 +1076,7 @@ APPLY_FEATURES() {
 
     echo "- Adding Mods..."
 	if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
+		mkdir "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper"
         cp -rfa "$(pwd)/LumiROM/Mods/Apps/AiWallpaper/"* "$EXTRACTED_FIRM_DIR/product/priv-app/"
     fi
 
@@ -1088,7 +1089,7 @@ APPLY_FEATURES() {
 		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/shadowremoval"
 		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/style_transfer"
 	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
-        cp -rfa "$(pwd)/LumiROM/Mods/Apps/PhotoEditor_AIFull/"* "$EXTRACTED_FIRM_DIR/system/system/priv-app/"
+        cp -rfa "$(pwd)/LumiROM/Mods/Apps/PhotoEditor_AIFull/"* "$EXTRACTED_FIRM_DIR/system/system/"
 		unzip -o "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip" -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/" >/dev/null 2>&1
 		rm -f "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip"
     fi
