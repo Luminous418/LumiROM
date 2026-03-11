@@ -1076,7 +1076,6 @@ APPLY_FEATURES() {
 
     echo "- Adding Mods..."
 	if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
-		mkdir "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper"
         cp -rfa "$(pwd)/LumiROM/Mods/Apps/AiWallpaper/"* "$EXTRACTED_FIRM_DIR/product/priv-app/"
     fi
 
