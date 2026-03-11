@@ -1141,7 +1141,7 @@ APPENDING_DISPLAY_ID() {
     # Add a name to build ID, doesnt delete, it adds on final 
 	local EXTRACTED_FIRM_DIR="$1"
 
-    APPEND_DISPLAY_ID "$1" "LumiROM $ROM_VERSION Stable"
+    APPEND_DISPLAY_ID "$1" "LumiROM $LUMIROM_VERSION Stable"
 }
 
 GEN_FS_CONFIG() {
