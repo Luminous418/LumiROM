@@ -40,7 +40,7 @@ DOWNLOAD_FIRMWARE() {
     echo "Downloading ROM images for $STOCK_DEVICE"
 
         if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-            gdown 13H5W6rptuTsqfidMivuibezLv_5nBuHu -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
+            gdown 1GttWVXgAYnCg9f2_facbfFbjwdh-KFp8 -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
         elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-A226B" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" ]]; then
             gdown 1gBgLT2evumd2aZgaTBpTz0KxTabknmdG -O "${DOWN_DIR}/SM-A156B_OneUi85_firmware.zip"
         else
