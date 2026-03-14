@@ -1,4 +1,4 @@
-getprop("ro.boot.em.model") == "SM-A325F" || abort("E3004: This package is for "a32");
+getprop("ro.boot.em.model") == "SM-A000F" || abort("E3004: This package is for "a00");
 ui_print(" ");
 ui_print("************************************************");
 ui_print(" ");
@@ -13,7 +13,7 @@ ui_print("        8.0.0-01012000 for Galaxy Axx 4G");
 ui_print(" ");
 ui_print("************************************************");
 ui_print("One UI version: 8.5");
-ui_print("Source: samsung/a34xdxx/a34x:16/BP4A.251205.006/A346EXXUDFZC2:user/release-keys");
+ui_print("Source: samsung/a00xdxx/a00x:00/BOMB.000000.000/A000BOMBA0418:user/release-keys");
 ui_print("************************************************");
 
 # --- Start patching dynamic partitions ---
