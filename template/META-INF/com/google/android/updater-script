@@ -13,7 +13,7 @@ ui_print("        8.0.0-01012000 for Galaxy Axx 4G");
 ui_print(" ");
 ui_print("************************************************");
 ui_print("One UI version: 8.5");
-ui_print("Source: samsung/a34xdxx/a34x:16/BP4A.251205.006/A346EXXUDFZC1:user/release-keys");
+ui_print("Source: samsung/a34xdxx/a34x:16/BP4A.251205.006/A346EXXUDFZC2:user/release-keys");
 ui_print("************************************************");
 
 # --- Start patching dynamic partitions ---

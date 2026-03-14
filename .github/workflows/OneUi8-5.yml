@@ -149,6 +149,9 @@ jobs:
       shell: bash
       run: |
         # Variables
+        local EXTRACTED_FIRM_DIR="$1"
+        BUILD_PROP_PATH="$EXTRACTED_FIRM_DIR/system/system/build.prop"
+        FINGERPRINT=$(grep -m 1 "ro.system.build.fingerprint=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
         ROM_VERSION="$LUMIROM_VERSION"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="$STOCK_DEVICE"
@@ -180,6 +183,14 @@ jobs:
             DISPLAY_NAME="Unknown Device"
         fi
 
+        if [ -z "$FINGERPRINT" ]; then
+            echo "Warning: Fingerprint not found, using generic value."
+            FINGERPRINT="Unknown/Release-Keys"
+        fi
+
+        echo "Detected Fingerprint: $FINGERPRINT"
+        sed -i "s!ui_print(\"Source: .*\");!ui_print(\"Source: $FINGERPRINT\");!" "$UPDATER_PATH"
+        
         NEW_CHECK="getprop(\"ro.boot.em.model\") == \"$DEVICE\" || abort(\"E3004: This package is for $DEVICE_CODENAME\");"
 
         echo "Updating device on updater-script for $DISPLAY_NAME..."
