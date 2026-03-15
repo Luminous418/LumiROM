@@ -1,0 +1,108 @@
+#!/bin/bash
+
+UPDATE_ZIP_SCRIPT() {
+    
+        local EXTRACTED_FIRM_DIR="$1"
+        BUILD_PROP_PATH="$EXTRACTED_FIRM_DIR/system/system/build.prop"
+        FINGERPRINT=$(grep -m 1 "ro.system.build.fingerprint=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
+        ROM_VERSION="$LUMIROM_VERSION"
+        BUILD_DATE=$(date +'%d%m%Y')
+        DEVICE="$STOCK_DEVICE"
+        UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
+
+        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
+            DEVICE_CODENAME="a32"
+            DISPLAY_NAME="Galaxy A32 4G"
+        elif [[ "$DEVICE" == "SM-A225F" ]]; then
+            DEVICE_CODENAME="a22"
+            DISPLAY_NAME="Galaxy A22 4G"
+        elif [[ "$DEVICE" == "SM-A225M" ]]; then
+            DEVICE_CODENAME="a22ub"
+            DISPLAY_NAME="Galaxy A22 4G"
+        elif [[ "$DEVICE" == "SM-A226B" ]]; then
+            DEVICE_CODENAME="a22x"
+            DISPLAY_NAME="Galaxy A22 5G"
+        elif [[ "$DEVICE" == "SM-M325F" ]]; then
+            DEVICE_CODENAME="m32"
+            DISPLAY_NAME="Galaxy M32 4G"
+        elif [[ "$DEVICE" == "SM-E225F" ]]; then
+            DEVICE_CODENAME="f22"
+            DISPLAY_NAME="Galaxy F22 4G"
+        elif [[ "$DEVICE" == "SM-M225F" ]]; then
+            DEVICE_CODENAME="m22"
+            DISPLAY_NAME="Galaxy M22 4G"
+        else
+            DEVICE_CODENAME="unknown"
+            DISPLAY_NAME="Unknown Device"
+        fi
+
+        if [ -z "$FINGERPRINT" ]; then
+            echo "Warning: Fingerprint not found, using generic value."
+            FINGERPRINT="Unknown/Release-Keys"
+        fi
+
+        echo "Detected Fingerprint: $FINGERPRINT"
+        sed -i "s!ui_print(\"Source: .*\");!ui_print(\"Source: $FINGERPRINT\");!" "$UPDATER_PATH"
+        
+        NEW_CHECK="getprop(\"ro.boot.em.model\") == \"$DEVICE\" || abort(\"E3004: This package is for $DEVICE_CODENAME\");"
+
+        echo "Updating device on updater-script for $DISPLAY_NAME..."
+      
+        sed -i "s!^getprop(\"ro.boot.em.model\").*!$NEW_CHECK!" "$UPDATER_PATH"
+
+        sed -i "s!ui_print(\".*for .*\");!ui_print(\"        $ROM_VERSION-$BUILD_DATE for $DISPLAY_NAME\");!" "$UPDATER_PATH"
+
+}
+
+FLASHABLE_ZIP_CREATION() {
+    
+        ROM_VERSION="$LUMIROM_VERSION"
+        BUILD_DATE=$(date +'%d%m%Y')
+        DEVICE="$STOCK_DEVICE"
+
+        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
+            DEVICE_CODENAME="a32"
+        elif [[ "$DEVICE" == "SM-A225F" ]]; then
+            DEVICE_CODENAME="a22"
+        elif [[ "$DEVICE" == "SM-A225M" ]]; then
+            DEVICE_CODENAME="a22ub"
+        elif [[ "$DEVICE" == "SM-A226B" ]]; then
+            DEVICE_CODENAME="a22x"
+        elif [[ "$DEVICE" == "SM-M325F" ]]; then
+            DEVICE_CODENAME="m32"
+        elif [[ "$DEVICE" == "SM-E225F" ]]; then
+            DEVICE_CODENAME="f22"
+        elif [[ "$DEVICE" == "SM-M225F" ]]; then
+            DEVICE_CODENAME="m22"
+        else
+            DEVICE_CODENAME="unknown"
+        fi
+
+        TEMPLATE_DIR="$(pwd)/template"
+        mkdir -p "$TEMPLATE_DIR"
+
+        SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$DEVICE/boot.img"
+
+        if [ -f "$SPECIFIC_BOOT" ]; then
+            echo "-> Copying boot.img from $DEVICE..."
+            cp "$SPECIFIC_BOOT" "$TEMPLATE_DIR/boot.img"
+        else
+            echo "There is no boot.img for $DEVICE"
+        fi
+
+        echo "Copying compressed DAT files to template..."
+        cp TMP/*.new.dat.br "$TEMPLATE_DIR"/
+        cp TMP/*.patch.dat "$TEMPLATE_DIR"/
+        cp TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
+
+        echo "Creating ZIP package..."
+        ZIP_FILE="LumiROM_${ROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
+        [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
+
+        # ZIP the rom
+        cd "$TEMPLATE_DIR"
+        zip -r "$ZIP_FILE" ./*
+
+        echo "ZIP package created: $ZIP_FILE"
+        echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
+}
