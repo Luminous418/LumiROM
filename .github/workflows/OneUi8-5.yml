@@ -10,7 +10,7 @@ on:
       USE_UI_8_TETHERING_APEX:
         description: "Set True if your kernel BPF version is lower than 5.10"
         required: true
-        default: "True"
+        default: "False"
 
 jobs:
   build:
