@@ -1,8 +1,5 @@
 #!/bin/bash
 
-###################################################################################################
-# REAL_USER=${SUDO_USER:-$USER}
-
 CHECK_FILE() {
     if [ ! -f "$1" ]; then
         echo "[!] File not found: $1"
@@ -177,10 +174,6 @@ DISABLE_FBE() {
 
     local i
 
-    # Exynos devices = fstab.exynos*.
-    # MediaTek devices = fstab.mt*.
-    # Snapdragon devices = fstab.qcom, fstab.emmc, fstab.default
-
     for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
     if [ -f $i ]; then
       echo "Disabling full-based encryption (FBE) for /data..."
@@ -202,10 +195,6 @@ DISABLE_FDE() {
     fi
 
     local i
-
-    # Exynos devices = fstab.exynos*.
-    # MediaTek devices = fstab.mt*.
-    # Snapdragon devices = fstab.qcom, fstab.emmc, fstab.default
 
     for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
     if [ -f $i ]; then
