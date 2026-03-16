@@ -139,7 +139,7 @@ jobs:
         cp -fv "$WORK_DIR"/*.jar \
           "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
 
-    - name: Build images
+    - name: Build ROM
       shell: bash
       run: |
         source scripts/LumiROM.sh
