@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script does exactly the same as OneUi8-5.yml
+# but does all in local so no need to use GitHub
+
+
 set -Eeuo pipefail
 
 trap '{
@@ -18,15 +22,16 @@ trap '{
 }' ERR
 
 
-if [ "$#" -lt 3 ]; then
-    echo "Usage: $0 <STOCK_DEVICE> <USE_UI_8_TETHERING_APEX> <OUTPUT_FILESYSTEM>"
+if [ "$#" -lt 2 ]; then
+    echo "Usage: $0 <STOCK_DEVICE> <USE_UI_8_TETHERING_APEX>"
     exit 1
 fi
 
 # Device info
 export STOCK_DEVICE="$1"
 export USE_UI_8_TETHERING_APEX="$2"
-export OUTPUT_FILESYSTEM="$3"
+export OUTPUT_FILESYSTEM="erofs"
+export LUMIROM_VERSION=8.6.0
 
 # Directories
 export OUT_DIR="$(pwd)/OUT"
@@ -36,6 +41,7 @@ export DEVICES_DIR="$(pwd)/LumiROM/Devices"
 export APKTOOL="$(pwd)/bin/apktool/apktool.jar"
 export VNDKS_COLLECTION="$(pwd)/LumiROM/vndks"
 
+# Partitions to build
 export BUILD_PARTITIONS="product,vendor,odm,system_ext,system"
 
 # Source
@@ -47,6 +53,11 @@ DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$FIRM_DIR"
 EXTRACT_FIRMWARE "$FIRM_DIR/$TARGET_DEVICE"
 PREPARE_PARTITIONS "$FIRM_DIR/$TARGET_DEVICE"
 EXTRACT_FIRMWARE_IMG "$FIRM_DIR/$TARGET_DEVICE"
+
+DISABLE_FBE "$FIRM_DIR/$TARGET_DEVICE"
+DISABLE_FDE "$FIRM_DIR/$TARGET_DEVICE"
+DELETE_ICCC "$FIRM_DIR/$TARGET_DEVICE"
+PATCH_FSTAB_EROFS "$FIRM_DIR/$TARGET_DEVICE"
 
 APPLY_STOCK_CONFIG "$FIRM_DIR/$TARGET_DEVICE"
 
@@ -68,3 +79,8 @@ RECOMPILE "$APKTOOL" "$WORK_DIR/services" "$FIRM_DIR/$TARGET_DEVICE/system/syste
 cp -fv "$WORK_DIR"/*.jar "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
 
 BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
+IMG_TO_SDAT_AND_COMPRESS "$OUT_DIR" "TMP"
+
+source scripts/zip_creation.sh
+UPDATE_ZIP_SCRIPT "$FIRM_DIR/$TARGET_DEVICE"
+FLASHABLE_ZIP_CREATION
