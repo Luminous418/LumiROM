@@ -1073,6 +1073,9 @@ APPLY_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "skiavk"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.telephony.sim_slots.count" "2"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.protected_contents" "true"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.voip.enabled" "true"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.vendor.audio.voip" "true"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.recording.voip" "true"
 
     echo "- Adding Mods..."
 	if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
