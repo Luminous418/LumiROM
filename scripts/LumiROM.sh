@@ -45,7 +45,7 @@ DOWNLOAD_FIRMWARE() {
         fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
-    wget -q "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
+    wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
 
 }
 
