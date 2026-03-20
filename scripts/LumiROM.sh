@@ -44,8 +44,8 @@ DOWNLOAD_FIRMWARE() {
             $STOCK_DEVICE="unknown"
         fi
 
-    echo "Downloading vendor for ${STOCK_DEVICE} - 700-800MB"
-    wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
+    echo "Downloading vendor for ${STOCK_DEVICE}"
+    wget -q "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
 
 }
 
@@ -860,6 +860,10 @@ APPLY_FLOATING_FEATURE() {
 
     #========== LOCKSCREEN ==========#
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_LOCKSCREEN_CONFIG_PUNCHHOLE_VI" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_LOCKSCREEN_CONFIG_PUNCHHOLE_VI" {print $3}' "$STOCK_FLOATING_FEATURE")"
+
+	#========== MANUFACTUREER TYPE ==========#
+	UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_COMMON_CONFIG_DEVICE_MANUFACTURING_TYPE" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_COMMON_CONFIG_DEVICE_MANUFACTURING_TYPE" {print $3}' "$STOCK_FLOATING_FEATURE")"
+
 }
 
 
