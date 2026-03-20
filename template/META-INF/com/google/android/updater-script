@@ -9,7 +9,7 @@ ui_print(" / /___/ /_/ / / / / / / / _, _/ /_/ / / / / / / ");
 ui_print("/_____/\__,_/_/ /_/ /_/_/_/ |_|\____/_/ /_/ /_/  ");
 ui_print("                                                 ");
 ui_print(" ");
-ui_print("        8.0.0-01012000 for Galaxy Axx 4G");
+ui_print("        8.0.0-01012000 for Galaxy Axx XG");
 ui_print(" ");
 ui_print("************************************************");
 ui_print("One UI version: 8.5");
