@@ -928,7 +928,8 @@ JDM_DEBLOAT() {
 
     if [[ "$MANUF_TYPE" == *jdm* ]]; then
         echo "JDM detected → debloating unnecessary files"
-
+        rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothAgent"
+        rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothMidiService"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/cameradata"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
     else
