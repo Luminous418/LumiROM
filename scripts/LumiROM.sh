@@ -36,9 +36,9 @@ DOWNLOAD_FIRMWARE() {
     
     echo "Downloading ROM images for $STOCK_DEVICE"
 
-        if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
+        if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
             gdown 1GttWVXgAYnCg9f2_facbfFbjwdh-KFp8 -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
-        elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-A226B" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" ]]; then
+        elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" ]]; then
             gdown 1oTWnFVL_A8qjzmFohjOJqMyjQaYQs-xR -O "${DOWN_DIR}/SM-A155F_OneUi85_firmware.zip"
         else
             $STOCK_DEVICE="unknown"
@@ -834,6 +834,9 @@ APPLY_FLOATING_FEATURE() {
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_LCD_SUPPORT_NATURAL_SCREEN_MODE" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_LCD_SUPPORT_NATURAL_SCREEN_MODE" {print $3}' "$STOCK_FLOATING_FEATURE")"
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_LCD_SUPPORT_SCREEN_MODE_TYPE" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_LCD_SUPPORT_SCREEN_MODE_TYPE" {print $3}' "$STOCK_FLOATING_FEATURE")"
 
+    #========== KEEP NOW-BAR EXPANDED ==========#
+    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_LCD_CONFIG_AOD_FULLSCREEN" "1"	
+
     #========== CAMERA ==========#
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_CAMERA_CONFIG_STRIDE_OCR_VERSION" "V1"
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_CAMERA_SUPPORT_PRIVACY_TOGGLE" "TRUE"
@@ -910,6 +913,30 @@ REMOVE_FABRIC_CRYPTO() {
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/KmxService"
 }
 
+JDM_DEBLOAT() {
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
+        return 1
+    fi
+
+    local EXTRACTED_FIRM_DIR="$1"
+    local STOCK_FLOATING_FEATURE="$DEVICES_DIR/$STOCK_DEVICE/floating_feature.xml"
+    local MANUF_TYPE
+    MANUF_TYPE=$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_COMMON_CONFIG_DEVICE_MANUFACTURING_TYPE" {print $3}' "$STOCK_FLOATING_FEATURE" | xargs)
+
+    shopt -s nocasematch
+
+    if [[ "$MANUF_TYPE" == *jdm* ]]; then
+        echo "JDM detected → debloating unnecessary files"
+        rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothAgent"
+        rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothMidiService"
+        rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
+    else
+        echo "Device is not JDM → skipping debloating"
+    fi
+
+    shopt -u nocasematch
+}
 
 APPLY_STOCK_CONFIG() {
     echo ""
@@ -1003,6 +1030,7 @@ DEBLOAT() {
     KICK "$EXTRACTED_FIRM_DIR"
     REMOVE_ESIM_FILES "$EXTRACTED_FIRM_DIR"
 	REMOVE_FABRIC_CRYPTO "$EXTRACTED_FIRM_DIR"
+    JDM_DEBLOAT "$EXTRACTED_FIRM_DIR"
 	echo "- Deleting unnecessary files and folders."
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.bprof"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.prof"
