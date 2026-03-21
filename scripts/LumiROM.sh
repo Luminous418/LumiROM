@@ -913,6 +913,27 @@ REMOVE_FABRIC_CRYPTO() {
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/KmxService"
 }
 
+JDM_DEBLOAT() {
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
+        return 1
+    fi
+
+    local EXTRACTED_FIRM_DIR="$1"
+
+    local MANUF_TYPE
+    MANUF_TYPE=$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_COMMON_CONFIG_DEVICE_MANUFACTURING_TYPE" {print $3}' "$STOCK_FLOATING_FEATURE" | xargs)
+
+    if echo "$MANUF_TYPE" | grep -iq "jdm"; then
+        echo "JDM detected → debloating unnecessary files"
+
+        rm -rf "$EXTRACTED_FIRM_DIR/system/system/cameradata"
+        rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
+
+    else
+        echo "Device is not JDM → skipping debloating"
+    fi
+}
 
 APPLY_STOCK_CONFIG() {
     echo ""
@@ -1006,6 +1027,7 @@ DEBLOAT() {
     KICK "$EXTRACTED_FIRM_DIR"
     REMOVE_ESIM_FILES "$EXTRACTED_FIRM_DIR"
 	REMOVE_FABRIC_CRYPTO "$EXTRACTED_FIRM_DIR"
+    JDM_DEBLOAT "$EXTRACTED_FIRM_DIR"
 	echo "- Deleting unnecessary files and folders."
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.bprof"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.prof"
