@@ -5,7 +5,6 @@ UPDATE_ZIP_SCRIPT() {
         local EXTRACTED_FIRM_DIR="$1"
         BUILD_PROP_PATH="$EXTRACTED_FIRM_DIR/system/system/build.prop"
         FINGERPRINT=$(grep -m 1 "ro.system.build.fingerprint=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
-        ROM_VERSION="$LUMIROM_VERSION"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="$STOCK_DEVICE"
         UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
@@ -50,13 +49,12 @@ UPDATE_ZIP_SCRIPT() {
       
         sed -i "s!^getprop(\"ro.boot.em.model\").*!$NEW_CHECK!" "$UPDATER_PATH"
 
-        sed -i "s!ui_print(\".*for .*\");!ui_print(\"        $ROM_VERSION-$BUILD_DATE for $DISPLAY_NAME\");!" "$UPDATER_PATH"
+        sed -i "s!ui_print(\".*for .*\");!ui_print(\"        $LUMIROM_VERSION-$BUILD_DATE for $DISPLAY_NAME\");!" "$UPDATER_PATH"
 
 }
 
 FLASHABLE_ZIP_CREATION() {
     
-        ROM_VERSION="$LUMIROM_VERSION"
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="$STOCK_DEVICE"
 
@@ -96,7 +94,7 @@ FLASHABLE_ZIP_CREATION() {
         cp TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
 
         echo "Creating ZIP package..."
-        ZIP_FILE="LumiROM_${ROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
+        ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
         [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
 
         # ZIP the rom

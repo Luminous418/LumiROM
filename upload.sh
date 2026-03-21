@@ -22,6 +22,3 @@ LINK=$(curl -F "file=@$FILE" "https://${SERVER}.gofile.io/uploadFile" | jq -r '.
 # Display the download link
 # Quoting $LINK preserves any spaces or special characters in the URL
 echo "$LINK"
-
-# Print a blank line for better readability
-echo
