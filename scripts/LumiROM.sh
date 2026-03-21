@@ -924,15 +924,18 @@ JDM_DEBLOAT() {
     local MANUF_TYPE
     MANUF_TYPE=$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_COMMON_CONFIG_DEVICE_MANUFACTURING_TYPE" {print $3}' "$STOCK_FLOATING_FEATURE" | xargs)
 
-    if echo "$MANUF_TYPE" | grep -iq "jdm"; then
+    shopt -s nocasematch
+
+    if [[ "$MANUF_TYPE" == *jdm* ]]; then
         echo "JDM detected → debloating unnecessary files"
 
-        rm -rf "$EXTRACTED_FIRM_DIR/system/system/cameradata"
-        rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
-
+        rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/cameradata"
+        rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
     else
         echo "Device is not JDM → skipping debloating"
     fi
+
+    shopt -u nocasematch
 }
 
 APPLY_STOCK_CONFIG() {
