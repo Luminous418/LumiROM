@@ -90,6 +90,7 @@ jobs:
       run: |
         source scripts/LumiROM.sh
         DEBLOAT "$FIRM_DIR/$TARGET_DEVICE"
+        JDM_DEBLOAT "$FIRM_DIR/$TARGET_DEVICE"
 
     - name: Apply features
       shell: bash

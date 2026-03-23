@@ -916,6 +916,7 @@ JDM_DEBLOAT() {
         return 1
     fi
 
+    # I added JDM Debloat separately from Debloat to have better control over it 
     local EXTRACTED_FIRM_DIR="$1"
     local STOCK_FLOATING_FEATURE="$DEVICES_DIR/$STOCK_DEVICE/floating_feature.xml"
     local MANUF_TYPE
