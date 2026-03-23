@@ -1089,6 +1089,7 @@ APPLY_FEATURES() {
 
 	local EXTRACTED_FIRM_DIR="$1"
 
+    # Add build.prop features
     echo "Applying useful features."
 	echo " Adding build prop tweak."
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.frp.pst"
@@ -1122,6 +1123,7 @@ APPLY_FEATURES() {
 		rm -f "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip"
     fi
 
+    # For every new mod, add it with all route, until I remake the script
     sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/bin/"* "$EXTRACTED_FIRM_DIR/system/system/bin/"
     sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/etc/"* "$EXTRACTED_FIRM_DIR/system/system/etc/"
     sudo cp -rfa "$(pwd)/LumiROM/Mods/vulkan_fix/system/system/lib64/"* "$EXTRACTED_FIRM_DIR/system/system/lib64/"
@@ -1152,7 +1154,7 @@ APPEND_DISPLAY_ID() {
             local CURRENT
             CURRENT=$(grep "^ro.build.display.id=" "$PROP" | cut -d= -f2-)
 
-            # Try not update it, if it was already there
+            # Try to not update it, if it was already there
             if [[ "$CURRENT" != *"$SUFFIX"* ]]; then
                 sed -i "s|^ro.build.display.id=.*|ro.build.display.id=${CURRENT} - ${SUFFIX}|" "$PROP"
                 echo "Updated ro.build.display.id in $PROP"
@@ -1167,7 +1169,7 @@ APPENDING_DISPLAY_ID() {
         return 1
     fi
 
-    # Add a name to build ID, doesnt delete, it adds on final 
+    # Add a name to build ID, doesnt delete the line, it adds at the end
 	local EXTRACTED_FIRM_DIR="$1"
 
     APPEND_DISPLAY_ID "$1" "LumiROM $LUMIROM_VERSION Stable"
@@ -1198,7 +1200,7 @@ GEN_FS_CONFIG() {
                 }
             }' "$FS_CONFIG" > "$TMP_CLEAN"
             
-            # Script removes, so hardcoded to be added again
+            # Script removes it, so hardcoded to be added again
             echo "/ 0 2000 755" >> "$TMP_CLEAN"
             echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
             echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
