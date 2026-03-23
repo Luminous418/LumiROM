@@ -55,6 +55,14 @@ jobs:
         echo "VNDKS_COLLECTION=$PWD/LumiROM/vndks" >> $GITHUB_ENV
         echo "BUILD_PARTITIONS=product,vendor,odm,system_ext,system" >> $GITHUB_ENV
 
+    - name: Check repo
+      shell: bash
+      env:
+        LUMIROM_BUILD: ${{ secrets.LUMIROM_BUILD }}
+      run: |
+        source scripts/LumiROM.sh
+        IS_OFFICIAL
+
     - name: Download firmware
       shell: bash
       run: |
