@@ -1351,7 +1351,7 @@ BUILD_IMG() {
     done
 }
 
-IMG_TO_SDAT_AND_COMPRESS() {
+IMG_TO_BROTLI() {
     if [ "$#" -ne 2 ]; then
         echo "Usage: ${FUNCNAME[0]} <IMG_DIR> <TMP_DIR>"
         return 1
@@ -1371,7 +1371,7 @@ IMG_TO_SDAT_AND_COMPRESS() {
 
     chmod +x "$IMG2SDAT_BIN"
 
-    # This is for compress to .new.dat
+    # This is for compressing to .new.dat
     echo "=== Converting IMG to SDAT ==="
 
     for f in "$IMG_DIR"/*.img; do

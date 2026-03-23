@@ -144,7 +144,7 @@ jobs:
       run: |
         source scripts/LumiROM.sh
         BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
-        IMG_TO_SDAT_AND_COMPRESS "$OUT_DIR" "TMP"
+        IMG_TO_BROTLI "$OUT_DIR" "TMP"
 
     - name: Update updater-script
       shell: bash

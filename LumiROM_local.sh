@@ -94,7 +94,7 @@ cp -fv "$WORK_DIR"/*.jar "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
 
 # Build ROM
 BUILD_IMG "$FIRM_DIR/$TARGET_DEVICE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
-IMG_TO_SDAT_AND_COMPRESS "$OUT_DIR" "TMP"
+IMG_TO_BROTLI "$OUT_DIR" "TMP"
 
 
 source "$(pwd)/scripts/zip_creation.sh"
