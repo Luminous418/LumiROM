@@ -1,5 +1,27 @@
 #!/bin/bash
 
+IS_OFFICIAL() {
+    CURRENT_SIGNATURE=$(echo -n "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
+
+    OFFICIAL_HASH="53741c81c947cdb11bc332b0b70b603fb6f94421bfac040a7cd35ec145fa4195"
+
+    if [ "$CURRENT_SIGNATURE" == "$OFFICIAL_HASH" ]; then
+        export BUILD_STATUS="OFFICIAL"
+        export ROM_TAG="✨ LumiROM Official Build"
+        
+        echo "BUILD_STATUS=OFFICIAL" >> "$GITHUB_ENV"
+        echo "ROM_TAG=✨ LumiROM Official Build" >> "$GITHUB_ENV"
+    else
+        export BUILD_STATUS="UNOFFICIAL"
+        export ROM_TAG="🛠️ LumiROM Unofficial Build"
+        
+        echo "BUILD_STATUS=UNOFFICIAL" >> "$GITHUB_ENV"
+        echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
+    fi
+
+    echo ">> $ROM_TAG detected."
+}
+
 CHECK_FILE() {
     if [ ! -f "$1" ]; then
         echo "[!] File not found: $1"
@@ -834,9 +856,6 @@ APPLY_FLOATING_FEATURE() {
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_LCD_SUPPORT_NATURAL_SCREEN_MODE" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_LCD_SUPPORT_NATURAL_SCREEN_MODE" {print $3}' "$STOCK_FLOATING_FEATURE")"
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_LCD_SUPPORT_SCREEN_MODE_TYPE" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_LCD_SUPPORT_SCREEN_MODE_TYPE" {print $3}' "$STOCK_FLOATING_FEATURE")"
 
-    #========== KEEP NOW-BAR EXPANDED ==========#
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_LCD_CONFIG_AOD_FULLSCREEN" "1"	
-
     #========== CAMERA ==========#
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_CAMERA_CONFIG_STRIDE_OCR_VERSION" "V1"
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_CAMERA_SUPPORT_PRIVACY_TOGGLE" "TRUE"
@@ -919,6 +938,7 @@ JDM_DEBLOAT() {
         return 1
     fi
 
+    # I added JDM Debloat separately from Debloat to have better control over it 
     local EXTRACTED_FIRM_DIR="$1"
     local STOCK_FLOATING_FEATURE="$DEVICES_DIR/$STOCK_DEVICE/floating_feature.xml"
     local MANUF_TYPE
@@ -932,7 +952,7 @@ JDM_DEBLOAT() {
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothMidiService"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
     else
-        echo "Device is not JDM → skipping debloating"
+        echo "Device is not JDM → skipping JDM debloating"
     fi
 
     shopt -u nocasematch
@@ -1092,6 +1112,7 @@ APPLY_FEATURES() {
 
 	local EXTRACTED_FIRM_DIR="$1"
 
+    # Add build.prop features
     echo "Applying useful features."
 	echo " Adding build prop tweak."
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.frp.pst"
@@ -1104,6 +1125,12 @@ APPLY_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.voip.enabled" "true"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.vendor.audio.voip" "true"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.recording.voip" "true"
+
+    if [ "$BUILD_STATUS" == "OFFICIAL" ]; then
+        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "true"
+    else
+        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "false"
+    fi
 
     echo "- Adding Mods..."
 	if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
@@ -1125,6 +1152,7 @@ APPLY_FEATURES() {
 		rm -f "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip"
     fi
 
+    # For every new mod, add it with all route, until I remake the script
     sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/bin/"* "$EXTRACTED_FIRM_DIR/system/system/bin/"
     sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/etc/"* "$EXTRACTED_FIRM_DIR/system/system/etc/"
     sudo cp -rfa "$(pwd)/LumiROM/Mods/vulkan_fix/system/system/lib64/"* "$EXTRACTED_FIRM_DIR/system/system/lib64/"
@@ -1155,7 +1183,7 @@ APPEND_DISPLAY_ID() {
             local CURRENT
             CURRENT=$(grep "^ro.build.display.id=" "$PROP" | cut -d= -f2-)
 
-            # Try not update it, if it was already there
+            # Try to not update it, if it was already there
             if [[ "$CURRENT" != *"$SUFFIX"* ]]; then
                 sed -i "s|^ro.build.display.id=.*|ro.build.display.id=${CURRENT} - ${SUFFIX}|" "$PROP"
                 echo "Updated ro.build.display.id in $PROP"
@@ -1170,10 +1198,10 @@ APPENDING_DISPLAY_ID() {
         return 1
     fi
 
-    # Add a name to build ID, doesnt delete, it adds on final 
+    # Add a name to build ID, doesnt delete the line, it adds at the end
 	local EXTRACTED_FIRM_DIR="$1"
 
-    APPEND_DISPLAY_ID "$1" "LumiROM $LUMIROM_VERSION Stable"
+    APPEND_DISPLAY_ID "$1" "LumiROM $LUMIROM_VERSION $BUILD_STATUS Stable"
 }
 
 GEN_FS_CONFIG() {
@@ -1201,7 +1229,7 @@ GEN_FS_CONFIG() {
                 }
             }' "$FS_CONFIG" > "$TMP_CLEAN"
             
-            # Script removes, so hardcoded to be added again
+            # Script removes it, so hardcoded to be added again
             echo "/ 0 2000 755" >> "$TMP_CLEAN"
             echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
             echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
@@ -1354,7 +1382,7 @@ BUILD_IMG() {
     done
 }
 
-IMG_TO_SDAT_AND_COMPRESS() {
+IMG_TO_BROTLI() {
     if [ "$#" -ne 2 ]; then
         echo "Usage: ${FUNCNAME[0]} <IMG_DIR> <TMP_DIR>"
         return 1
@@ -1374,7 +1402,7 @@ IMG_TO_SDAT_AND_COMPRESS() {
 
     chmod +x "$IMG2SDAT_BIN"
 
-    # This is for compress to .new.dat
+    # This is for compressing to .new.dat
     echo "=== Converting IMG to SDAT ==="
 
     for f in "$IMG_DIR"/*.img; do

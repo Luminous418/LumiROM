@@ -56,6 +56,7 @@ UPDATE_ZIP_SCRIPT() {
 FLASHABLE_ZIP_CREATION() {
     
         BUILD_DATE=$(date +'%d%m%Y')
+        TIMESTAMP=$(date +'%s')
         DEVICE="$STOCK_DEVICE"
 
         if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
@@ -78,6 +79,14 @@ FLASHABLE_ZIP_CREATION() {
 
         TEMPLATE_DIR="$(pwd)/template"
         mkdir -p "$TEMPLATE_DIR"
+
+        echo "Generating build_info.txt..."
+        {
+            echo "device=$DEVICE_CODENAME"
+            echo "version=$LUMIROM_VERSION-$BUILD_DATE"
+            echo "timestamp=$TIMESTAMP"
+            echo "status=$BUILD_STATUS"
+        } > "$TEMPLATE_DIR/build_info.txt"
 
         SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$DEVICE/boot.img"
 
