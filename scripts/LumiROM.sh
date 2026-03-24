@@ -1,9 +1,7 @@
 #!/bin/bash
 
 IS_OFFICIAL() {
-    CURRENT_SIGNATURE=$(echo -n "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
-
-    OFFICIAL_HASH="53741c81c947cdb11bc332b0b70b603fb6f94421bfac040a7cd35ec145fa4195"
+    CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
 
     if [ "$CURRENT_SIGNATURE" == "$OFFICIAL_HASH" ]; then
         export BUILD_STATUS="OFFICIAL"
@@ -19,7 +17,7 @@ IS_OFFICIAL() {
         echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
     fi
 
-    echo ">> $ROM_TAG detected."
+    echo "--- $ROM_TAG detected ---"
 }
 
 CHECK_FILE() {
