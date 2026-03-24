@@ -47,6 +47,14 @@ jobs:
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
         echo "LUMIROM_VERSION=8.6.1" >> $GITHUB_ENV
 
+        if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
+            echo "TARGET_DEVICE=SM-A346B" >> $GITHUB_ENV
+        elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" ]]; then
+            echo "TARGET_DEVICE=SM-A155F" >> $GITHUB_ENV
+        else
+            echo "TARGET_DEVICE=unknown" >> $GITHUB_ENV
+        fi
+
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
         echo "WORK_DIR=$PWD/WORK" >> $GITHUB_ENV
         echo "FIRM_DIR=$PWD/FIRMWARE" >> $GITHUB_ENV
