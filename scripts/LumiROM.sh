@@ -17,7 +17,7 @@ IS_OFFICIAL() {
         echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
     fi
 
-    echo ">> $ROM_TAG detected."
+    echo "--- $ROM_TAG detected ---"
 }
 
 CHECK_FILE() {
