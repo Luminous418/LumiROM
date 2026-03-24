@@ -51,6 +51,8 @@ jobs:
         IS_OFFICIAL
 
     - name: Test
+      env:
+        LUMIROM_BUILD: ${{ secrets.LUMIROM_BUILD }}
       run: |
         CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
 
