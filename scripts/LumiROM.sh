@@ -1,7 +1,9 @@
 #!/bin/bash
 
 IS_OFFICIAL() {
-    CURRENT_SIGNATURE=$(echo -n "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
+    local LUMI_SIGN="$LUMIROM_BUILD"
+
+    CURRENT_SIGNATURE=$(echo -n "$LUMI_SIGN" | sha256sum | cut -d ' ' -f 1)
 
     OFFICIAL_HASH="53741c81c947cdb11bc332b0b70b603fb6f94421bfac040a7cd35ec145fa4195"
 
