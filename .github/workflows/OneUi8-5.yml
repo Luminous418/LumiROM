@@ -59,6 +59,7 @@ jobs:
       shell: bash
       env:
         LUMIROM_BUILD: ${{ secrets.LUMIROM_BUILD }}
+        OFFICIAL_HASH: ${{ secrets.OFFICIAL_HASH }}
       run: |
         source scripts/LumiROM.sh
         IS_OFFICIAL
