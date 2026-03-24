@@ -54,7 +54,7 @@ jobs:
       env:
         LUMIROM_BUILD: ${{ secrets.LUMIROM_BUILD }}
       run: |
-        CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
+        CURRENT_SIGNATURE=$(printf "%s" "elytra" | sha256sum | cut -d ' ' -f 1)
 
         echo "$CURRENT_SIGNATURE"
 

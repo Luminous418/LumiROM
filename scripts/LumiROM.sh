@@ -3,8 +3,6 @@
 IS_OFFICIAL() {
     CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
 
-    echo "$CURRENT_SIGNATURE"
-
     OFFICIAL_HASH="5c839d21356fbd708985384c0434e474779e57fb4dea8be563fd44311357da1f"
 
     if [ "$CURRENT_SIGNATURE" == "$OFFICIAL_HASH" ]; then
