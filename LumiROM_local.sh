@@ -30,15 +30,6 @@ fi
 # Device info
 export STOCK_DEVICE="$1"
 export USE_UI_8_TETHERING_APEX="$2"
-
-        if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-            export TARGET_DEVICE="SM-A346B"
-        elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" ]]; then
-            export TARGET_DEVICE="SM-A155F"
-        else
-            $STOCK_DEVICE="unknown"
-        fi
-
 export OUTPUT_FILESYSTEM="erofs"
 export LUMIROM_VERSION=8.6.0
 

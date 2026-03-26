@@ -1,6 +1,6 @@
 ![LumiROM Logo](LumiROM/logo/LumiROM.png)
 
-This custom ROM is created to provide a totally new experience to Mediatek Helio G80 devices such as A32, A22, M32...
+This custom ROM is created to provide a totally new experience to Low end Mediatek devices.
 - It is focused on stability while upgrading the android version so we can test new One Ui releases and adding new features such as Galaxy AI✨
 
 ## What it does?
