@@ -56,17 +56,16 @@ DOWNLOAD_FIRMWARE() {
     
     echo "Downloading ROM images for $STOCK_DEVICE"
 
-        if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-            gdown 19NWairTkaf9gImG6AkFcMc3_4uvz2YqD -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
-        elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" ]]; then
-            gdown 1oTWnFVL_A8qjzmFohjOJqMyjQaYQs-xR -O "${DOWN_DIR}/SM-A155F_OneUi85_firmware.zip"
-        else
-            $STOCK_DEVICE="unknown"
-        fi
+    if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
+        wget -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip" "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM_files/Base_FW/A345G.zip?sign=x3QaWkui4DkaeVzPInhKQX5L8wvuylHsqc1df7cm7I4=:0"
+    elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" ]]; then
+        wget -O "${DOWN_DIR}/SM-A155F_OneUi85_firmware.zip" "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM_files/Base_FW/A154G.zip?sign=4dZyqG5taFJ0gb2uNAq0ifVolCV4fcPpt4DH-CMrj3g=:0"
+    else
+        STOCK_DEVICE="unknown"
+    fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
     wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
-
 }
 
 EXTRACT_FIRMWARE() {
