@@ -422,15 +422,14 @@ HEX_PATCH() {
 
 
 PATCH_FLAG_SECURE() {
-	echo ""
+	echo -e ""
 	if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
+        echo -e "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
         return 1
     fi
 
-    # Remove screenshot secure flag
-	echo "Patching flag secure."
-	local FILE="${1}/smali_classes2/com/android/server/wm/WindowState.smali"
+	echo -e "Patching flag secure"
+	local FILE_1="${1}/smali_classes2/com/android/server/wm/WindowState.smali"
     local METHOD_NAME_1=".method public final isSecureLocked()Z"
     local REPLACE_BODY_1='
     .locals 1
@@ -439,8 +438,9 @@ PATCH_FLAG_SECURE() {
 
     return v0
     '
-    REPLACE_SMALI_METHOD "$FILE" "$METHOD_NAME_1" "$REPLACE_BODY_1"
-    
+    REPLACE_SMALI_METHOD "$FILE_1" "$METHOD_NAME_1" "$REPLACE_BODY_1"
+  
+	local FILE_2="${1}/smali_classes2/com/android/server/wm/WindowManagerService.smali"
     local METHOD_NAME_2=".method public final notifyScreenshotListeners(I)Ljava/util/List;"
     local REPLACE_BODY_2='
     .locals 3
@@ -479,8 +479,8 @@ PATCH_FLAG_SECURE() {
     invoke-direct {p0, p1}, Ljava/lang/SecurityException;-><init>(Ljava/lang/String;)V
 
     throw p0
-'    
-    REPLACE_SMALI_METHOD "$FILE" "$METHOD_NAME_2" "$REPLACE_BODY_2"
+    '
+    REPLACE_SMALI_METHOD "$FILE_2" "$METHOD_NAME_2" "$REPLACE_BODY_2"
 }
 
 
