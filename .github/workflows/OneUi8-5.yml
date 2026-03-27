@@ -15,9 +15,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    env:
-      SERVER: ${{ secrets.SERVER_DIR}}
       
     steps:
     - name: Checkout repository
@@ -69,6 +66,8 @@ jobs:
 
     - name: Download firmware
       shell: bash
+      env:
+        SERVER_DIR: ${{ secrets.SERVER_DIR }}
       run: |
         source scripts/LumiROM.sh
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
