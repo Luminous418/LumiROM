@@ -139,6 +139,8 @@ jobs:
         PATCH_KNOX_GUARD "$WORK_DIR/services"
         PATCH_FLAG_SECURE "$WORK_DIR/services"
         PATCH_SECURE_FOLDER "$WORK_DIR/services"
+        PATCH_PRIVATE_SHARE "$WORK_DIR/services"
+        DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
 
     - name: Recompile framework
       shell: bash

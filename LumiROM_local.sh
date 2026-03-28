@@ -3,6 +3,9 @@
 # This script does exactly the same as OneUi8-5.yml
 # but does all in local so no need to use GitHub
 
+# First use the setup_directories.sh script to setup directories (isn't obvious?)
+# Then use this script to build the ROM
+
 
 set -Eeuo pipefail
 
@@ -30,6 +33,7 @@ fi
 # Device info
 export STOCK_DEVICE="$1"
 export USE_UI_8_TETHERING_APEX="$2"
+export TARGET_DEVICE="$STOCK_DEVICE"
 export OUTPUT_FILESYSTEM="erofs"
 export LUMIROM_VERSION=8.6.0
 
@@ -82,12 +86,16 @@ DECOMPILE "$APKTOOL" "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/ssrm.jar"
 DECOMPILE "$APKTOOL" "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/services.jar" "$WORK_DIR"
 
 # Patch framework
+source "$(pwd)/scripts/Knox_script.sh"
 PATCH_SSRM "$WORK_DIR/ssrm"
 PATCH_KNOX_GUARD "$WORK_DIR/services"
 PATCH_FLAG_SECURE "$WORK_DIR/services"
 PATCH_SECURE_FOLDER "$WORK_DIR/services"
+PATCH_PRIVATE_SHARE "$WORK_DIR/services"
+DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
 
 # Recompile framework
+source "$(pwd)/scripts/LumiROM.sh"
 RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
 RECOMPILE "$APKTOOL" "$WORK_DIR/services" "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
 cp -fv "$WORK_DIR"/*.jar "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
