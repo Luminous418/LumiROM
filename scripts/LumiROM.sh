@@ -265,6 +265,7 @@ PATCH_FSTAB_EROFS() {
     local fstab_files="
         vendor/etc/fstab.mt6768
         vendor/etc/fstab.mt6769t
+        vendor/etc/fstab.mt6833
     "
     # Patch fstab to add EROFS
     for fstab in $fstab_files; do
