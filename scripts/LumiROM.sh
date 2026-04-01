@@ -237,7 +237,6 @@ DELETE_ICCC() {
         "$EXTRACTED_FIRM_DIR/vendor/etc/vintf/manifest/vendor.samsung.hardware.tlc.iccc@1.0-manifest.xml"
         "$EXTRACTED_FIRM_DIR/vendor/lib64/vendor.samsung.hardware.tlc.iccc@1.0-impl.so"
         "$EXTRACTED_FIRM_DIR/vendor/lib64/vendor.samsung.hardware.tlc.iccc@1.0.so"
-        "$EXTRACTED_FIRM_DIR/vendor/recovery-from-boot.p"
     )
 
     for file in "${targets[@]}"; do
@@ -250,6 +249,36 @@ DELETE_ICCC() {
     done
 
     echo "Wipe iccc completed"
+}
+
+DEBLOAT_VENDOR() {
+    local EXTRACTED_FIRM_DIR="$1"
+    echo "Starting Debloat..."
+
+    local targets=(
+        "$EXTRACTED_FIRM_DIR/vendor/bin/create_factory_efs_file"
+        "$EXTRACTED_FIRM_DIR/vendor/bin/factory"
+        "$EXTRACTED_FIRM_DIR/vendor/bin/install-recovery.sh"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/factory.ini"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/init/vendor_flash_recovery.rc"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/mmigroup"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/recovery-resource.dat"
+        "$EXTRACTED_FIRM_DIR/vendor/lib/modules"
+        "$EXTRACTED_FIRM_DIR/vendor/lost+found"
+        "$EXTRACTED_FIRM_DIR/vendor/recovery-from-boot.p"
+        "$EXTRACTED_FIRM_DIR/vendor/res"
+    )
+
+    for file in "${targets[@]}"; do
+        if [ -e "$file" ] || [ -L "$file" ]; then
+            sudo rm -rf "$file"
+            echo "Deleted $file"
+        else
+            echo "[Omitted] $file not found"
+        fi
+    done
+
+    echo "Vendor debloat completed"
 }
 
 PATCH_FSTAB_EROFS() {
@@ -294,7 +323,6 @@ PATCH_FSTAB_EROFS() {
 
     echo "--- EROFS patching completed ---"
 }
-
 
 INSTALL_FRAMEWORK() {
     if [ "$#" -ne 1 ]; then
