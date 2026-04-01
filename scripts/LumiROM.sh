@@ -65,7 +65,7 @@ DOWNLOAD_FIRMWARE() {
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
-    wget -q "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
+    wget -q "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
 }
 
 EXTRACT_FIRMWARE() {
@@ -237,7 +237,6 @@ DELETE_ICCC() {
         "$EXTRACTED_FIRM_DIR/vendor/etc/vintf/manifest/vendor.samsung.hardware.tlc.iccc@1.0-manifest.xml"
         "$EXTRACTED_FIRM_DIR/vendor/lib64/vendor.samsung.hardware.tlc.iccc@1.0-impl.so"
         "$EXTRACTED_FIRM_DIR/vendor/lib64/vendor.samsung.hardware.tlc.iccc@1.0.so"
-        "$EXTRACTED_FIRM_DIR/vendor/recovery-from-boot.p"
     )
 
     for file in "${targets[@]}"; do
@@ -250,6 +249,36 @@ DELETE_ICCC() {
     done
 
     echo "Wipe iccc completed"
+}
+
+DEBLOAT_VENDOR() {
+    local EXTRACTED_FIRM_DIR="$1"
+    echo "Starting Debloat..."
+
+    local targets=(
+        "$EXTRACTED_FIRM_DIR/vendor/bin/create_factory_efs_file"
+        "$EXTRACTED_FIRM_DIR/vendor/bin/factory"
+        "$EXTRACTED_FIRM_DIR/vendor/bin/install-recovery.sh"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/factory.ini"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/init/vendor_flash_recovery.rc"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/mmigroup"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/recovery-resource.dat"
+        "$EXTRACTED_FIRM_DIR/vendor/lib/modules"
+        "$EXTRACTED_FIRM_DIR/vendor/lost+found"
+        "$EXTRACTED_FIRM_DIR/vendor/recovery-from-boot.p"
+        "$EXTRACTED_FIRM_DIR/vendor/res"
+    )
+
+    for file in "${targets[@]}"; do
+        if [ -e "$file" ] || [ -L "$file" ]; then
+            sudo rm -rf "$file"
+            echo "Deleted $file"
+        else
+            echo "[Omitted] $file not found"
+        fi
+    done
+
+    echo "Vendor debloat completed"
 }
 
 PATCH_FSTAB_EROFS() {
@@ -265,6 +294,7 @@ PATCH_FSTAB_EROFS() {
     local fstab_files="
         vendor/etc/fstab.mt6768
         vendor/etc/fstab.mt6769t
+        vendor/etc/fstab.mt6833
     "
     # Patch fstab to add EROFS
     for fstab in $fstab_files; do
@@ -293,7 +323,6 @@ PATCH_FSTAB_EROFS() {
 
     echo "--- EROFS patching completed ---"
 }
-
 
 INSTALL_FRAMEWORK() {
     if [ "$#" -ne 1 ]; then
@@ -941,7 +970,7 @@ APPLY_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "skiavk"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "opengl"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.telephony.sim_slots.count" "2"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.protected_contents" "true"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.voip.enabled" "true"
