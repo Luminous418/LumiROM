@@ -66,6 +66,7 @@ DOWNLOAD_FIRMWARE() {
             eval "$DOWNLOAD_LINK"
         else
             gdown 13H5W6rptuTsqfidMivuibezLv_5nBuHu -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
+        fi
     else
         STOCK_DEVICE="unknown"
     fi
