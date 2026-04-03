@@ -53,14 +53,13 @@ DOWNLOAD_FIRMWARE() {
     DOWN_DIR="$2"
 
     mkdir -p "$DOWN_DIR" || return 1
-    CURRENT_LINK=$(printf "%s" "$DOWNLOAD_LINK" | sha256sum | cut -d ' ' -f 1)
     
     echo "Downloading ROM images for $STOCK_DEVICE"
 
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
         gdown 1JFBTb7SlAbFXmCAn7fIXOuE9VJX4x48U -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        CURRENT_LINK=$(printf "%s" "$DOWNLOAD_LINK" | sha256sum | cut -d ' ' -f 1)
+        CURRENT_LINK=$(printf "blob $(printf "%s" "$DOWNLOAD_LINK" | wc -c)\0%s" "$DOWNLOAD_LINK" | sha256sum | cut -d ' ' -f 1)
 
         if [ "$CURRENT_LINK" == "$LINK_HASH" ]; then
             echo "[+] Link hash matches. Downloading from provided link."
