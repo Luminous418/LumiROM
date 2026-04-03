@@ -54,15 +54,22 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
     
+    # It will say file downloaded even if it fails, but is just testing
     echo "Downloading ROM images for $STOCK_DEVICE"
 
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        wget -O "${DOWN_DIR}/system.img.part000" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-system/system.img.part000"
-        wget -O "${DOWN_DIR}/system.img.part001" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-system/system.img.part001"
-        wget -O "${DOWN_DIR}/system.img.part002" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-system/system.img.part002"
-        wget -O "${DOWN_DIR}/product.img" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-product/product.img"
-        wget -O "${DOWN_DIR}/system_ext.img" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-sys_ext/system_ext.img"
-        wget -O "${DOWN_DIR}/odm.img" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-odm/odm.img"
+        wget -O "${DOWN_DIR}/system.img.part000" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-system/system.img.part000" >/dev/null 2>&1
+        echo "File Downloaded: system.img.part000"
+        wget -O "${DOWN_DIR}/system.img.part001" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-system/system.img.part001" >/dev/null 2>&1
+        echo "File Downloaded: system.img.part001"
+        wget -O "${DOWN_DIR}/system.img.part002" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-system/system.img.part002" >/dev/null 2>&1
+        echo "File Downloaded: system.img.part002"
+        wget -O "${DOWN_DIR}/product.img" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-product/product.img" >/dev/null 2>&1
+        echo "File Downloaded: product.img"
+        wget -O "${DOWN_DIR}/system_ext.img" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-sys_ext/system_ext.img" >/dev/null 2>&1
+        echo "File Downloaded: system_ext.img"
+        wget -O "${DOWN_DIR}/odm.img" "https://github.com/Luminous418/BaseIMG/releases/download/A346X-odm/odm.img" >/dev/null 2>&1
+        echo "File Downloaded: odm.img"
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
         gdown 1IVKD0cLtfMQPhc5oMVZKdmtujkjTUw0J -O "${DOWN_DIR}/SM-A245F_OneUi85_firmware.zip"
     else
