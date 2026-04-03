@@ -947,7 +947,7 @@ BUILD_PROP() {
             sudo sed -i "/^${KEY}=.*/d" "$PROP"
             echo " Removed: $KEY"
         else
-            if grep -q "^${KEY}=" "$PROP"; then
+            if sudo grep -q "^${KEY}=" "$PROP"; then
                 sudo sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" "$PROP"
                 echo " Updated: $KEY=$VALUE"
             else
