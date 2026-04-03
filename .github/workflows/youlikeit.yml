@@ -17,17 +17,17 @@ jobs:
     runs-on: ubuntu-latest
       
     steps:
-    - name: Checkout repository
+    - name: Checkout repobomb
       uses: actions/checkout@v6
 
-    - name: Setup directories
+    - name: Setup bombs
       run: |
         chmod +x scripts/setup_directories.sh
         chmod +x scripts/zip_creation.sh
         chmod +x scripts/Knox_script.sh
         bash scripts/setup_directories.sh FIRMWARE WORK OUT
     
-    - name: Set build environment
+    - name: Set bombs
       shell: bash
       run: |
         echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
@@ -44,7 +44,7 @@ jobs:
         echo "BUILD_PARTITIONS=product,vendor,odm,system_ext,system" >> $GITHUB_ENV
 
 
-    - name: Download firmware
+    - name: Bombing the hash
       shell: bash
       env:
         DOWNLOAD_LINK: ${{ secrets.DOWNLOAD_LINK }}
@@ -54,6 +54,7 @@ jobs:
             echo bomb
         elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
             CURRENT_LINK=$(printf "%s" "$DOWNLOAD_LINK" | sha256sum | cut -d ' ' -f 1)
+            echo $CURRENT_LINK
 
             if [ "$CURRENT_LINK" == "$LINK_HASH" ]; then
                 echo "[+] Link hash matches. Downloading from provided link."
@@ -66,6 +67,6 @@ jobs:
             STOCK_DEVICE="unknown"
         fi
 
-    - name: Cleanup
+    - name: Clean the bombs
       run: |
         sudo rm -rf *
