@@ -1,0 +1,59 @@
+name: LumiROM Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      STOCK_DEVICE:
+        description: "Put the Model of your phone, remember it starts with SM-"
+        required: true
+        default: "SM-A225F"
+      USE_UI_8_TETHERING_APEX:
+        description: "Set True if your kernel BPF version is lower than 5.10"
+        required: true
+        default: "False"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Setup directories
+      run: |
+        chmod +x scripts/setup_directories.sh
+        chmod +x scripts/zip_creation.sh
+        chmod +x scripts/Knox_script.sh
+        bash scripts/setup_directories.sh FIRMWARE WORK OUT
+    
+    - name: Set build environment
+      shell: bash
+      run: |
+        echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
+        echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
+        echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
+        echo "LUMIROM_VERSION=8.6.1" >> $GITHUB_ENV
+
+        echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
+        echo "WORK_DIR=$PWD/WORK" >> $GITHUB_ENV
+        echo "FIRM_DIR=$PWD/FIRMWARE" >> $GITHUB_ENV
+        echo "DEVICES_DIR=$PWD/LumiROM/Devices" >> $GITHUB_ENV
+        echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
+        echo "VNDKS_COLLECTION=$PWD/LumiROM/vndks" >> $GITHUB_ENV
+        echo "BUILD_PARTITIONS=product,vendor,odm,system_ext,system" >> $GITHUB_ENV
+
+
+    - name: Download firmware
+      shell: bash
+      env:
+        DOWNLOAD_LINK: ${{ secrets.DOWNLOAD_LINK }}
+        LINK_HASH: ${{ secrets.LINK_HASH }}
+      run: |
+        source scripts/LumiROM.sh
+        source "$DEVICES_DIR/$STOCK_DEVICE/config"
+        DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$FIRM_DIR"
+
+    - name: Cleanup
+      run: |
+        sudo rm -rf *
