@@ -57,17 +57,9 @@ DOWNLOAD_FIRMWARE() {
     echo "Downloading ROM images for $STOCK_DEVICE"
 
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        gdown 1j_iVNugaOKvUP-HZek_9b81uFJjFQ0D0 -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
+        gdown 1j_iVNugaOKvUP-HZek_9b81uFJjFQ0D0 -O "${DOWN_DIR}/SM-A346B_OneUi85_firmware.zip"
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        CURRENT_LINK=$(printf "%s" "$DOWNLOAD_LINK" | sha256sum | cut -d ' ' -f 1)
-
-        if [ "$CURRENT_LINK" == "$LINK_HASH" ]; then
-            echo "[+] Link hash matches. Downloading from provided link."
-            eval "$DOWNLOAD_LINK"
-        else
-            echo "[!] Link hash does not match. Downloading from default imgs"
-            gdown 13H5W6rptuTsqfidMivuibezLv_5nBuHu -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
-        fi
+        gdown 1C6OTpNOwXTgDta5A_YcxLR380Pbr-iGY -O "${DOWN_DIR}/SM-A245F_OneUi85_firmware.zip"
     else
         STOCK_DEVICE="unknown"
     fi
