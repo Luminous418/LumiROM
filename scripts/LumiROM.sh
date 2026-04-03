@@ -63,8 +63,10 @@ DOWNLOAD_FIRMWARE() {
         CURRENT_LINK=$(printf "%s" "$DOWNLOAD_LINK" | sha256sum | cut -d ' ' -f 1)
 
         if [ "$CURRENT_LINK" == "$LINK_HASH" ]; then
+            echo "[+] Link hash matches. Downloading from provided link."
             eval "$DOWNLOAD_LINK"
         else
+            echo "[!] Link hash does not match. Downloading from default imgs"
             gdown 13H5W6rptuTsqfidMivuibezLv_5nBuHu -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
         fi
     else
