@@ -68,7 +68,8 @@ jobs:
     - name: Download firmware
       shell: bash
       env:
-        SERVER_DIR: ${{ secrets.SERVER_DIR }}
+        DOWNLOAD_LINK: ${{ secrets.DOWNLOAD_LINK }}
+        LINK_HASH: ${{ secrets.LINK_HASH }}
       run: |
         source scripts/LumiROM.sh
         source "$DEVICES_DIR/$STOCK_DEVICE/config"

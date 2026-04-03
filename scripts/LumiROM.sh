@@ -53,13 +53,19 @@ DOWNLOAD_FIRMWARE() {
     DOWN_DIR="$2"
 
     mkdir -p "$DOWN_DIR" || return 1
+    CURRENT_LINK=$(printf "%s" "$DOWNLOAD_LINK" | sha256sum | cut -d ' ' -f 1)
     
     echo "Downloading ROM images for $STOCK_DEVICE"
 
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        wget -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip" "https://${SERVER_DIR}A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
+        gdown 1JFBTb7SlAbFXmCAn7fIXOuE9VJX4x48U -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        wget -O "${DOWN_DIR}/SM-A155F_OneUi85_firmware.zip" "https://${SERVER_DIR}A155F.zip?sign=42KKwi4g2iTpzl9TmNYFWbechxpAqB6Qf-REAIbspI8=:0"
+        CURRENT_LINK=$(printf "%s" "$DOWNLOAD_LINK" | sha256sum | cut -d ' ' -f 1)
+
+        if [ "$CURRENT_LINK" == "$LINK_HASH" ]; then
+            eval "$DOWNLOAD_LINK"
+        else
+            gdown 13H5W6rptuTsqfidMivuibezLv_5nBuHu -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
     else
         STOCK_DEVICE="unknown"
     fi
