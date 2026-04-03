@@ -102,7 +102,7 @@ EXTRACT_FIRMWARE() {
         
         echo "  -> Joining parts for: $(basename "$output_file")"
         
-        cat "$output_file".part[0-9][0-9][0-9] > "$output_file"
+        cat "$output_file".part[0-9][0-9][0-9] > "$output_file" && sync
         
         rm -rf "$output_file".part[0-9][0-9][0-9]
     done
@@ -355,6 +355,8 @@ INSTALL_FRAMEWORK() {
         return 1
     fi
 
+    ls -lh "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
+    file "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
     # Installing stock overlay
     echo ""
     local framework_res_apk="$1"
