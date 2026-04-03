@@ -943,14 +943,14 @@ BUILD_PROP() {
         [ -f "$PROP" ] || continue
 
         if [ -z "$VALUE" ]; then
-            sed -i "/^${KEY}=.*/d" "$PROP"
+            sudo sed -i "/^${KEY}=.*/d" "$PROP"
             echo " Removed: $KEY"
         else
             if grep -q "^${KEY}=" "$PROP"; then
-                sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" "$PROP"
+                sudo sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" "$PROP"
                 echo " Updated: $KEY=$VALUE"
             else
-                echo "${KEY}=${VALUE}" >> "$PROP"
+                echo "${KEY}=${VALUE}" | sudo tee -a "$PROP" > /dev/null
                 echo " Added: $KEY=$VALUE"
             fi
         fi
