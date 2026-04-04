@@ -355,7 +355,7 @@ INSTALL_FRAMEWORK() {
         return 1
     fi
 
-    ls -lh "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
+    ls -lh "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
     file "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
     # Installing stock overlay
     echo ""
