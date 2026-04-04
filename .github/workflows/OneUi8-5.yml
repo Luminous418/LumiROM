@@ -120,44 +120,6 @@ jobs:
         source scripts/LumiROM.sh
         APPENDING_DISPLAY_ID "$FIRM_DIR/$TARGET_DEVICE"
 
-    - name: Install stock framework-res
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        INSTALL_FRAMEWORK \
-          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
-
-    - name: Decompile framework jars
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        DECOMPILE "$APKTOOL" \
-          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/ssrm.jar" "$WORK_DIR"
-        DECOMPILE "$APKTOOL" \
-          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/services.jar" "$WORK_DIR"
-
-    - name: Patch Knox
-      shell: bash
-      run: |
-        source scripts/Knox_script.sh
-        PATCH_SSRM "$WORK_DIR/ssrm"
-        PATCH_KNOX_GUARD "$WORK_DIR/services"
-        PATCH_FLAG_SECURE "$WORK_DIR/services"
-        PATCH_SECURE_FOLDER "$WORK_DIR/services"
-        PATCH_PRIVATE_SHARE "$WORK_DIR/services"
-        DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
-
-    - name: Recompile framework
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
-          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
-        RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
-          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework" "$WORK_DIR"
-        cp -fv "$WORK_DIR"/*.jar \
-          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
-
     - name: Build ROM
       shell: bash
       run: |
