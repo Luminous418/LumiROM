@@ -100,9 +100,9 @@ EXTRACT_FIRMWARE() {
         
         echo "  -> Joining parts for: $(basename "$output_file")"
         
-        cat system.img.xz.part* > system.img.xz
+        cat "$output_file".part* > "$output_file"
 
-        xz -d system.img.xz
+        xz -d "$output_file"
         
         rm -rf "$output_file".part[0-9][0-9][0-9]
     done
