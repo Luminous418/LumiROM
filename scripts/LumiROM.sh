@@ -330,10 +330,29 @@ INSTALL_FRAMEWORK() {
         return 1
     fi
 
-    # Installing stock overlay
-    echo ""
     local framework_res_apk="$1"
-    echo "Installing Framework."
+
+    echo "===== DEBUG INFO ====="
+    echo "Current dir:"
+    pwd
+
+    echo ""
+    echo "Contents (current dir):"
+    find . | sed 's|^\./||'
+
+    echo ""
+    echo "Checking framework path:"
+    echo "$framework_res_apk"
+
+    if [ -f "$framework_res_apk" ]; then
+        echo "FOUND framework-res.apk ✅"
+    else
+        echo "MISSING framework-res.apk ❌"
+    fi
+    echo "======================="
+
+    echo ""
+    echo "Installing Framework..."
     java -jar "$APKTOOL" install-framework "$framework_res_apk"
 }
 
