@@ -1086,15 +1086,30 @@ APPLY_FEATURES() {
 
 LUMI_BOMBS() {
     local EXTRACTED_FIRM_DIR="$1"
-    echo "- Applying LumiBombs..."
-    OVERLAY="$(pwd)/LumiROM/Mods/overlay"
+    OVERLAY="$(pwd)/LumiROM/Mods/overlays"
+
     if [ -d "$OVERLAY" ]; then
-        echo "  > Found overlay directory"
-        echo "  > Files to copy:"
-        find "$OVERLAY" -type f | sed "s|$OVERLAY/|    - |"
-        sudo cp -rfa "$OVERLAY/." "$EXTRACTED_FIRM_DIR/"
+        echo "Applying LumiBombs Mods..."
+
+        for MOD in "$OVERLAY"/*; do
+            [ -d "$MOD" ] || continue
+
+            MOD_NAME=$(basename "$MOD")
+            echo "Applying Mod: $MOD_NAME"
+
+            echo "  > Files:"
+            find "$MOD" -type f | sed "s|$MOD/|    - |"
+
+            # Copy mod into firmware
+            sudo rsync -a --delete "$MOD"/ "$EXTRACTED_FIRM_DIR"/
+
+            echo "Finished: $MOD_NAME"
+            echo "--------------------------------------------"
+        done
+
+        echo "All LumiBombs mods applied successfully"
     else
-        echo "  > No overlay found, skipping"
+        echo "No LumiBombs overlay found, skipping..."
     fi
 }
 
