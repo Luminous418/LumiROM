@@ -108,6 +108,12 @@ jobs:
         source scripts/LumiROM.sh
         APPLY_FEATURES "$FIRM_DIR/$TARGET_DEVICE"
 
+    - name: Apply LumiBombs
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        LUMI_BOMBS "$FIRM_DIR/$TARGET_DEVICE"
+
     - name: Update Build ID
       shell: bash
       run: |

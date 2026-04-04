@@ -846,7 +846,7 @@ APPLY_STOCK_CONFIG() {
 
     # Fix unsupported BPF error for kernels lower than 5.10.
     if [ "$USE_UI_8_TETHERING_APEX" = "True" ]; then
-        cp -rfa "$(pwd)/LumiROM/Mods/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
+        cp -rfa "$(pwd)/LumiROM/Mods/device_specific/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
     fi
 
 	# Replace Stock Files.
@@ -898,6 +898,7 @@ DEBLOAT() {
     REMOVE_ESIM_FILES "$EXTRACTED_FIRM_DIR"
 	REMOVE_FABRIC_CRYPTO "$EXTRACTED_FIRM_DIR"
     JDM_DEBLOAT "$EXTRACTED_FIRM_DIR"
+    DEODEX "$EXTRACTED_FIRM_DIR"
 	echo "- Deleting unnecessary files and folders."
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.bprof"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.prof"
@@ -906,6 +907,7 @@ DEBLOAT() {
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/tts"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/mediasearch"
 	rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/MediaSearch"
+
 
     if [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" ]]; then
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc-sec.so"
@@ -916,6 +918,13 @@ DEBLOAT() {
     
 }
 
+DEODEX() {
+    echo "- Deodexing ROM (removing oat folders)..."
+    echo "  > OAT folders to remove:"
+    find "$EXTRACTED_FIRM_DIR/system" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
+    sudo find "$EXTRACTED_FIRM_DIR/system" -type d -name "oat" -exec rm -rf {} +
+    echo "  > Deodex complete"
+}
 
 BUILD_PROP() {
     local EXTRACTED_FIRM_DIR="$1"
@@ -1070,36 +1079,23 @@ APPLY_FEATURES() {
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "false"
     fi
 
-    echo "- Adding Mods..."
-	if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
-        mkdir -p "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper"
-        cp -rfa "$(pwd)/LumiROM/Mods/Apps/AiWallpaper/"* "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper/"
-    fi
-
-	if [ ! -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull" ]; then
-	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailasso"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailassomatting"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/inpainting"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/objectremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/reflectionremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/shadowremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/style_transfer"
-	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
-        cp -rfa "$(pwd)/LumiROM/Mods/Apps/PhotoEditor_AIFull/"* "$EXTRACTED_FIRM_DIR/system/system/"
-		unzip -o "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip" -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/" >/dev/null 2>&1
-		rm -f "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip"
-    fi
-
-    # For every new mod, add it with all route, until I remake the script
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/bin/"* "$EXTRACTED_FIRM_DIR/system/system/bin/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/etc/"* "$EXTRACTED_FIRM_DIR/system/system/etc/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/vulkan_fix/system/system/lib64/"* "$EXTRACTED_FIRM_DIR/system/system/lib64/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/volte_fix/vendor/lib64/"* "$EXTRACTED_FIRM_DIR/vendor/lib64/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/tweaks/system/system/etc/init/"* "$EXTRACTED_FIRM_DIR/system/system/etc/init/"
-
     # Fix Samsung AI Photo Editor Crash.
 	sed -i '0,/"ModelType": "MODEL_TYPE_INSTANCE_CAPTURE"/s//"ModelType": "MODEL_TYPE_OBJ_INSTANCE_CAPTURE"/' "$EXTRACTED_FIRM_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json"
 
+}
+
+LUMI_BOMBS() {
+    local EXTRACTED_FIRM_DIR="$1"
+    echo "- Applying LumiBombs..."
+    OVERLAY="$(pwd)/LumiROM/Mods/overlay"
+    if [ -d "$OVERLAY" ]; then
+        echo "  > Found overlay directory"
+        echo "  > Files to copy:"
+        find "$OVERLAY" -type f | sed "s|$OVERLAY/|    - |"
+        sudo cp -rfa "$OVERLAY/." "$EXTRACTED_FIRM_DIR/"
+    else
+        echo "  > No overlay found, skipping"
+    fi
 }
 
 APPEND_DISPLAY_ID() {
