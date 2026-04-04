@@ -57,7 +57,7 @@ DOWNLOAD_FIRMWARE() {
     echo "Downloading ROM images for $STOCK_DEVICE"
 
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        wget -O "${DOWN_DIR}/SM-A346B_OneUi85_firmware.zip" "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
+        wget -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip" "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346E.zip?sign=knQcGWRr34MvrYyX20B7Q-miyafL9DAlhbye5neyoQI=:0"
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" ]]; then
         wget -O "${DOWN_DIR}/SM-A245F_OneUi85_firmware.zip" "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A245F.zip?sign=GpyvunbcV76xw7beb90jkAdYrmpaiUPNv_8uSf1LJ5Y=:0"
     else
