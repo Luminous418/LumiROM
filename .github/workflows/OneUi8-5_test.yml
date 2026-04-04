@@ -118,8 +118,7 @@ jobs:
       shell: bash
       run: |
         source scripts/LumiROM_test.sh
-        INSTALL_FRAMEWORK \
-          "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
+        INSTALL_FRAMEWORK
 
     - name: Decompile framework jars
       shell: bash

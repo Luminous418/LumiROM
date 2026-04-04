@@ -350,16 +350,9 @@ PATCH_FSTAB_EROFS() {
 }
 
 INSTALL_FRAMEWORK() {
-    if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <framework-res.apk>"
-        return 1
-    fi
-
-    ls -lh "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/"
-    file "$FIRM_DIR/$TARGET_DEVICE/system/system/framework/framework-res.apk"
-    # Installing stock overlay
+    # Installing base rom overlay
     echo ""
-    local framework_res_apk="$1"
+    local framework_res_apk="$(pwd)/LumiROM/framework-res.apk"
     echo "Installing Framework."
     java -jar "$APKTOOL" install-framework "$framework_res_apk"
 }
