@@ -102,7 +102,7 @@ EXTRACT_FIRMWARE() {
         
         echo "  -> Joining parts for: $(basename "$output_file")"
         
-        cat "$output_file".part000 "$output_file".part001 "$output_file".part002 > "$output_file" && sync
+        cat "$output_file".part[0-9][0-9][0-9] > "$output_file" && sync
         
         rm -rf "$output_file".part[0-9][0-9][0-9]
     done
