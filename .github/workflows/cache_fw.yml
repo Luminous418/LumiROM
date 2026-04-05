@@ -1,0 +1,35 @@
+name: Cache Firmware
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 0'
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set cache key
+        id: vars
+        run: echo "key=fw-${{ github.run_id }}" >> $GITHUB_OUTPUT
+
+      - name: Download firmware
+        run: |
+          mkdir -p FIRMWARE
+
+          echo "Downloading A34 firmware..."
+          wget -O FIRMWARE/A34.zip \
+          "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
+
+          echo "Downloading A24 firmware..."
+          wget -O FIRMWARE/A24.zip \
+          "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A245F.zip?sign=GpyvunbcV76xw7beb90jkAdYrmpaiUPNv_8uSf1LJ5Y=:0"
+
+      - name: Save cache
+        uses: actions/cache/save@v4
+        with:
+          path: FIRMWARE
+          key: ${{ steps.vars.outputs.key }}

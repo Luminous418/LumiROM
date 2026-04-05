@@ -54,14 +54,34 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
     
-    echo "Downloading ROM images for $STOCK_DEVICE"
+    echo "Preparing ROM images for $STOCK_DEVICE"
 
+    FW_FILE="${DOWN_DIR}/BASE_FW.zip"
+    FW_URL=""
+
+    # Determine FW URL and cached filename based on stock device
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        gdown 1KQIM4qWau2KWeGNo-rKPpU6Ifl6AR2jr -O "${DOWN_DIR}/SM-A346E_OneUi85_firmware.zip"
+        FW_URL="https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
+        CACHE_FW="${DOWN_DIR}/A34.zip"
+
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        gdown 1IVKD0cLtfMQPhc5oMVZKdmtujkjTUw0J -O "${DOWN_DIR}/SM-A245F_OneUi85_firmware.zip"
+        FW_URL="https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A245F.zip?sign=GpyvunbcV76xw7beb90jkAdYrmpaiUPNv_8uSf1LJ5Y=:0"
+        CACHE_FW="${DOWN_DIR}/A24.zip"
+
     else
-        STOCK_DEVICE="unknown"
+        echo "Unknown device: $STOCK_DEVICE"
+        return 1
+    fi
+
+    # Check for cached firmware and rename it
+    if [ -f "$CACHE_FW" ]; then
+        echo "Using cached firmware: $CACHE_FW"
+        mv "$CACHE_FW" "$FW_FILE"
+        # Remove any other zip files in the folder
+        find "$DOWN_DIR" -maxdepth 1 -type f -name '*.zip' ! -name 'BASE_FW.zip' -exec rm -f {} +
+    else
+        echo "Firmware not found, downloading..."
+        wget -O "$FW_FILE" "$FW_URL" || return 1
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
@@ -69,18 +89,27 @@ DOWNLOAD_FIRMWARE() {
 }
 
 EXTRACT_FIRMWARE() {
-	if [ "$#" -ne 1 ]; then
+    if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
     local FIRM_DIR="$1"
+    local ZIP="$FIRM_DIR/BASE_FW.zip"
 
     echo "Extracting downloaded firmware."
-    echo "- Extracting zip file."
-    find "$FIRM_DIR" -maxdepth 1 -name "*.zip" \
-        -exec 7z x -y -bd -o"$FIRM_DIR" {} \; >/dev/null 2>&1
-    rm -rf "$FIRM_DIR"/*.zip
+
+    if [ ! -f "$ZIP" ]; then
+        echo "Error: BASE_FW.zip not found in $FIRM_DIR"
+        return 1
+    fi
+
+    7z x -y -bd -o"$FIRM_DIR" "$ZIP" || {
+        echo "Extraction failed"
+        return 1
+    }
+
+    rm -f "$ZIP"
 }
 
 
@@ -846,7 +875,7 @@ APPLY_STOCK_CONFIG() {
 
     # Fix unsupported BPF error for kernels lower than 5.10.
     if [ "$USE_UI_8_TETHERING_APEX" = "True" ]; then
-        cp -rfa "$(pwd)/LumiROM/Mods/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
+        cp -rfa "$(pwd)/LumiROM/Mods/device_specific/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
     fi
 
 	# Replace Stock Files.
@@ -898,6 +927,7 @@ DEBLOAT() {
     REMOVE_ESIM_FILES "$EXTRACTED_FIRM_DIR"
 	REMOVE_FABRIC_CRYPTO "$EXTRACTED_FIRM_DIR"
     JDM_DEBLOAT "$EXTRACTED_FIRM_DIR"
+    DEODEX "$EXTRACTED_FIRM_DIR"
 	echo "- Deleting unnecessary files and folders."
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.bprof"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.prof"
@@ -906,6 +936,7 @@ DEBLOAT() {
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/tts"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/mediasearch"
 	rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/MediaSearch"
+
 
     if [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" ]]; then
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc-sec.so"
@@ -916,6 +947,13 @@ DEBLOAT() {
     
 }
 
+DEODEX() {
+    echo "- Deodexing ROM (removing oat folders)..."
+    echo "  > OAT folders to remove:"
+    find "$EXTRACTED_FIRM_DIR/system" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
+    sudo find "$EXTRACTED_FIRM_DIR/system" -type d -name "oat" -exec rm -rf {} +
+    echo "  > Deodex complete"
+}
 
 BUILD_PROP() {
     local EXTRACTED_FIRM_DIR="$1"
@@ -967,7 +1005,7 @@ APPLY_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "opengl"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "skiavk"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.telephony.sim_slots.count" "2"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.protected_contents" "true"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.voip.enabled" "true"
@@ -1070,36 +1108,37 @@ APPLY_FEATURES() {
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "false"
     fi
 
-    echo "- Adding Mods..."
-	if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
-        mkdir -p "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper"
-        cp -rfa "$(pwd)/LumiROM/Mods/Apps/AiWallpaper/"* "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper/"
-    fi
-
-	if [ ! -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull" ]; then
-	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailasso"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailassomatting"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/inpainting"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/objectremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/reflectionremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/shadowremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/style_transfer"
-	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
-        cp -rfa "$(pwd)/LumiROM/Mods/Apps/PhotoEditor_AIFull/"* "$EXTRACTED_FIRM_DIR/system/system/"
-		unzip -o "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip" -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/" >/dev/null 2>&1
-		rm -f "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip"
-    fi
-
-    # For every new mod, add it with all route, until I remake the script
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/bin/"* "$EXTRACTED_FIRM_DIR/system/system/bin/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/etc/"* "$EXTRACTED_FIRM_DIR/system/system/etc/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/vulkan_fix/system/system/lib64/"* "$EXTRACTED_FIRM_DIR/system/system/lib64/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/volte_fix/vendor/lib64/"* "$EXTRACTED_FIRM_DIR/vendor/lib64/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/tweaks/system/system/etc/init/"* "$EXTRACTED_FIRM_DIR/system/system/etc/init/"
-
     # Fix Samsung AI Photo Editor Crash.
 	sed -i '0,/"ModelType": "MODEL_TYPE_INSTANCE_CAPTURE"/s//"ModelType": "MODEL_TYPE_OBJ_INSTANCE_CAPTURE"/' "$EXTRACTED_FIRM_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json"
 
+}
+
+LUMI_BOMBS() {
+    OVERLAY="$(pwd)/LumiROM/Mods/overlays"
+
+    if [ -d "$OVERLAY" ]; then
+        echo "Applying LumiBombs Mods..."
+
+        for MOD in "$OVERLAY"/*; do
+            [ -d "$MOD" ] || continue
+
+            MOD_NAME=$(basename "$MOD")
+            echo "Applying Mod: $MOD_NAME"
+
+            echo "  > Files:"
+            find "$MOD" -type f | sed "s|$MOD/|    - |"
+
+            # Copy mod into firmware
+            sudo rsync -a "$MOD"/ "$EXTRACTED_FIRM_DIR"/
+
+            echo "Finished: $MOD_NAME"
+            echo "--------------------------------------------"
+        done
+
+        echo "All LumiBombs mods applied successfully"
+    else
+        echo "No LumiBombs overlay found, skipping..."
+    fi
 }
 
 APPEND_DISPLAY_ID() {
