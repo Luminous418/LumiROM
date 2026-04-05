@@ -26,7 +26,7 @@ jobs:
 
           echo "Downloading A34 firmware..."
           wget -O firmware/SM-A346E_OneUi85_firmware.zip \
-          "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346E.zip?sign=knQcGWRr34MvrYyX20B7Q-miyafL9DAlhbye5neyoQI=:0"
+          "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
 
           echo "Downloading A24 firmware..."
           wget -O firmware/SM-A245F_OneUi85_firmware.zip \
