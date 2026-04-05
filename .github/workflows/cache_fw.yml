@@ -16,20 +16,20 @@ jobs:
         uses: actions/cache@v4
         id: cache-fw
         with:
-          path: firmware
-          key: fw-bundle-v2
+          path: FIRMWARE
+          key: fw-bundle-v3
 
       - name: Download firmware if missing
         if: steps.cache-fw.outputs.cache-hit != 'true'
         run: |
-          mkdir -p firmware
+          mkdir -p FIRMWARE
 
           echo "Downloading A34 firmware..."
-          wget -O firmware/SM-A346E_OneUi85_firmware.zip \
+          wget -O FIRMWARE/SM-A346E_OneUi85_firmware.zip \
           "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
 
           echo "Downloading A24 firmware..."
-          wget -O firmware/SM-A245F_OneUi85_firmware.zip \
+          wget -O FIRMWARE/SM-A245F_OneUi85_firmware.zip \
           "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A245F.zip?sign=GpyvunbcV76xw7beb90jkAdYrmpaiUPNv_8uSf1LJ5Y=:0"
 
       - name: Save cache
@@ -37,4 +37,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: firmware
-          key: fw-bundle-v2
+          key: fw-bundle-v3
