@@ -70,7 +70,9 @@ jobs:
       id: firmware-cache
       with:
         path: FIRMWARE
-        key: fw-bundle-v4
+        key: fw-latest
+        restore-keys: |
+          fw-
 
     - name: Download firmware
       shell: bash

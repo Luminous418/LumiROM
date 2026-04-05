@@ -3,7 +3,7 @@ name: Cache Firmware
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * 0'  # every Sunday
+    - cron: '0 3 * * 0'
 
 jobs:
   cache:
@@ -12,29 +12,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Restore cache (if exists)
-        uses: actions/cache@v4
-        id: cache-fw
-        with:
-          path: FIRMWARE
-          key: fw-bundle-v4
+      - name: Set cache key
+        id: vars
+        run: echo "key=fw-${{ github.run_id }}" >> $GITHUB_OUTPUT
 
-      - name: Download firmware if missing
-        if: steps.cache-fw.outputs.cache-hit != 'true'
+      - name: Download firmware
         run: |
           mkdir -p FIRMWARE
 
           echo "Downloading A34 firmware..."
-          wget -O FIRMWARE/SM-A346E_OneUi85_firmware.zip \
+          wget -O FIRMWARE/A34.zip \
           "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
 
           echo "Downloading A24 firmware..."
-          wget -O FIRMWARE/SM-A245F_OneUi85_firmware.zip \
+          wget -O FIRMWARE/A24.zip \
           "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A245F.zip?sign=GpyvunbcV76xw7beb90jkAdYrmpaiUPNv_8uSf1LJ5Y=:0"
 
       - name: Save cache
-        if: steps.cache-fw.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: FIRMWARE
-          key: fw-bundle-v4
+          key: ${{ steps.vars.outputs.key }}

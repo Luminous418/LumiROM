@@ -56,26 +56,34 @@ DOWNLOAD_FIRMWARE() {
     
     echo "Preparing ROM images for $STOCK_DEVICE"
 
-    FW_FILE=""
+    FW_FILE="${DOWN_DIR}/BASE_FW.zip"
     FW_URL=""
 
+    # Determine FW URL based on stock device
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        FW_FILE="${DOWN_DIR}/OneUi85_firmware.zip"
         FW_URL="https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
+        CACHE_FW="${DOWN_DIR}/A34.zip"
 
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        FW_FILE="${DOWN_DIR}/OneUi85_firmware.zip"
         FW_URL="https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A245F.zip?sign=GpyvunbcV76xw7beb90jkAdYrmpaiUPNv_8uSf1LJ5Y=:0"
+        CACHE_FW="${DOWN_DIR}/A24.zip"
+
     else
         echo "Unknown device: $STOCK_DEVICE"
         return 1
     fi
 
-    if [ -f "$FW_FILE" ]; then
-        echo "Using cached firmware: $FW_FILE"
+    # Check for cached firmware
+    if [ -f "$CACHE_FW" ]; then
+        echo "Using cached firmware: $CACHE_FW"
+        mv "$CACHE_FW" "$FW_FILE"
+        # Remove any other zip files in the directory
+        find "$DOWN_DIR" -maxdepth 1 -type f -name '*.zip' ! -name 'BASE_FW.zip' -exec rm -f {} +
     else
-        echo "Firmware not found, downloading..."
-        wget -O "$FW_FILE" "$FW_URL"
+        echo "Firmware not cached yet, downloading..."
+        wget -O "$FW_FILE" "$FW_URL" || return 1
+        # Save a copy for caching
+        cp "$FW_FILE" "$CACHE_FW"
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
@@ -83,18 +91,27 @@ DOWNLOAD_FIRMWARE() {
 }
 
 EXTRACT_FIRMWARE() {
-	if [ "$#" -ne 1 ]; then
+    if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
     local FIRM_DIR="$1"
+    local ZIP="$FIRM_DIR/BASE_FW.zip"
 
     echo "Extracting downloaded firmware."
-    echo "- Extracting zip file."
-    find "$FIRM_DIR" -maxdepth 1 -name "*.zip" \
-        -exec 7z x -y -bd -o"$FIRM_DIR" {} \; >/dev/null 2>&1
-    rm -rf "$FIRM_DIR"/*.zip
+
+    if [ ! -f "$ZIP" ]; then
+        echo "Error: BASE_FW.zip not found in $FIRM_DIR"
+        return 1
+    fi
+
+    7z x -y -bd -o"$FIRM_DIR" "$ZIP" || {
+        echo "Extraction failed"
+        return 1
+    }
+
+    rm -f "$ZIP"
 }
 
 
