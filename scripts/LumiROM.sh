@@ -59,7 +59,7 @@ DOWNLOAD_FIRMWARE() {
     FW_FILE="${DOWN_DIR}/BASE_FW.zip"
     FW_URL=""
 
-    # Determine FW URL based on stock device
+    # Determine FW URL and cached filename based on stock device
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
         FW_URL="https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
         CACHE_FW="${DOWN_DIR}/A34.zip"
@@ -73,17 +73,15 @@ DOWNLOAD_FIRMWARE() {
         return 1
     fi
 
-    # Check for cached firmware
+    # Check for cached firmware and rename it
     if [ -f "$CACHE_FW" ]; then
         echo "Using cached firmware: $CACHE_FW"
         mv "$CACHE_FW" "$FW_FILE"
-        # Remove any other zip files in the directory
+        # Remove any other zip files in the folder
         find "$DOWN_DIR" -maxdepth 1 -type f -name '*.zip' ! -name 'BASE_FW.zip' -exec rm -f {} +
     else
-        echo "Firmware not cached yet, downloading..."
+        echo "Firmware not found, downloading..."
         wget -O "$FW_FILE" "$FW_URL" || return 1
-        # Save a copy for caching
-        cp "$FW_FILE" "$CACHE_FW"
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
