@@ -17,7 +17,7 @@ jobs:
         id: cache-fw
         with:
           path: FIRMWARE
-          key: fw-bundle-v3
+          key: fw-bundle-v4
 
       - name: Download firmware if missing
         if: steps.cache-fw.outputs.cache-hit != 'true'
@@ -37,4 +37,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: FIRMWARE
-          key: fw-bundle-v3
+          key: fw-bundle-v4
