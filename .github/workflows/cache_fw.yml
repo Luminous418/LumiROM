@@ -1,0 +1,40 @@
+name: Cache Firmware
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 0'  # every Sunday
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore cache (if exists)
+        uses: actions/cache@v4
+        id: cache-fw
+        with:
+          path: firmware
+          key: fw-bundle-v1
+
+      - name: Download firmware if missing
+        if: steps.cache-fw.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p firmware
+
+          echo "Downloading A34 firmware..."
+          wget -O firmware/SM-A346E_OneUi85_firmware.zip \
+          "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346E.zip?sign=knQcGWRr34MvrYyX20B7Q-miyafL9DAlhbye5neyoQI=:0"
+
+          echo "Downloading A24 firmware..."
+          wget -O firmware/SM-A245F_OneUi85_firmware.zip \
+          "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A245F.zip?sign=GpyvunbcV76xw7beb90jkAdYrmpaiUPNv_8uSf1LJ5Y=:0"
+
+      - name: Save cache
+        if: steps.cache-fw.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: firmware
+          key: fw-bundle-v1
