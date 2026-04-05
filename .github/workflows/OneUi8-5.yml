@@ -69,8 +69,8 @@ jobs:
       uses: actions/cache@v4
       id: firmware-cache
       with:
-        path: firmware
-        key: fw-bundle-v1
+        path: FIRMWARE
+        key: fw-bundle-v4
 
     - name: Download firmware
       shell: bash
