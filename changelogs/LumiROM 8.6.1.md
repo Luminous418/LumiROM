@@ -6,6 +6,7 @@
 - Added new wallpapers on the ROM, be sure to check them all going to wallpapers app, then select wallpaper and choose the default one, then tap below where it says "Other styles" to check the new walls!, there is some S26 walls aswell as one that I always use (I put it for default).
 - Fixed VoLTE
 - Added some stock props for get better perfomance on daily based tasks.
+- Also added mods to quick panel, now is more resizable!
 - Added A226B (Galaxy A22 5G) support as OFFICIAL builds.
 - New A34 base: A346EXXUEFZC6 with 05-04-2026 security patch.
 - New A24 base: A245FXXUBFZD1 with 05-04-2026 security patch.
