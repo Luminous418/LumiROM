@@ -1202,136 +1202,109 @@ APPENDING_DISPLAY_ID() {
     APPEND_DISPLAY_ID "$1" "LumiROM $LUMIROM_VERSION $BUILD_STATUS Stable"
 }
 
-########################################
-# GENERATE FS_CONFIG
-########################################
 GEN_FS_CONFIG() {
     local EXTRACTED_FIRM_DIR="${1%/}"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
-        local PARTITION=$(basename "$ROOT")
+        PARTITION=$(basename "$ROOT")
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-        [[ ! -f "$FS_CONFIG" ]] && touch "$FS_CONFIG"
 
-        echo "--- Synchronizing FS_CONFIG for $PARTITION ---"
+        echo "--- Synchronizing $PARTITION ---"
 
-        # Special handling for vendor
         if [[ "$PARTITION" == "vendor" ]]; then
+            echo "  [*] Fixing vendor_fs_config..."
+            
             local TMP_CLEAN=$(mktemp)
-            awk '{
+            
+            sudo awk '{
                 gsub(/^\//, "", $1);
-                if (length($4)==4 && substr($4,1,1)=="0") $4=substr($4,2);
-                if ($1 ~ /^(vendor|lost)/ && NF >= 4) print $1, $2, $3, $4
+                if (length($4) == 4 && substr($4, 1, 1) == "0") $4 = substr($4, 2);
+                if ($1 ~ /^(vendor|lost)/ && NF >= 4) {
+                    print $1, $2, $3, $4
+                }
             }' "$FS_CONFIG" > "$TMP_CLEAN"
+            
+            # Script removes it, so hardcoded to be added again
             echo "/ 0 2000 755" >> "$TMP_CLEAN"
             echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
             echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
-            sort -k1,1 -u "$TMP_CLEAN" > "$FS_CONFIG"
+            
+            sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" > /dev/null
+            
             rm "$TMP_CLEAN"
+            echo "  [+] vendor_fs_config fixed."
+        fi
+        
+        if [[ ! -f "$FS_CONFIG" ]]; then
+            echo "--- Creating new fs_config for $PARTITION ---"
+            echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
         fi
 
-        # Scan files and directories
-        declare -A existing
-        while read -r line; do existing["$line"]=1; done < "$FS_CONFIG" || true
-
-        find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
+        sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
             [[ -z "$ENTRY" ]] && continue
-            [[ -n "${existing[$ENTRY]}" ]] && continue
-            existing["$ENTRY"]=1
-
-            local REL_PATH="${ENTRY#$PARTITION/}"
-            if [[ -d "$ROOT/$REL_PATH" ]]; then
-                echo "$ENTRY 0 0 0755" >> "$FS_CONFIG"
-            else
-                echo "$ENTRY 0 0 0644" >> "$FS_CONFIG"
+            
+            if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
+                local REL_PATH="${ENTRY#$PARTITION/}"
+                if [[ -d "$ROOT/$REL_PATH" ]]; then
+                    echo "  [+] Adding DIR: $ENTRY"
+                    echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
+                else
+                    echo "  [+] Adding FILE: $ENTRY"
+                    echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
+                fi
             fi
         done
     done
 }
 
-########################################
-# GENERATE FILE_CONTEXTS
-########################################
 GEN_FILE_CONTEXTS() {
     local EXTRACTED_FIRM_DIR="${1%/}"
 
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
-        local PARTITION=$(basename "$ROOT")
+        PARTITION=$(basename "$ROOT")
         [[ "$PARTITION" == "config" ]] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
         [[ ! -f "$FILE_CONTEXTS" ]] && touch "$FILE_CONTEXTS"
 
-        echo "--- Syncing file contexts for $PARTITION ---"
+        echo "--- Syncing contexts for: $PARTITION ---"
+        
+        local TMP_EXISTING=$(mktemp)
+        sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
 
-        declare -A existing
-        while read -r line; do
-            line="${line//\\/}"  # remove backslashes
-            existing["$line"]=1
-        done < "$FILE_CONTEXTS" || true
+        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
+            
+            if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
+                echo "  [+] Context for: $PATH_ENTRY"
+                
+                local CONTEXT="u:object_r:system_file:s0"
 
-        find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
-            [[ -n "${existing[$PATH_ENTRY]}" ]] && continue
-            existing["$PATH_ENTRY"]=1
+                if [[ "$PARTITION" == "vendor" ]]; then
+                    CONTEXT="u:object_r:vendor_file:s0"
+                
+                elif [[ "$PARTITION" == "system" || "$PARTITION" == "product" ]]; then
+                    if [[ "$PATH_ENTRY" == *.so ]]; then
+                        CONTEXT="u:object_r:system_lib_file:s0"
+                    else
+                        CONTEXT="u:object_r:system_file:s0"
+                    fi
+                fi
 
-            local CONTEXT="u:object_r:system_file:s0"
-            if [[ "$PARTITION" == "vendor" ]]; then
-                CONTEXT="u:object_r:vendor_file:s0"
-            elif [[ "$PARTITION" == "system" || "$PARTITION" == "product" ]]; then
-                [[ "$PATH_ENTRY" == *.so ]] && CONTEXT="u:object_r:system_lib_file:s0"
+                local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
+                
+                echo "$ESCAPED_PATH $CONTEXT" >> "$FILE_CONTEXTS"
+                
+                echo "$PATH_ENTRY" >> "$TMP_EXISTING"
             fi
-
-            echo "$PATH_ENTRY $CONTEXT" >> "$FILE_CONTEXTS"
         done
+        rm "$TMP_EXISTING"
     done
 }
 
-########################################
-# BUILD SINGLE PARTITION IMAGE
-########################################
-BUILD_SINGLE_PARTITION() {
-    local PART="$1"
-    local EXTRACTED_FIRM_DIR="$2"
-    local OUT_DIR="$3"
-    local FILE_SYSTEM="$4"
-    local OP_LIST="$5"
-
-    local PARTITION=$(basename "$PART")
-    [[ "$PARTITION" == "config" ]] && return
-
-    local SRC_DIR="$EXTRACTED_FIRM_DIR/$PARTITION"
-    local OUT_IMG="$OUT_DIR/${PARTITION}.img"
-    local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-    local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-
-    [[ ! -f "$FS_CONFIG" ]] && { echo "Warning: $FS_CONFIG missing, skipping $PARTITION"; return; }
-    [[ ! -f "$FILE_CONTEXTS" ]] && { echo "Warning: $FILE_CONTEXTS missing, skipping $PARTITION"; return; }
-
-    sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
-    sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-
-    echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-    ./bin/erofs-utils/mkfs.erofs \
-        --mount-point="/$PARTITION" \
-        --fs-config-file="$FS_CONFIG" \
-        --file-contexts="$FILE_CONTEXTS" \
-        -z lz4hc -b 4096 -T 1640995200 \
-        "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
-
-    # Update image size in op_list
-    if [[ -f "$OUT_IMG" && -f "$OP_LIST" ]]; then
-        local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
-        sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
-    fi
-}
-
-########################################
-# BUILD ALL PARTITIONS
-########################################
 BUILD_IMG() {
     if [ "$#" -ne 3 ]; then
         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR> <FILE_SYSTEM> <OUT_DIR>"
@@ -1340,33 +1313,73 @@ BUILD_IMG() {
 
     local EXTRACTED_FIRM_DIR="$1"
     local FILE_SYSTEM="$2"
-    local OUT_DIR="$3"
+	local OUT_DIR="$3"
     local DEVICE_CONFIG="$(pwd)/LumiROM/Devices/${STOCK_DEVICE}/config"
     local OP_LIST="$(pwd)/template/dynamic_partitions_op_list"
 
-    # Update super size if available
-    if [[ -f "$DEVICE_CONFIG" && -f "$OP_LIST" ]]; then
+    if [[ -f "$DEVICE_CONFIG" ]]; then
         local SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')
-        [[ -n "$SUPER_SIZE" ]] && sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
+        
+        # Update the super size on the list according to the device
+        if [[ -n "$SUPER_SIZE" && -f "$OP_LIST" ]]; then
+            echo -e "\e[32mUpdating super size on op_list: $SUPER_SIZE bytes\e[0m"
+            sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
+        else
+            echo "Warning: STOCK_SUPER_SIZE hasn't been found on $DEVICE_CONFIG"
+        fi
+    else
+        echo "Error: config file not found"
     fi
 
+
     GEN_FS_CONFIG "$EXTRACTED_FIRM_DIR"
-    GEN_FILE_CONTEXTS "$EXTRACTED_FIRM_DIR"
+	GEN_FILE_CONTEXTS "$EXTRACTED_FIRM_DIR"
 
-    mkdir -p "$OUT_DIR"
-
-    # Parallel build
     for PART in "$EXTRACTED_FIRM_DIR"/*; do
-        [[ -d "$PART" ]] || continue
-        [[ "$(basename "$PART")" == "config" ]] && continue
-        BUILD_SINGLE_PARTITION "$PART" "$EXTRACTED_FIRM_DIR" "$OUT_DIR" "$FILE_SYSTEM" "$OP_LIST" &
+        [[ -d "$PART" ]] || continue    
+        PARTITION="$(basename "$PART")"
+        [[ "$PARTITION" == "config" ]] && continue 
+
+        local SRC_DIR="$EXTRACTED_FIRM_DIR/$PARTITION"
+        local OUT_IMG="$OUT_DIR/${PARTITION}.img"
+        local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+        local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
+        local SIZE=$(sudo du -sb --apparent-size "$SRC_DIR" | awk '{printf "%.0f", $1 * 1.2}')
+		local MOUNT_POINT="/$PARTITION"
+
+
+        echo ""
+        [[ -f "$FS_CONFIG" ]] || { echo "Warning: $FS_CONFIG missing, skipping $PARTITION"; continue; }
+        [[ -f "$FILE_CONTEXTS" ]] || { echo "Warning: $FILE_CONTEXTS missing, skipping $PARTITION"; continue; }
+
+        sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
+        sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
+        sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/
+
+        if [[ "$FILE_SYSTEM" == "erofs" ]]; then
+            echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
+            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
+            sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
+        else
+            echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
+            continue
+        fi
+
+        # Updates the img size on the list 
+        if [[ -f "$OUT_IMG" ]]; then
+            local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
+            echo -e "\e[32mUpdating size of $PARTITION in op_list: $ACTUAL_SIZE bytes\e[0m"
+            
+            # Updates the img size on the resize lines to be able to be flashed
+            if [[ -f "$OP_LIST" ]]; then
+                sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
+            else
+                echo "Warning: $OP_LIST hasn't been found."
+            fi
+        fi
     done
-    wait
 }
 
-########################################
-# CONVERT IMG → SDAT → BROTLI
-########################################
 IMG_TO_BROTLI() {
     if [ "$#" -ne 2 ]; then
         echo "Usage: ${FUNCNAME[0]} <IMG_DIR> <TMP_DIR>"
@@ -1378,16 +1391,62 @@ IMG_TO_BROTLI() {
     local IMG2SDAT_BIN="$(pwd)/bin/img2sdat/img2sdat"
 
     mkdir -p "$TMP_DIR"
+
+    # Check if img2sdat binary exists
+    if [[ ! -f "$IMG2SDAT_BIN" ]]; then
+        echo "Error: img2sdat binary not found at $IMG2SDAT_BIN"
+        return 1
+    fi
+
     chmod +x "$IMG2SDAT_BIN"
 
-    echo "=== Converting IMG to SDAT (parallel) ==="
-    find "$IMG_DIR" -name '*.img' | xargs -P8 -I{} bash -c '
-        PART=$(basename {} .img)
-        '"$IMG2SDAT_BIN"' -o "'"$TMP_DIR"'" -B "'"$TMP_DIR"'/$PART.map" "{}"
-        touch "'"$TMP_DIR"'/$PART.patch.dat"
-    '
+    # This is for compressing to .new.dat
+    echo "=== Converting IMG to SDAT ==="
 
-    echo "=== Compressing DAT files with Brotli (parallel) ==="
-    find "$TMP_DIR" -name '*.new.dat' | xargs -P8 -I{} brotli -f --quality=6 --output={}.br {}
+    for f in "$IMG_DIR"/*.img; do
+        [[ -f "$f" ]] || continue
+
+        PARTITION="$(basename "$f" .img)"
+
+        echo "Converting $PARTITION.img..."
+
+        "$IMG2SDAT_BIN" \
+            -o "$TMP_DIR" \
+            -B "$TMP_DIR/$PARTITION.map" \
+            "$f"
+
+        
+        if [ $? -ne 0 ]; then
+            echo "Error converting $PARTITION"
+            return 1
+        fi
+        
+        touch "$TMP_DIR/$PARTITION.patch.dat"
+        echo "Created patch.dat for $PARTITION"
+    done
+
+    # Compress it to .new.dat.br to make later a .zip file
+    echo ""
+    echo "=== Compressing DAT files with Brotli ==="
+
+    for DAT in "$TMP_DIR"/*.new.dat; do
+        [[ -f "$DAT" ]] || continue
+
+        PARTITION="$(basename "$DAT" .new.dat)"
+        OUT_FILE="$TMP_DIR/$PARTITION.new.dat.br"
+
+        echo "Compressing $PARTITION.new.dat..."
+
+        brotli -f --quality=6 \
+               --output="$OUT_FILE" \
+               "$DAT"
+
+        if [ $? -ne 0 ]; then
+            echo "Error compressing $PARTITION"
+            return 1
+        fi
+    done
+
+    echo ""
     echo "All partitions converted and compressed successfully."
 }
