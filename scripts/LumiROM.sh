@@ -1119,6 +1119,8 @@ LUMI_BOMBS() {
     if [ -d "$OVERLAY" ]; then
         echo "Applying LumiBombs Mods..."
 
+        # Add every mod that is on Mods/overlay folder
+        # Need to be added like /system/system/priv-app/(file or folder)
         for MOD in "$OVERLAY"/*; do
             [ -d "$MOD" ] || continue
 
