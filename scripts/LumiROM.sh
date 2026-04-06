@@ -1135,7 +1135,7 @@ LUMI_BOMBS() {
             find "$MOD" -type f | sed "s|$MOD/|    - |"
 
             # Copy mod into firmware
-            sudo rsync -a "$MOD"/ "$EXTRACTED_FIRM_DIR"/
+            sudo rsync -a "$MOD"/ "FIRMWARE"/
 
             echo "Finished: $MOD_NAME"
             echo "--------------------------------------------"
