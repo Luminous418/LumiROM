@@ -48,6 +48,9 @@ Update your device model in the STOCK_DEVICE_MODEL option.
 - If your model is available in /LumiROM/Device folder of this repository, the tool will work for your device.
 - If your model is not present, it will not work
 
+Quick reminder: FOD devices will use FOD bases, Side-FP will use Side-FP bases<br>
+like if you have an A32, will use A34 base, and if you have A22, will use A24 base.
+
 #### 4. Kernel BPF Version Option:
 Set this option to True if your kernel BPF version is 5.4 (lower than 5.10).
 - Otherwise, set it to False.
