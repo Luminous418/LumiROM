@@ -21,12 +21,12 @@ jobs:
           mkdir -p FIRMWARE
 
           echo "Downloading A34 firmware..."
-          wget -O FIRMWARE/A34.zip \
-          "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A346B.zip?sign=nSPfUDaOWHgPp9J_w-sb56skCDdlDC6hZIB7tYekoC0=:0"
+          wget -O FIRMWARE/A34.tar.zst \
+          "https://huggingface.co/buckets/Zears14/lumifiles/resolve/A346E.tar.zst?download=true"
 
           echo "Downloading A24 firmware..."
-          wget -O FIRMWARE/A24.zip \
-          "https://h3cked.qzz.io/d/H3CKED_HDD/LumiROM/Base_FW/A245F.zip?sign=GpyvunbcV76xw7beb90jkAdYrmpaiUPNv_8uSf1LJ5Y=:0"
+          wget -O FIRMWARE/A24.tar.zst \
+          "https://huggingface.co/buckets/Zears14/lumifiles/resolve/A245F.tar.zst?download=true"
 
       - name: Save cache
         uses: actions/cache/save@v4
