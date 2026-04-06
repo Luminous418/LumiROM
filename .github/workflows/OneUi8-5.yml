@@ -62,15 +62,6 @@ jobs:
         source scripts/LumiROM.sh
         IS_OFFICIAL
 
-    - name: Restore firmware cache
-      uses: actions/cache@v4
-      id: firmware-cache
-      with:
-        path: FIRMWARE
-        key: fw-latest
-        restore-keys: |
-          fw-
-
     - name: Download firmware
       shell: bash
       run: |

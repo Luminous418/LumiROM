@@ -73,16 +73,9 @@ DOWNLOAD_FIRMWARE() {
         return 1
     fi
 
-    # Check for cached firmware and rename it
-    if [ -f "$CACHE_FW" ]; then
-        echo "Using cached firmware: $CACHE_FW"
-        mv "$CACHE_FW" "$FW_FILE"
-        # Remove any other compressed files in the folder
-        find "$DOWN_DIR" -maxdepth 1 -type f -name '*.tar.zst' ! -name 'BASE_FW.tar.zst' -exec rm -f {} +
-    else
-        echo "Firmware not found, downloading..."
-        aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.tar.zst" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
-    fi
+
+    echo "Firmware downloading..."
+    aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.tar.zst" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
     aria2c -x 16 -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img"
