@@ -1,7 +1,7 @@
 name: Debug Secret
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
 jobs:
   print-secret:
@@ -12,7 +12,11 @@ jobs:
 
       - name: Print encoded secret
         env:
-          MY_SECRET: ${{ secrets.MY_SECRET }}   # Replace with your secret name
+          LUMIROM_BUILD: ${{ secrets.LUMIROM_BUILD }}   # Make this match your secret name
         run: |
-          echo "Secret length: ${LUMIROM_BUILD}"
-          echo "Base64 encoded secret: $(echo -n "$MY_SECRET" | base64)"
+          if [ -z "$LUMIROM_BUILD" ]; then
+            echo "Secret is empty or not found!"
+          else
+            echo "Secret length: ${#LUMIROM_BUILD}"
+            echo "Base64 encoded secret: $(echo -n "$LUMIROM_BUILD" | base64)"
+          fi
