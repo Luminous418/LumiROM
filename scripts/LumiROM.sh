@@ -1203,6 +1203,15 @@ APPENDING_DISPLAY_ID() {
 }
 
 ########################################
+# MAKE CONFIG WRITABLE
+########################################
+MAKE_CONFIG_WRITABLE() {
+    local EXTRACTED_FIRM_DIR="${1%/}"
+    echo "--- Making config writable ---"
+    sudo chmod -R u+w "$EXTRACTED_FIRM_DIR/config"
+}
+
+########################################
 # GENERATE FS_CONFIG
 ########################################
 GEN_FS_CONFIG() {
@@ -1214,39 +1223,40 @@ GEN_FS_CONFIG() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-        [[ ! -f "$FS_CONFIG" ]] && touch "$FS_CONFIG"
+        [[ ! -f "$FS_CONFIG" ]] && sudo touch "$FS_CONFIG"
 
         echo "--- Synchronizing FS_CONFIG for $PARTITION ---"
 
-        # Special handling for vendor
         if [[ "$PARTITION" == "vendor" ]]; then
-            local TMP_CLEAN=$(mktemp)
-            awk '{
+            local TMP_CLEAN
+            TMP_CLEAN=$(mktemp)
+            sudo awk '{
                 gsub(/^\//, "", $1);
                 if (length($4)==4 && substr($4,1,1)=="0") $4=substr($4,2);
                 if ($1 ~ /^(vendor|lost)/ && NF >= 4) print $1, $2, $3, $4
             }' "$FS_CONFIG" > "$TMP_CLEAN"
-            echo "/ 0 2000 755" >> "$TMP_CLEAN"
-            echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
-            echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
-            sort -k1,1 -u "$TMP_CLEAN" > "$FS_CONFIG"
+
+            echo "/ 0 2000 755" | sudo tee -a "$TMP_CLEAN" >/dev/null
+            echo "vendor/lost+found 0 0 700" | sudo tee -a "$TMP_CLEAN" >/dev/null
+            echo "vendor/bin/toolbox 0 2000 755" | sudo tee -a "$TMP_CLEAN" >/dev/null
+
+            sudo sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" >/dev/null
             rm "$TMP_CLEAN"
         fi
 
-        # Scan files and directories
         declare -A existing
         while read -r line; do existing["$line"]=1; done < "$FS_CONFIG" || true
 
-        find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
+        sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
             [[ -z "$ENTRY" ]] && continue
             [[ -n "${existing[$ENTRY]}" ]] && continue
             existing["$ENTRY"]=1
 
             local REL_PATH="${ENTRY#$PARTITION/}"
             if [[ -d "$ROOT/$REL_PATH" ]]; then
-                echo "$ENTRY 0 0 0755" >> "$FS_CONFIG"
+                echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" >/dev/null
             else
-                echo "$ENTRY 0 0 0644" >> "$FS_CONFIG"
+                echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" >/dev/null
             fi
         done
     done
@@ -1264,17 +1274,17 @@ GEN_FILE_CONTEXTS() {
         [[ "$PARTITION" == "config" ]] && continue
 
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        [[ ! -f "$FILE_CONTEXTS" ]] && touch "$FILE_CONTEXTS"
+        [[ ! -f "$FILE_CONTEXTS" ]] && sudo touch "$FILE_CONTEXTS"
 
         echo "--- Syncing file contexts for $PARTITION ---"
 
         declare -A existing
         while read -r line; do
-            line="${line//\\/}"  # remove backslashes
+            line="${line//\\/}"
             existing["$line"]=1
         done < "$FILE_CONTEXTS" || true
 
-        find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
+        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
             [[ -n "${existing[$PATH_ENTRY]}" ]] && continue
             existing["$PATH_ENTRY"]=1
 
@@ -1285,7 +1295,7 @@ GEN_FILE_CONTEXTS() {
                 [[ "$PATH_ENTRY" == *.so ]] && CONTEXT="u:object_r:system_lib_file:s0"
             fi
 
-            echo "$PATH_ENTRY $CONTEXT" >> "$FILE_CONTEXTS"
+            echo "$PATH_ENTRY $CONTEXT" | sudo tee -a "$FILE_CONTEXTS" >/dev/null
         done
     done
 }
@@ -1311,21 +1321,21 @@ BUILD_SINGLE_PARTITION() {
     [[ ! -f "$FS_CONFIG" ]] && { echo "Warning: $FS_CONFIG missing, skipping $PARTITION"; return; }
     [[ ! -f "$FILE_CONTEXTS" ]] && { echo "Warning: $FILE_CONTEXTS missing, skipping $PARTITION"; return; }
 
-    sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
-    sort -u "$FS_CONFIG" -o "$FS_CONFIG"
+    sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
+    sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
 
     echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-    ./bin/erofs-utils/mkfs.erofs \
+    sudo ./bin/erofs-utils/mkfs.erofs \
         --mount-point="/$PARTITION" \
         --fs-config-file="$FS_CONFIG" \
         --file-contexts="$FILE_CONTEXTS" \
         -z lz4hc -b 4096 -T 1640995200 \
         "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
 
-    # Update image size in op_list
     if [[ -f "$OUT_IMG" && -f "$OP_LIST" ]]; then
-        local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
-        sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
+        local ACTUAL_SIZE
+        ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
+        sudo sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
     fi
 }
 
@@ -1333,21 +1343,16 @@ BUILD_SINGLE_PARTITION() {
 # BUILD ALL PARTITIONS
 ########################################
 BUILD_IMG() {
-    if [ "$#" -ne 3 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR> <FILE_SYSTEM> <OUT_DIR>"
-        return 1
-    fi
-
     local EXTRACTED_FIRM_DIR="$1"
     local FILE_SYSTEM="$2"
     local OUT_DIR="$3"
     local DEVICE_CONFIG="$(pwd)/LumiROM/Devices/${STOCK_DEVICE}/config"
     local OP_LIST="$(pwd)/template/dynamic_partitions_op_list"
 
-    # Update super size if available
     if [[ -f "$DEVICE_CONFIG" && -f "$OP_LIST" ]]; then
-        local SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')
-        [[ -n "$SUPER_SIZE" ]] && sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
+        local SUPER_SIZE
+        SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')
+        [[ -n "$SUPER_SIZE" ]] && sudo sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
     fi
 
     GEN_FS_CONFIG "$EXTRACTED_FIRM_DIR"
@@ -1355,7 +1360,6 @@ BUILD_IMG() {
 
     mkdir -p "$OUT_DIR"
 
-    # Parallel build
     for PART in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$PART" ]] || continue
         [[ "$(basename "$PART")" == "config" ]] && continue
@@ -1368,26 +1372,21 @@ BUILD_IMG() {
 # CONVERT IMG → SDAT → BROTLI
 ########################################
 IMG_TO_BROTLI() {
-    if [ "$#" -ne 2 ]; then
-        echo "Usage: ${FUNCNAME[0]} <IMG_DIR> <TMP_DIR>"
-        return 1
-    fi
-
     local IMG_DIR="$1"
     local TMP_DIR="$2"
     local IMG2SDAT_BIN="$(pwd)/bin/img2sdat/img2sdat"
 
     mkdir -p "$TMP_DIR"
-    chmod +x "$IMG2SDAT_BIN"
+    sudo chmod +x "$IMG2SDAT_BIN"
 
-    echo "=== Converting IMG to SDAT (parallel) ==="
+    echo "=== Converting IMG to SDAT ==="
     find "$IMG_DIR" -name '*.img' | xargs -P8 -I{} bash -c '
         PART=$(basename {} .img)
         '"$IMG2SDAT_BIN"' -o "'"$TMP_DIR"'" -B "'"$TMP_DIR"'/$PART.map" "{}"
         touch "'"$TMP_DIR"'/$PART.patch.dat"
     '
 
-    echo "=== Compressing DAT files with Brotli (parallel) ==="
+    echo "=== Compressing DAT files with Brotli ==="
     find "$TMP_DIR" -name '*.new.dat' | xargs -P8 -I{} brotli -f --quality=6 --output={}.br {}
     echo "All partitions converted and compressed successfully."
 }
