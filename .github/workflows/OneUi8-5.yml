@@ -19,9 +19,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
-  
-    - name: Cleaning junk files
-      uses: rokibhasansagar/slimhub_actions@v25.42.5
 
     - name: Install required packages
       run: |
