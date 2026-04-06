@@ -1122,23 +1122,34 @@ LUMI_BOMBS() {
 
     if [ -d "$OVERLAY" ]; then
         echo "Applying LumiBombs Mods..."
+        echo "SOURCE ROOT: $OVERLAY"
+        echo "TARGET ROOT: $(pwd)/FIRMWARE"
+        echo "============================================"
 
-        # Add every mod that is on Mods/overlay folder
-        # Need to be added like /system/system/priv-app/(file or folder)
         for MOD in "$OVERLAY"/*; do
             [ -d "$MOD" ] || continue
 
             MOD_NAME=$(basename "$MOD")
             echo "Applying Mod: $MOD_NAME"
+            echo "--------------------------------------------"
 
-            echo "  > Files:"
+            echo "  > SOURCE DIR:"
+            echo "    $MOD"
+
+            echo "  > FILES:"
             find "$MOD" -type f | sed "s|$MOD/|    - |"
 
-            # Copy mod into firmware
-            sudo rsync -a "$MOD"/ "FIRMWARE"/
+            echo "  > DESTINATION ROOT:"
+            echo "    $(pwd)/FIRMWARE"
+
+            echo "  > RESULTING PATHS:"
+            find "$MOD" -type f | sed "s|$MOD|$(pwd)/FIRMWARE|"
+
+            echo "  > COPYING (rsync output):"
+            sudo rsync -av "$MOD"/ "FIRMWARE"/
 
             echo "Finished: $MOD_NAME"
-            echo "--------------------------------------------"
+            echo "============================================"
         done
 
         echo "All LumiBombs mods applied successfully"
