@@ -49,7 +49,7 @@ UPDATE_ZIP_SCRIPT() {
       
         sed -i "s!^getprop(\"ro.boot.em.model\").*!$NEW_CHECK!" "$UPDATER_PATH"
 
-        sed -i "s!ui_print(\".*for .*\");!ui_print(\"        $LUMIROM_VERSION-$BUILD_DATE $BUILD_STATUS for $DISPLAY_NAME\");!" "$UPDATER_PATH"
+        sed -i "s!ui_print(\".*for .*\");!ui_print(\"   $LUMIROM_VERSION-$BUILD_DATE $BUILD_STATUS for $DISPLAY_NAME\");!" "$UPDATER_PATH"
 
 }
 
