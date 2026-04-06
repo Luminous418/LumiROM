@@ -1148,7 +1148,7 @@ LUMI_BOMBS() {
             find "$MOD" -type f | sed "s|$MOD|$(pwd)/FIRMWARE|"
 
             echo "  > COPYING (rsync output):"
-            sudo rsync -av "$MOD"/ "FIRMWARE"/
+            rsync -av "$MOD"/ "FIRMWARE"/
 
             echo "Finished: $MOD_NAME"
             echo "============================================"
