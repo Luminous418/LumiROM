@@ -1,8 +1,0 @@
-ota-required-cache=0
-ota-type=BLOCK
-post-build=samsung/dm1qxxx/dm1q:15/AP3A.240905.015.A2/S911BXXS8DYF1:user/release-keys
-post-build-incremental=S911BXXS8DYF1
-post-sdk-level=15
-post-security-patch-level=2025-06-01
-post-timestamp=1748586544
-pre-device=m52xq
