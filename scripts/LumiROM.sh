@@ -81,11 +81,14 @@ DOWNLOAD_FIRMWARE() {
         find "$DOWN_DIR" -maxdepth 1 -type f -name '*.tar.zst' ! -name 'BASE_FW.tar.zst' -exec rm -f {} +
     else
         echo "Firmware not found, downloading..."
-        aria2c -x 16 -o "BASE_FW.tar.zst" "$FW_URL" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.tar.zst" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
-    aria2c -x 16 -o "vendor.img" "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img"
+    aria2c -x 16 -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img"
+    
+    # Cleanup any leftover .aria2 control files
+    find "$DOWN_DIR" -name "*.aria2" -exec rm -f {} +
 }
 
 EXTRACT_FIRMWARE() {
