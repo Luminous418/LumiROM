@@ -1101,6 +1101,10 @@ APPLY_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.use_bg_keeping_policy_light" "true"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.use_camera_boost" "true"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.use_lowmem_keep_except" "true"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "audio.safemedia.bypass" "true"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.vendor.camera.expose.aux" "1"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist" "com.sec.android.app.camera,com.samsung.android.scan3d"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist2" "com.simplemobiletools.camera,net.sourceforge.opencamera,com.google.android.googlequicksearchbox,com.google.android.apps.translate,com.google.ar.lens,com.google.android.apps.bard"
 
     if [ "$BUILD_STATUS" == "OFFICIAL" ]; then
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "true"
