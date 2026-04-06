@@ -1114,6 +1114,9 @@ APPLY_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.vendor.camera.expose.aux" "1"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist" "com.sec.android.app.camera,com.samsung.android.scan3d"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist2" "com.simplemobiletools.camera,net.sourceforge.opencamera,com.google.android.googlequicksearchbox,com.google.android.apps.translate,com.google.ar.lens,com.google.android.apps.bard"
+	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.show_multiuserui" "1"
+	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.max_users" "5"
+	
 
     if [ "$BUILD_STATUS" == "OFFICIAL" ]; then
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "true"
