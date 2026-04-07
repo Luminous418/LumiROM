@@ -22,7 +22,8 @@ jobs:
 
     - name: Install required packages
       run: |
-        sudo apt install -y \
+        sudo apt update -q
+        sudo apt install -y -q \
           p7zip-full lz4 android-sdk-libsparse-utils \
           python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2
         pip3 install liblp tgcrypto pyrogram gdown
@@ -46,7 +47,7 @@ jobs:
         echo "LUMIROM_VERSION=8.6.1" >> $GITHUB_ENV
 
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
-        echo "WORK_DIR=$PWD/WORK" >> $GITHUB_ENV
+        echo "WORK_DIR=/dev/shm/WORK" >> $GITHUB_ENV
         echo "FIRM_DIR=$PWD/FIRMWARE" >> $GITHUB_ENV
         echo "DEVICES_DIR=$PWD/LumiROM/Devices" >> $GITHUB_ENV
         echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
@@ -138,9 +139,10 @@ jobs:
       run: |
         source scripts/LumiROM.sh
         DECOMPILE "$APKTOOL" \
-          "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR"
+          "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
         DECOMPILE "$APKTOOL" \
-          "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR"
+          "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+        wait
 
     - name: Patch Knox
       shell: bash
@@ -158,9 +160,10 @@ jobs:
       run: |
         source scripts/LumiROM.sh
         RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
-          "FIRMWARE/system/system/framework" "$WORK_DIR"
+          "FIRMWARE/system/system/framework" "$WORK_DIR" &
         RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
-          "FIRMWARE/system/system/framework" "$WORK_DIR"
+          "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        wait
         cp -fv "$WORK_DIR"/*.jar \
           "FIRMWARE/system/system/framework/"
 
