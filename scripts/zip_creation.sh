@@ -65,7 +65,7 @@ FLASHABLE_ZIP_CREATION() {
     local DEVICE="$STOCK_DEVICE"
     local WS_ROOT="$(pwd)"
     local TEMPLATE_DIR="$WS_ROOT/template"
-    local TMP_DIR="$WS_ROOT/TMP"
+    local TMP_DIR="${TMP_DIR:-$WS_ROOT/TMP}"
 
     # 1. Gather Metadata and Boot
     if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then DEVICE_CODENAME="a32"
@@ -120,7 +120,7 @@ FLASHABLE_ZIP_CREATION() {
         (
             cd "$TMP_DIR"
             RUN_SILENT 7z a -mx=0 -mmt "$OUT_DIR/$ZIP_FILE" \
-                ./*.new.dat.br ./*.patch.dat
+                ./*.new.dat.br ./*.patch.dat ./*.transfer.list
         )
     fi
 

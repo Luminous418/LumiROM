@@ -4,6 +4,7 @@ import os
 import subprocess
 import shutil
 import sys
+import signal
 from datetime import datetime
 
 class LumiROMBuilder:
@@ -34,6 +35,7 @@ class LumiROMBuilder:
             "OUTPUT_FILESYSTEM": "erofs",
             "LUMIROM_VERSION": "8.6.1",
             "OUT_DIR": os.path.join(self.ws_root, "OUT"),
+            "TMP_DIR": os.path.join(self.ws_root, "TMP"),
             "WORK_DIR": "/dev/shm/WORK",
             "FIRM_DIR": os.path.join(self.ws_root, "FIRMWARE"),
             "DEVICES_DIR": os.path.join(self.ws_root, "LumiROM/Devices"),
@@ -275,7 +277,17 @@ class LumiROMBuilder:
         subprocess.run(["find", "bin/", "-type", "f", "!", "-path", "bin/img2sdat/img2sdat", "-exec", "chmod", "0644", "{}", "+"], check=False)
         print("Cleanup complete.")
 
+def signal_handler(sig, frame):
+    """Handle interrupt signals by cleaning up and exiting."""
+    print("\n\n[!] Build interrupted. Cleaning up transient workspace...")
+    LumiROMBuilder.clean()
+    sys.exit(130)
+
 def main():
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     parser = argparse.ArgumentParser(description="LumiROM Build System")
     subparsers = parser.add_subparsers(dest="command", required=True, help="Available commands")
 
