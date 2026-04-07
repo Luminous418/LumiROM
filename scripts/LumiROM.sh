@@ -394,7 +394,7 @@ INSTALL_FRAMEWORK() {
 
     # Installing stock overlay
     echo "Installing Framework..."
-    java -jar "$APKTOOL" install-framework "$framework_res_apk"
+    RUN_SILENT java -jar "$APKTOOL" install-framework "$framework_res_apk"
 }
 
 

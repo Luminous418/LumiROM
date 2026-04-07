@@ -158,7 +158,7 @@ jobs:
         source scripts/LumiROM.sh
         
         # Install framework-res first (needed for decompile)
-        RUN_SILENT java -jar "$APKTOOL" install-framework "FIRMWARE/system/system/framework/framework-res.apk"
+        INSTALL_FRAMEWORK "FIRMWARE/system/system/framework/framework-res.apk"
         
         # Start Decompilation in background
         echo "--- Decompiling framework jars ---"
