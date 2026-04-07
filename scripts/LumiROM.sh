@@ -1,5 +1,10 @@
 # --- Helper Functions ---
 RUN_SILENT() {
+    if [ "$LUMI_VERBOSE" = "true" ]; then
+        "$@"
+        return $?
+    fi
+    
     local LOG_FILE=$(mktemp)
     if ! "$@" > "$LOG_FILE" 2>&1; then
         echo -e "\e[31m[!] Command FAILED: $*\e[0m"
@@ -121,7 +126,7 @@ EXTRACT_FIRMWARE() {
     fi
 
     echo "--- Extracting firmware ---"
-    RUN_SILENT "Extracting" tar --use-compress-program="zstd -d -T0 --long=29" -xf "$FIRM_FILE" -C "$FIRM_DIR"
+    RUN_SILENT tar --use-compress-program="zstd -d -T0 --long=29" -xf "$FIRM_FILE" -C "$FIRM_DIR"
 
     rm -f "$FIRM_FILE"
 }

@@ -11,6 +11,10 @@ on:
         description: "Set True if your kernel BPF version is lower than 5.10"
         required: true
         default: "False"
+      VERBOSE:
+        description: "Set True to see all logs (useful for debugging)"
+        required: false
+        default: "False"
 
 jobs:
   build:
@@ -81,6 +85,7 @@ jobs:
         echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
         echo "VNDKS_COLLECTION=$PWD/LumiROM/vndks" >> $GITHUB_ENV
         echo "BUILD_PARTITIONS=product,vendor,odm,system_ext,system" >> $GITHUB_ENV
+        echo "LUMI_VERBOSE=${{ github.event.inputs.VERBOSE }}" >> $GITHUB_ENV
 
     - name: Check repo
       shell: bash
@@ -153,12 +158,12 @@ jobs:
         source scripts/LumiROM.sh
         
         # Install framework-res first (needed for decompile)
-        RUN_SILENT "Install Framework" java -jar "$APKTOOL" install-framework "FIRMWARE/system/system/framework/framework-res.apk"
+        RUN_SILENT java -jar "$APKTOOL" install-framework "FIRMWARE/system/system/framework/framework-res.apk"
         
         # Start Decompilation in background
         echo "--- Decompiling framework jars ---"
-        RUN_SILENT "Decompile SSRM" java -jar "$APKTOOL" d -f "FIRMWARE/system/system/framework/ssrm.jar" -o "$WORK_DIR/ssrm" &
-        RUN_SILENT "Decompile Services" java -jar "$APKTOOL" d -f "FIRMWARE/system/system/framework/services.jar" -o "$WORK_DIR/services" &
+        RUN_SILENT java -jar "$APKTOOL" d -f "FIRMWARE/system/system/framework/ssrm.jar" -o "$WORK_DIR/ssrm" &
+        RUN_SILENT java -jar "$APKTOOL" d -f "FIRMWARE/system/system/framework/services.jar" -o "$WORK_DIR/services" &
         
         # Wait for decompilation to finish before patching
         wait
@@ -174,8 +179,8 @@ jobs:
         
         # Recompile in parallel
         echo "--- Recompiling framework jars ---"
-        RUN_SILENT "Recompile SSRM" java -jar "$APKTOOL" b "$WORK_DIR/ssrm" --copy-original -p "$WORK_DIR" -o "$WORK_DIR/ssrm_built.jar" &
-        RUN_SILENT "Recompile Services" java -jar "$APKTOOL" b "$WORK_DIR/services" --copy-original -p "$WORK_DIR" -o "$WORK_DIR/services_built.jar" &
+        RUN_SILENT java -jar "$APKTOOL" b "$WORK_DIR/ssrm" --copy-original -p "$WORK_DIR" -o "$WORK_DIR/ssrm_built.jar" &
+        RUN_SILENT java -jar "$APKTOOL" b "$WORK_DIR/services" --copy-original -p "$WORK_DIR" -o "$WORK_DIR/services_built.jar" &
         wait
         
         cp -fv "$WORK_DIR"/*_built.jar "FIRMWARE/system/system/framework/"

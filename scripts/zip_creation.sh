@@ -96,7 +96,7 @@ FLASHABLE_ZIP_CREATION() {
     echo "  Adding scripts and metadata (Compress)..."
     (
         cd "$TEMPLATE_DIR"
-        RUN_SILENT "Compress Archive (Base)" 7z a -mx=6 -mmt=4 "$WS_ROOT/$ZIP_FILE" \
+        RUN_SILENT 7z a -mx=6 -mmt=4 "$WS_ROOT/$ZIP_FILE" \
             ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list
     ) 2>/dev/null || true
 
@@ -105,7 +105,7 @@ FLASHABLE_ZIP_CREATION() {
         echo "  Appending large ROM assets (Store)..."
         (
             cd "$TMP_DIR"
-            RUN_SILENT "Compress Archive (Assets)" 7z a -mx=0 -mmt=4 "$WS_ROOT/$ZIP_FILE" \
+            RUN_SILENT 7z a -mx=0 -mmt=4 "$WS_ROOT/$ZIP_FILE" \
                 ./*.new.dat.br ./*.patch.dat
         ) 2>/dev/null || true
     fi
