@@ -54,67 +54,62 @@ UPDATE_ZIP_SCRIPT() {
 }
 
 FLASHABLE_ZIP_CREATION() {
+    local EXTRACTED_FIRM_DIR="$1"
+    local BUILD_DATE=$(date +'%d%m%Y')
+    local TIMESTAMP=$(date +'%s')
+    local DEVICE="$STOCK_DEVICE"
+    local WS_ROOT="$(pwd)"
+    local TEMPLATE_DIR="$WS_ROOT/template"
+    local TMP_DIR="$WS_ROOT/TMP"
+
+    # 1. Gather Metadata and Boot
+    if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then DEVICE_CODENAME="a32"
+    elif [[ "$DEVICE" == "SM-A225F" ]]; then DEVICE_CODENAME="a22"
+    elif [[ "$DEVICE" == "SM-A225M" ]]; then DEVICE_CODENAME="a22ub"
+    elif [[ "$DEVICE" == "SM-A226B" ]]; then DEVICE_CODENAME="a22x"
+    elif [[ "$DEVICE" == "SM-M325F" ]]; then DEVICE_CODENAME="m32"
+    elif [[ "$DEVICE" == "SM-E225F" ]]; then DEVICE_CODENAME="f22"
+    elif [[ "$DEVICE" == "SM-M225F" ]]; then DEVICE_CODENAME="m22"
+    else DEVICE_CODENAME="unknown"; fi
+
+    echo "--- Preparing Flashable ZIP ($DEVICE_CODENAME) ---"
     
-        BUILD_DATE=$(date +'%d%m%Y')
-        TIMESTAMP=$(date +'%s')
-        DEVICE="$STOCK_DEVICE"
+    # Generate build info
+    {
+        echo "device=$DEVICE_CODENAME"
+        echo "version=$LUMIROM_VERSION-$BUILD_DATE"
+        echo "timestamp=$TIMESTAMP"
+        echo "status=$BUILD_STATUS"
+    } > "$TEMPLATE_DIR/build_info.txt"
 
-        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
-            DEVICE_CODENAME="a32"
-        elif [[ "$DEVICE" == "SM-A225F" ]]; then
-            DEVICE_CODENAME="a22"
-        elif [[ "$DEVICE" == "SM-A225M" ]]; then
-            DEVICE_CODENAME="a22ub"
-        elif [[ "$DEVICE" == "SM-A226B" ]]; then
-            DEVICE_CODENAME="a22x"
-        elif [[ "$DEVICE" == "SM-M325F" ]]; then
-            DEVICE_CODENAME="m32"
-        elif [[ "$DEVICE" == "SM-E225F" ]]; then
-            DEVICE_CODENAME="f22"
-        elif [[ "$DEVICE" == "SM-M225F" ]]; then
-            DEVICE_CODENAME="m22"
-        else
-            DEVICE_CODENAME="unknown"
-        fi
+    # Copy boot.img if specific one exists
+    local SPECIFIC_BOOT="$WS_ROOT/LumiROM/Devices/$DEVICE/boot.img"
+    if [ -f "$SPECIFIC_BOOT" ]; then
+        cp "$SPECIFIC_BOOT" "$TEMPLATE_DIR/boot.img"
+    fi
 
-        TEMPLATE_DIR="$(pwd)/template"
-        mkdir -p "$TEMPLATE_DIR"
+    # 2. ZIP Creation (Multi-stage Zero Copy)
+    local ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
+    [ -f "$WS_ROOT/$ZIP_FILE" ] && rm "$WS_ROOT/$ZIP_FILE"
 
-        echo "Generating build_info.txt..."
-        {
-            echo "device=$DEVICE_CODENAME"
-            echo "version=$LUMIROM_VERSION-$BUILD_DATE"
-            echo "timestamp=$TIMESTAMP"
-            echo "status=$BUILD_STATUS"
-        } > "$TEMPLATE_DIR/build_info.txt"
-
-        SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$DEVICE/boot.img"
-
-        if [ -f "$SPECIFIC_BOOT" ]; then
-            echo "-> Copying boot.img from $DEVICE..."
-            cp "$SPECIFIC_BOOT" "$TEMPLATE_DIR/boot.img"
-        else
-            echo "There is no boot.img for $DEVICE"
-        fi
-
-        echo "Copying compressed DAT files to template..."
-        cp TMP/*.new.dat.br "$TEMPLATE_DIR"/
-        cp TMP/*.patch.dat "$TEMPLATE_DIR"/
-        cp TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
-
-        echo "Creating ZIP package..."
-        ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
-        [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
-
-        # ZIP the rom with mixed compression levels (Multithreaded 7z)
+    # First add base template files (compressible)
+    echo "  Adding scripts and metadata (Compress)..."
+    (
         cd "$TEMPLATE_DIR"
-        
-        echo "Adding large/compressed files (Store)..."
-        7z a -mx=0 -mmt=4 "$ZIP_FILE" ./*.new.dat.br ./*.patch.dat 2>/dev/null || true
-        
-        echo "Adding scripts and compressible data (Compress)..."
-        7z a -mx=6 -mmt=4 "$ZIP_FILE" ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list 2>/dev/null || true
+        RUN_SILENT "Compress Archive (Base)" 7z a -mx=6 -mmt=4 "$WS_ROOT/$ZIP_FILE" \
+            ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list
+    ) 2>/dev/null || true
 
-        echo "ZIP package created: $ZIP_FILE"
-        echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
+    # Then append large binary assets (store level)
+    if [ -d "$TMP_DIR" ]; then
+        echo "  Appending large ROM assets (Store)..."
+        (
+            cd "$TMP_DIR"
+            RUN_SILENT "Compress Archive (Assets)" 7z a -mx=0 -mmt=4 "$WS_ROOT/$ZIP_FILE" \
+                ./*.new.dat.br ./*.patch.dat
+        ) 2>/dev/null || true
+    fi
+
+    echo "ZIP package created: $ZIP_FILE"
+    echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
 }
