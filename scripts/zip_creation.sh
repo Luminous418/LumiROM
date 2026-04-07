@@ -81,9 +81,12 @@ FLASHABLE_ZIP_CREATION() {
     echo "--- Preparing Flashable ZIP ($DEVICE_CODENAME) ---"
     
     local ZIP_WORK_DIR="$OUT_DIR/ZIP_PACKAGE"
-    # Ensure fresh workspace based on static template
-    rm -rf "$ZIP_WORK_DIR" && mkdir -p "$ZIP_WORK_DIR"
-    cp -rp "$TEMPLATE_DIR/"* "$ZIP_WORK_DIR/"
+    # Workspace should already be prepared by BUILD_IMG or workflow
+    if [ ! -d "$ZIP_WORK_DIR" ]; then
+        echo "  Initializing ZIP workspace..."
+        mkdir -p "$ZIP_WORK_DIR"
+        cp -rp "$TEMPLATE_DIR/"* "$ZIP_WORK_DIR/"
+    fi
 
     # Generate build info
     {

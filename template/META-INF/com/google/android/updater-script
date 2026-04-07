@@ -1,4 +1,4 @@
-getprop("ro.boot.em.model") == "SM-A000F" || abort("E3004: This package is for "a00");
+getprop("ro.boot.em.model") == "SM-A000F" || abort("E3004: This package is for a00");
 ui_print(" ");
 ui_print("************************************************");
 ui_print(" ");
