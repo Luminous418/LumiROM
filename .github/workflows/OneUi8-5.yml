@@ -79,39 +79,39 @@ jobs:
         PREPARE_PARTITIONS "FIRMWARE"
         EXTRACT_FIRMWARE_IMG "FIRMWARE"
 
-    - name: Apply vendor patches
+    - name: Patch and Debloat ROM
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        DISABLE_FBE "FIRMWARE"
-        DISABLE_FDE "FIRMWARE"
-        DELETE_ICCC "FIRMWARE"
-        DEBLOAT_VENDOR "FIRMWARE"
-        PATCH_FSTAB_EROFS "FIRMWARE"
+        
+        # Parallel Group 1: Vendor and Stock Config
+        (
+          DISABLE_FBE "FIRMWARE"
+          DISABLE_FDE "FIRMWARE"
+          DELETE_ICCC "FIRMWARE"
+          DEBLOAT_VENDOR "FIRMWARE"
+          PATCH_FSTAB_EROFS "FIRMWARE"
+        ) &
+        
+        # Parallel Group 2: Stock Config and Debloat
+        (
+          APPLY_STOCK_CONFIG "FIRMWARE"
+          DEBLOAT "FIRMWARE"
+        ) &
+        
+        wait
+        echo "Base patches and debloating completed."
 
-    - name: Apply stock config
+    - name: Apply features and LumiBombs
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        APPLY_STOCK_CONFIG "FIRMWARE"
-
-    - name: Debloat ROM
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        DEBLOAT "FIRMWARE"
-
-    - name: Apply features
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        APPLY_FEATURES "FIRMWARE"
-
-    - name: Apply LumiBombs
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        LUMI_BOMBS "FIRMWARE"
+        
+        # LumiBombs can run in parallel with property updates
+        APPLY_FEATURES "FIRMWARE" &
+        LUMI_BOMBS "FIRMWARE" &
+        
+        wait
 
     - name: Update Build ID
       shell: bash
@@ -119,26 +119,23 @@ jobs:
         source scripts/LumiROM.sh
         APPENDING_DISPLAY_ID "FIRMWARE"
 
-    - name: Install stock framework-res
+    - name: Process Frameworks
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        INSTALL_FRAMEWORK \
-          "FIRMWARE/system/system/framework/framework-res.apk"
-
-    - name: Decompile framework jars
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        DECOMPILE "$APKTOOL" \
-          "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
-        DECOMPILE "$APKTOOL" \
-          "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+        
+        # Install framework-res first (needed for decompile)
+        INSTALL_FRAMEWORK "FIRMWARE/system/system/framework/framework-res.apk"
+        
+        # Start Decompilation in background
+        echo "Starting background decompilation..."
+        DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
+        DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+        
+        # Wait for decompilation to finish before patching
         wait
-
-    - name: Patch Knox
-      shell: bash
-      run: |
+        
+        # Patch Knox (Very fast sed operations)
         source scripts/Knox_script.sh
         PATCH_SSRM "$WORK_DIR/ssrm"
         PATCH_KNOX_GUARD "$WORK_DIR/services"
@@ -146,25 +143,20 @@ jobs:
         PATCH_SECURE_FOLDER "$WORK_DIR/services"
         PATCH_PRIVATE_SHARE "$WORK_DIR/services"
         DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
-
-    - name: Recompile framework
-      shell: bash
-      run: |
-        source scripts/LumiROM.sh
-        RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
-          "FIRMWARE/system/system/framework" "$WORK_DIR" &
-        RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
-          "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        
+        # Recompile in parallel
+        echo "Starting parallel recompilation..."
+        RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        RECOMPILE "$APKTOOL" "$WORK_DIR/services" "FIRMWARE/system/system/framework" "$WORK_DIR" &
         wait
-        cp -fv "$WORK_DIR"/*.jar \
-          "FIRMWARE/system/system/framework/"
+        
+        cp -fv "$WORK_DIR"/*.jar "FIRMWARE/system/system/framework/"
 
     - name: Build ROM
       shell: bash
       run: |
         source scripts/LumiROM.sh
         BUILD_IMG "FIRMWARE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
-        IMG_TO_BROTLI "$OUT_DIR" "TMP"
 
     - name: Update updater-script
       shell: bash

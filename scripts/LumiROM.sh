@@ -636,18 +636,18 @@ FIX_SELINUX() {
         return 1
     fi
 
-    echo "Fixing selinux for $STOCK_DEVICE."
-
-    UNSUPPORTED_SELINUX=("audiomirroring" "fabriccrypto" "hal_dsms_default" "qb_id_prop" "hal_dsms_service" "proc_compaction_proactiveness" "sbauth" "ker_app" "kpp_app" "kpp_data" "attiqi_app" "kpoc_charger")
-
+    # Batch delete keywords using a single sed pass
+    local SED_PATTERN=""
     for keyword in "${UNSUPPORTED_SELINUX[@]}"; do
-        if grep -q "$keyword" "$SELINUX_FILE"; then
-            sed -i "/$keyword/d" "$SELINUX_FILE"
-        fi
+        SED_PATTERN+="/$keyword/d; "
     done
 
-	REMOVE_LINE '(genfscon proc "/sys/kernel/firmware_config" (u object_r proc_fmw ((s0) (s0))))' "$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/system_ext_sepolicy.cil"
-	REMOVE_LINE '(genfscon proc "/sys/vm/compaction_proactiveness" (u object_r proc_compaction_proactiveness ((s0) (s0))))' "$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/system_ext_sepolicy.cil"
+    echo "Fixing SELinux for $STOCK_DEVICE (Batch processing keywords)."
+    sudo sed -i -e "$SED_PATTERN" "$SELINUX_FILE"
+
+    # Additional standard line removals
+    REMOVE_LINE '(genfscon proc "/sys/kernel/firmware_config" (u object_r proc_fmw ((s0) (s0))))' "$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/system_ext_sepolicy.cil"
+    REMOVE_LINE '(genfscon proc "/sys/vm/compaction_proactiveness" (u object_r proc_compaction_proactiveness ((s0) (s0))))' "$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/system_ext_sepolicy.cil"
     REMOVE_LINE 'init.svc.vendor.wvkprov_server_hal                           u:object_r:wvkprov_prop:s0' "$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/system_ext_property_contexts"
 }
 
@@ -903,23 +903,20 @@ KICK() {
     
 	local EXTRACTED_FIRM_DIR="$1"
 
-    echo "- Debloating apps."
-    local APP_DIRS=(
-        "$EXTRACTED_FIRM_DIR/system/system/app"
-        "$EXTRACTED_FIRM_DIR/system/system/priv-app"
-        "$EXTRACTED_FIRM_DIR/product/app"
-        "$EXTRACTED_FIRM_DIR/product/priv-app"
-    )
-
+    echo "- Debloating apps from $STOCK_DEVICE partition."
+    
+    # Construct a space-separated list of potential app directories
+    local TARGETS=()
     for app in "${DEBLOAT_APPS[@]}"; do
-        for dir in "${APP_DIRS[@]}"; do
-            target="$dir/$app"
-
-            if [[ -d "$target" ]]; then
-                rm -rf "$target" || echo "[WARN] Failed to remove $target"
-            fi
-        done
+        TARGETS+=("$EXTRACTED_FIRM_DIR/system/system/app/$app")
+        TARGETS+=("$EXTRACTED_FIRM_DIR/system/system/priv-app/$app")
+        TARGETS+=("$EXTRACTED_FIRM_DIR/product/app/$app")
+        TARGETS+=("$EXTRACTED_FIRM_DIR/product/priv-app/$app")
     done
+
+    # Remove all valid targets in a single clean pass where possible
+    # We use xargs to handle potential long argument lists safely
+    printf "%s\n" "${TARGETS[@]}" | xargs -r rm -rf 2>/dev/null || true
 }
 
 
@@ -999,134 +996,132 @@ BUILD_PROP() {
 
 
 APPLY_FEATURES() {
-    echo ""
-    if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
-        return 1
-    fi
+    local EXTRACTED_FIRM_DIR="$1"
+    echo "--- Applying ROM features and properties ---"
 
-	local EXTRACTED_FIRM_DIR="$1"
+    # Define properties to be applied
+    # Format: "KEY=VALUE"
+    local PROPS=(
+        "ro.frp.pst="
+        "ro.product.locale=en-US"
+        "wifi.interface=wlan0"
+        "wlan.wfd.hdcp=disabled"
+        "debug.hwui.renderer=skiavk"
+        "ro.telephony.sim_slots.count=2"
+        "ro.surface_flinger.protected_contents=true"
+        "persist.audio.voip.enabled=true"
+        "persist.vendor.audio.voip=true"
+        "persist.audio.recording.voip=true"
+        "debug.atrace.app_%d=0"
+        "debug.atrace.app_number=0"
+        "debug.atrace.prefer_sdk=0"
+        "debug.atrace.tags.enableflags=0"
+        "debug.atrace.user_initiated=0"
+        "debug.documentscan.loglevel=0"
+        "debug.documentscan.timelog=0"
+        "debug.egl.trace=0"
+        "debug.egl.traceGpuCompletion=0"
+        "debug.hdr.log.hdr10plus=0"
+        "debug.hwui.skia_tracing_enabled=0"
+        "debug.hwui.trace_gpu_resources=0"
+        "debug.incremental.enforce_readlogs_max_interval_for_system_dataloaders=0"
+        "debug.incremental.readlogs_max_interval_sec=0"
+        "debug.log=0"
+        "debug.printbacktraceselfkill=0"
+        "debug.tflite.trace=0"
+        "debug.thirdpartylogs.enabled=0"
+        "debug.tracing=0"
+        "debug.tracing.ctl.hwui.skia_tracing_enabled=0"
+        "debug.tracing.ctl.hwui.skia_use_perfetto_track_events=0"
+        "debug.tracing.ctl.perfetto.sdk_sysprop_guard_generation=0"
+        "debug.tracing.ctl.renderengine.skia_tracing_enabled=0"
+        "debug.tracing.ctl.renderengine.skia_use_perfetto_track_events=0"
+        "debug.tracing.screen_brightness=0"
+        "debug.tracing.screen_state=0"
+        "debug.unihal.logStatus=0"
+        "debug.vulkan.profiler.apitrace=0"
+        "ro.config.iccc_version=Disabled"
+        "dalvik.vm.systemuicompilerfilter=speed"
+        "persist.adb.notify=0"
+        "ro.surface_flinger.max_frame_buffer_acquired_buffers=4"
+        "debug.hwui.use_triple_buffering=true"
+        "debug.sf.enable_gl_backpressure=0"
+        "ro.lmk.critical_upgrade=true"
+        "ro.lmk.swap_compression_ratio=3"
+        "ro.lmk.filecache_min_kb=200600"
+        "ro.lmk.swap_util_max=85"
+        "ro.lmk.psi_complete_stall_ms=200"
+        "ro.lmk.psi_partial_stall_ms=200"
+        "ro.lmk.swap_free_low_percentage=10"
+        "ro.lmk.stall_limit_critical=40"
+        "ro.lmk.thrashing_limit=30"
+        "ro.lmk.thrashing_limit_decay=50"
+        "ro.lmk.use_psi=true"
+        "ro.slmk.2nd.dha_cached_max=12"
+        "ro.slmk.2nd.dha_empty_max=24"
+        "ro.slmk.2nd.freelimit_val=10"
+        "ro.slmk.2nd.swap_free_low_percentage=10"
+        "ro.slmk.2nd.upgrade_pressure=1000"
+        "ro.slmk.allied_proc_protect=true"
+        "ro.slmk.base_swaptotal=4096"
+        "ro.slmk.beks_enable=false"
+        "ro.slmk.beks_key=166"
+        "ro.slmk.c_deadline_zone_on_off=false"
+        "ro.slmk.cam_kill_start_minutes=30"
+        "ro.slmk.chimera.protect_activitytime_ms=600000"
+        "ro.slmk.chimera_strategy_4gb=0,0,0,0"
+        "ro.slmk.chimera_strategy_6gb=0,0,0,0"
+        "ro.slmk.chimera.quickreclaim_enable=false"
+        "ro.slmk.chimera.quickreclaim_big_game_enable=false"
+        "ro.slmk.chimera_quota_enable=false"
+        "ro.slmk.dec_EFK_enable=true"
+        "ro.slmk.dha_2ndprop_thMB=4096"
+        "ro.slmk.dha_cached_min=4"
+        "ro.slmk.dha_cached_max=16"
+        "ro.slmk.dha_dialer_except_th=2048"
+        "ro.slmk.dha_empty_init=12"
+        "ro.slmk.dha_empty_min=8"
+        "ro.slmk.dha_empty_max=24"
+        "ro.slmk.dha_lmk_array=8940,11649,14359,18017,27768,38398"
+        "ro.slmk.dha_lmk_scale=0.3"
+        "ro.slmk.dha_pwhl_key=0"
+        "ro.slmk.dha_th_rate=3.5"
+        "ro.slmk.enable_reentry_lmk=true"
+        "ro.slmk.enable_upgrade_criadj=true"
+        "ro.slmk.enable_userspace_lmk=true"
+        "ro.slmk.fha_enable=false"
+        "ro.slmk.freelimit_val=10"
+        "ro.slmk.kill_heaviest_task=true"
+        "ro.slmk.max_snapshot_num=3"
+        "ro.slmk.plg_key=4"
+        "ro.slmk.psi_critical=160"
+        "ro.slmk.swap_free_low_percentage=10"
+        "ro.slmk.trim_sec_policy=true"
+        "ro.slmk.upgrade_pressure=1000"
+        "ro.slmk.use_bg_keeping_policy=false"
+        "ro.slmk.use_bg_keeping_policy_light=true"
+        "ro.slmk.use_camera_boost=true"
+        "ro.slmk.use_lowmem_keep_except=true"
+        "audio.safemedia.bypass=true"
+        "persist.vendor.camera.expose.aux=1"
+        "vendor.camera.aux.packagelist=com.sec.android.app.camera,com.samsung.android.scan3d"
+        "vendor.camera.aux.packagelist2=com.simplemobiletools.camera,net.sourceforge.opencamera,com.google.android.googlequicksearchbox,com.google.android.apps.translate,com.google.ar.lens,com.google.android.apps.bard"
+        "fw.show_multiuserui=1"
+        "fw.max_users=5"
+        "ro.lumirom.official=$( [[ "$BUILD_STATUS" == "OFFICIAL" ]] && echo true || echo false )"
+    )
 
-    # Add build.prop features
-    echo "Applying useful features."
-	echo " Adding build prop tweak."
-	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.frp.pst"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "skiavk"
-	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.telephony.sim_slots.count" "2"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.protected_contents" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.voip.enabled" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.vendor.audio.voip" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.recording.voip" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.atrace.app_%d" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.atrace.app_number" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.atrace.prefer_sdk" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.atrace.tags.enableflags" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.atrace.user_initiated" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.documentscan.loglevel" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.documentscan.timelog" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.egl.trace" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.egl.traceGpuCompletion" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hdr.log.hdr10plus" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.skia_tracing_enabled" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.trace_gpu_resources" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.incremental.enforce_readlogs_max_interval_for_system_dataloaders" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.incremental.readlogs_max_interval_sec" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.log" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.printbacktraceselfkill" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tflite.trace" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.thirdpartylogs.enabled" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tracing" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tracing.ctl.hwui.skia_tracing_enabled" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tracing.ctl.hwui.skia_use_perfetto_track_events" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tracing.ctl.perfetto.sdk_sysprop_guard_generation" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tracing.ctl.renderengine.skia_tracing_enabled" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tracing.ctl.renderengine.skia_use_perfetto_track_events" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tracing.screen_brightness" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.tracing.screen_state" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.unihal.logStatus" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.vulkan.profiler.apitrace" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.config.iccc_version" "Disabled"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "dalvik.vm.systemuicompilerfilter" "speed"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.adb.notify" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.max_frame_buffer_acquired_buffers" "4"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.use_triple_buffering" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.sf.enable_gl_backpressure" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.critical_upgrade" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.swap_compression_ratio" "3"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.filecache_min_kb" "200600"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.swap_util_max" "85"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.psi_complete_stall_ms" "200"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.psi_partial_stall_ms" "200"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.swap_free_low_percentage" "10"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.stall_limit_critical" "40"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.thrashing_limit" "30"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.thrashing_limit_decay" "50"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lmk.use_psi" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.2nd.dha_cached_max" "12"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.2nd.dha_empty_max" "24"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.2nd.freelimit_val" "10"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.2nd.swap_free_low_percentage" "10"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.2nd.upgrade_pressure" "1000"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.allied_proc_protect" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.base_swaptotal" "4096"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.beks_enable" "false"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.beks_key" "166"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.c_deadline_zone_on_off" "false"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.cam_kill_start_minutes" "30"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.chimera.protect_activitytime_ms" "600000"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.chimera_strategy_4gb" "0,0,0,0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.chimera_strategy_6gb" "0,0,0,0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.chimera.quickreclaim_enable" "false"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.chimera.quickreclaim_big_game_enable" "false"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.chimera_quota_enable" "false"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dec_EFK_enable" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_2ndprop_thMB" "4096"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_cached_min" "4"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_cached_max" "16"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_dialer_except_th" "2048"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_empty_init" "12"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_empty_min" "8"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_empty_max" "24"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_lmk_array" "8940,11649,14359,18017,27768,38398"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_lmk_scale" "0.3"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_pwhl_key" "0"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.dha_th_rate" "3.5"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.enable_reentry_lmk" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.enable_upgrade_criadj" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.enable_userspace_lmk" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.fha_enable" "false"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.freelimit_val" "10"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.kill_heaviest_task" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.max_snapshot_num" "3"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.plg_key" "4"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.psi_critical" "160"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.swap_free_low_percentage" "10"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.trim_sec_policy" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.upgrade_pressure" "1000"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.use_bg_keeping_policy" "false"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.use_bg_keeping_policy_light" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.use_camera_boost" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.slmk.use_lowmem_keep_except" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "audio.safemedia.bypass" "true"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.vendor.camera.expose.aux" "1"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist" "com.sec.android.app.camera,com.samsung.android.scan3d"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist2" "com.simplemobiletools.camera,net.sourceforge.opencamera,com.google.android.googlequicksearchbox,com.google.android.apps.translate,com.google.ar.lens,com.google.android.apps.bard"
-	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.show_multiuserui" "1"
-	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.max_users" "5"
-	
-
-    if [ "$BUILD_STATUS" == "OFFICIAL" ]; then
-        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "true"
-    else
-        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "false"
-    fi
+    for item in "${PROPS[@]}"; do
+        local key="${item%%=*}"
+        local val="${item#*=}"
+        BUILD_PROP "$EXTRACTED_FIRM_DIR" "$key" "$val"
+    done
 
     # Fix Samsung AI Photo Editor Crash.
-	sed -i '0,/"ModelType": "MODEL_TYPE_INSTANCE_CAPTURE"/s//"ModelType": "MODEL_TYPE_OBJ_INSTANCE_CAPTURE"/' "$EXTRACTED_FIRM_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json"
-
+    local PHOTO_EDITOR_DATA="$EXTRACTED_FIRM_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json"
+    if [ -f "$PHOTO_EDITOR_DATA" ]; then
+        sed -i '0,/"ModelType": "MODEL_TYPE_INSTANCE_CAPTURE"/s//"ModelType": "MODEL_TYPE_OBJ_INSTANCE_CAPTURE"/' "$PHOTO_EDITOR_DATA"
+    fi
 }
 
 LUMI_BOMBS() {
@@ -1201,107 +1196,157 @@ APPENDING_DISPLAY_ID() {
     APPEND_DISPLAY_ID "$1" "LumiROM $LUMIROM_VERSION $BUILD_STATUS Stable"
 }
 
+GEN_FS_CONFIG_SINGLE() {
+    local EXTRACTED_FIRM_DIR="${1%/}"
+    local PARTITION="$2"
+    local ROOT="$EXTRACTED_FIRM_DIR/$PARTITION"
+
+    [[ -d "$ROOT" ]] || return 0
+    [[ "$PARTITION" == "config" ]] && return 0
+
+    local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+
+    echo "--- [${PARTITION}] Synchronizing FS Config ---"
+
+    if [[ "$PARTITION" == "vendor" ]]; then
+        echo "  [${PARTITION}] Fixing vendor_fs_config..."
+        local TMP_CLEAN=$(mktemp)
+        sudo awk '{
+            gsub(/^\//, "", $1);
+            if (length($4) == 4 && substr($4, 1, 1) == "0") $4 = substr($4, 2);
+            if ($1 ~ /^(vendor|lost)/ && NF >= 4) {
+                print $1, $2, $3, $4
+            }
+        }' "$FS_CONFIG" > "$TMP_CLEAN"
+        echo "/ 0 2000 755" >> "$TMP_CLEAN"
+        echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
+        echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
+        sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" > /dev/null
+        rm "$TMP_CLEAN"
+        echo "  [${PARTITION}] vendor_fs_config fixed."
+    fi
+    
+    if [[ ! -f "$FS_CONFIG" ]]; then
+        echo "--- [${PARTITION}] Creating new fs_config ---"
+        echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
+    fi
+
+    sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
+        [[ -z "$ENTRY" ]] && continue
+        if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
+            local REL_PATH="${ENTRY#$PARTITION/}"
+            if [[ -d "$ROOT/$REL_PATH" ]]; then
+                echo "  [${PARTITION}] Adding DIR: $ENTRY"
+                echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
+            else
+                echo "  [${PARTITION}] Adding FILE: $ENTRY"
+                echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
+            fi
+        fi
+    done
+}
+
 GEN_FS_CONFIG() {
     local EXTRACTED_FIRM_DIR="${1%/}"
-
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
         PARTITION=$(basename "$ROOT")
         [[ "$PARTITION" == "config" ]] && continue
+        GEN_FS_CONFIG_SINGLE "$EXTRACTED_FIRM_DIR" "$PARTITION"
+    done
+}
 
-        local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+GEN_FILE_CONTEXTS_SINGLE() {
+    local EXTRACTED_FIRM_DIR="${1%/}"
+    local PARTITION="$2"
+    local ROOT="$EXTRACTED_FIRM_DIR/$PARTITION"
 
-        echo "--- Synchronizing $PARTITION ---"
+    [[ -d "$ROOT" ]] || return 0
+    [[ "$PARTITION" == "config" ]] && return 0
 
-        if [[ "$PARTITION" == "vendor" ]]; then
-            echo "  [*] Fixing vendor_fs_config..."
-            
-            local TMP_CLEAN=$(mktemp)
-            
-            sudo awk '{
-                gsub(/^\//, "", $1);
-                if (length($4) == 4 && substr($4, 1, 1) == "0") $4 = substr($4, 2);
-                if ($1 ~ /^(vendor|lost)/ && NF >= 4) {
-                    print $1, $2, $3, $4
-                }
-            }' "$FS_CONFIG" > "$TMP_CLEAN"
-            
-            # Script removes it, so hardcoded to be added again
-            echo "/ 0 2000 755" >> "$TMP_CLEAN"
-            echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
-            echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
-            
-            sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" > /dev/null
-            
-            rm "$TMP_CLEAN"
-            echo "  [+] vendor_fs_config fixed."
-        fi
-        
-        if [[ ! -f "$FS_CONFIG" ]]; then
-            echo "--- Creating new fs_config for $PARTITION ---"
-            echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
-        fi
+    local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
+    [[ ! -f "$FILE_CONTEXTS" ]] && sudo touch "$FILE_CONTEXTS"
 
-        sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
-            [[ -z "$ENTRY" ]] && continue
-            
-            if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
-                local REL_PATH="${ENTRY#$PARTITION/}"
-                if [[ -d "$ROOT/$REL_PATH" ]]; then
-                    echo "  [+] Adding DIR: $ENTRY"
-                    echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
+    echo "--- [${PARTITION}] Syncing contexts ---"
+    
+    local TMP_EXISTING=$(mktemp)
+    sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
+
+    sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
+        if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
+            echo "  [${PARTITION}] Context for: $PATH_ENTRY"
+            local CONTEXT="u:object_r:system_file:s0"
+            if [[ "$PARTITION" == "vendor" ]]; then
+                CONTEXT="u:object_r:vendor_file:s0"
+            elif [[ "$PARTITION" == "system" || "$PARTITION" == "product" ]]; then
+                if [[ "$PATH_ENTRY" == *.so ]]; then
+                    CONTEXT="u:object_r:system_lib_file:s0"
                 else
-                    echo "  [+] Adding FILE: $ENTRY"
-                    echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
+                    CONTEXT="u:object_r:system_file:s0"
                 fi
             fi
-        done
+            local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
+            echo "$ESCAPED_PATH $CONTEXT" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
+            echo "$PATH_ENTRY" >> "$TMP_EXISTING"
+        fi
     done
+    rm "$TMP_EXISTING"
 }
 
 GEN_FILE_CONTEXTS() {
     local EXTRACTED_FIRM_DIR="${1%/}"
-
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
         PARTITION=$(basename "$ROOT")
         [[ "$PARTITION" == "config" ]] && continue
-
-        local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        [[ ! -f "$FILE_CONTEXTS" ]] && touch "$FILE_CONTEXTS"
-
-        echo "--- Syncing contexts for: $PARTITION ---"
-        
-        local TMP_EXISTING=$(mktemp)
-        sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
-
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
-            
-            if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
-                echo "  [+] Context for: $PATH_ENTRY"
-                
-                local CONTEXT="u:object_r:system_file:s0"
-
-                if [[ "$PARTITION" == "vendor" ]]; then
-                    CONTEXT="u:object_r:vendor_file:s0"
-                
-                elif [[ "$PARTITION" == "system" || "$PARTITION" == "product" ]]; then
-                    if [[ "$PATH_ENTRY" == *.so ]]; then
-                        CONTEXT="u:object_r:system_lib_file:s0"
-                    else
-                        CONTEXT="u:object_r:system_file:s0"
-                    fi
-                fi
-
-                local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
-                
-                echo "$ESCAPED_PATH $CONTEXT" >> "$FILE_CONTEXTS"
-                
-                echo "$PATH_ENTRY" >> "$TMP_EXISTING"
-            fi
-        done
-        rm "$TMP_EXISTING"
+        GEN_FILE_CONTEXTS_SINGLE "$EXTRACTED_FIRM_DIR" "$PARTITION"
     done
+}
+
+BUILD_SINGLE_PARTITION() {
+    local EXTRACTED_FIRM_DIR="$1"
+    local FILE_SYSTEM="$2"
+    local OUT_DIR="$3"
+    local PARTITION="$4"
+    local TMP_DIR="$5"
+    local SRC_DIR="$EXTRACTED_FIRM_DIR/$PARTITION"
+    local OUT_IMG="$OUT_DIR/${PARTITION}.img"
+    local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+    local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
+    local MOUNT_POINT="/$PARTITION"
+    local IMG2SDAT_BIN="$(pwd)/bin/img2sdat/img2sdat"
+
+    # 1. Sync Configs
+    GEN_FS_CONFIG_SINGLE "$EXTRACTED_FIRM_DIR" "$PARTITION"
+    GEN_FILE_CONTEXTS_SINGLE "$EXTRACTED_FIRM_DIR" "$PARTITION"
+
+    # 2. Build Image
+    echo "--- [${PARTITION}] Building EROFS Image ---"
+    sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
+    sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
+    sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/ 2>/dev/null || true
+
+    if [[ "$FILE_SYSTEM" == "erofs" ]]; then
+        sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
+        sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
+    else
+        echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
+        return 1
+    fi
+
+    # 3. Convert to SDAT
+    echo "--- [${PARTITION}] Converting to SDAT ---"
+    "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$OUT_IMG" > /dev/null 2>&1
+    touch "$TMP_DIR/$PARTITION.patch.dat"
+
+    # 4. Compress to Brotli
+    echo "--- [${PARTITION}] Compressing with Brotli ---"
+    local DAT="$TMP_DIR/$PARTITION.new.dat"
+    local OUT_BR="$TMP_DIR/$PARTITION.new.dat.br"
+    brotli -f -q 1 --output="$OUT_BR" "$DAT"
+    rm -f "$DAT" # Free up space
+
+    echo "--- [${PARTITION}] Done ---"
 }
 
 BUILD_IMG() {
@@ -1313,58 +1358,33 @@ BUILD_IMG() {
     local EXTRACTED_FIRM_DIR="$1"
     local FILE_SYSTEM="$2"
 	local OUT_DIR="$3"
+    local TMP_DIR="TMP" # Default TMP dir
     local DEVICE_CONFIG="$(pwd)/LumiROM/Devices/${STOCK_DEVICE}/config"
     local OP_LIST="$(pwd)/template/dynamic_partitions_op_list"
 
+    mkdir -p "$TMP_DIR"
+
     if [[ -f "$DEVICE_CONFIG" ]]; then
         local SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')
-        
-        # Update the super size on the list according to the device
         if [[ -n "$SUPER_SIZE" && -f "$OP_LIST" ]]; then
             echo -e "\e[32mUpdating super size on op_list: $SUPER_SIZE bytes\e[0m"
             sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
         else
             echo "Warning: STOCK_SUPER_SIZE hasn't been found on $DEVICE_CONFIG"
         fi
-    else
-        echo "Error: config file not found"
     fi
 
-
-    GEN_FS_CONFIG "$EXTRACTED_FIRM_DIR"
-	GEN_FILE_CONTEXTS "$EXTRACTED_FIRM_DIR"
-
+    echo "=== Starting Parallel ROM Build Pipeline (Per Partition) ==="
     for PART in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$PART" ]] || continue    
         PARTITION="$(basename "$PART")"
         [[ "$PARTITION" == "config" ]] && continue 
 
-        (
-            local SRC_DIR="$EXTRACTED_FIRM_DIR/$PARTITION"
-            local OUT_IMG="$OUT_DIR/${PARTITION}.img"
-            local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-            local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-            local MOUNT_POINT="/$PARTITION"
-
-            echo ""
-            [[ -f "$FS_CONFIG" ]] || { echo "Warning: $FS_CONFIG missing, skipping $PARTITION"; exit 0; }
-            [[ -f "$FILE_CONTEXTS" ]] || { echo "Warning: $FILE_CONTEXTS missing, skipping $PARTITION"; exit 0; }
-
-            sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
-            sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-            sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/
-
-            if [[ "$FILE_SYSTEM" == "erofs" ]]; then
-                echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-                sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
-                sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
-            else
-                echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
-            fi
-        ) &
+        BUILD_SINGLE_PARTITION "$EXTRACTED_FIRM_DIR" "$FILE_SYSTEM" "$OUT_DIR" "$PARTITION" "$TMP_DIR" &
     done
 
     wait
+    echo "=== All Partition Pipelines Finished ==="
 
     # Updates the list sequentially to avoid race conditions
     for PART in "$EXTRACTED_FIRM_DIR"/*; do
@@ -1380,65 +1400,5 @@ BUILD_IMG() {
 }
 
 IMG_TO_BROTLI() {
-    if [ "$#" -ne 2 ]; then
-        echo "Usage: ${FUNCNAME[0]} <IMG_DIR> <TMP_DIR>"
-        return 1
-    fi
-
-    local IMG_DIR="$1"
-    local TMP_DIR="$2"
-    local IMG2SDAT_BIN="$(pwd)/bin/img2sdat/img2sdat"
-
-    mkdir -p "$TMP_DIR"
-
-    # Check if img2sdat binary exists
-    if [[ ! -f "$IMG2SDAT_BIN" ]]; then
-        echo "Error: img2sdat binary not found at $IMG2SDAT_BIN"
-        return 1
-    fi
-
-    chmod +x "$IMG2SDAT_BIN"
-
-    # This is for compressing to .new.dat
-    echo "=== Converting IMG to SDAT ==="
-
-    for f in "$IMG_DIR"/*.img; do
-        [[ -f "$f" ]] || continue
-        PARTITION="$(basename "$f" .img)"
-
-        (
-            echo "Converting $PARTITION.img..."
-            "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$f" > /dev/null 2>&1
-            touch "$TMP_DIR/$PARTITION.patch.dat"
-            echo "Created patch.dat for $PARTITION"
-        ) &
-    done
-
-    wait
-
-    # Compress it to .new.dat.br to make later a .zip file
-    echo ""
-    echo "=== Compressing DAT files with Brotli (Parallel) ==="
-
-    local JOBS=4 # Set to match vCPUs
-    for DAT in "$TMP_DIR"/*.new.dat; do
-        [[ -f "$DAT" ]] || continue
-        PARTITION="$(basename "$DAT" .new.dat)"
-        OUT_FILE="$TMP_DIR/$PARTITION.new.dat.br"
-
-        (
-            echo "Compressing $PARTITION.new.dat..."
-            brotli -f -q 1 --output="$OUT_FILE" "$DAT"
-            echo "Finished $PARTITION.new.dat.br"
-        ) &
-
-        # Limit concurrent jobs
-        while [ $(jobs -r | wc -l) -ge "$JOBS" ]; do
-            sleep 1
-        done
-    done
-
-    wait
-    echo ""
-    echo "All partitions converted and compressed successfully."
+    echo "[!] IMG_TO_BROTLI is now integrated into BUILD_IMG. Skipping."
 }
