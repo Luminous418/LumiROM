@@ -33,7 +33,8 @@ def main():
         os.environ["HF_TOKEN"] = token
 
     # Configuration
-    date_str = datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
+    # Use URL-safe timestamp and add -local suffix to distinguish from workflow builds
+    date_str = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ") + "-local"
     target_url = f"{args.endpoint}/{date_str}/"
     os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"
 
