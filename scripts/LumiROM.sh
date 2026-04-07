@@ -209,7 +209,7 @@ EXTRACT_FIRMWARE_IMG() {
 
         # 2. Detect Filesystem Type
         if echo "$INFO" | grep -qi "erofs"; then fstype="EROFS"
-        elif echo "$INFO" | grep -qi "ext4"; then fstype="Linux"
+        elif echo "$INFO" | grep -qiE "ext[2-4]|Linux.*filesystem"; then fstype="Linux"
         fi
 
         if [[ "$fstype" != "Unknown" ]]; then
