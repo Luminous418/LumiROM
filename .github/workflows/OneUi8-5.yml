@@ -21,13 +21,38 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
 
+    - name: Setup apt-fast
+      shell: bash
+      run: |
+        echo "Installing apt-fast..."
+        cat << 'EOF' > install_apt_fast.sh
+        #!/bin/sh
+        set -e
+        if [ -n "$EUID" ]; then userid="$EUID"; else userid="$(id -u)"; fi
+        run_cmd() { [ "$userid" -ne 0 ] && set -- sudo "$@"; "$@"; }
+        apt_fast_url='https://raw.githubusercontent.com/ilikenwf/apt-fast/master'
+        if ! type aria2c >/dev/null 2>&1; then
+          run_cmd apt-get update -qq
+          run_cmd apt-get install -y -qq aria2
+        fi
+        run_cmd rm -f /usr/local/sbin/apt-fast
+        run_cmd wget -q "$apt_fast_url"/apt-fast -O /usr/local/bin/apt-fast
+        run_cmd chmod +x /usr/local/bin/apt-fast
+        if [ ! -f /etc/apt-fast.conf ]; then
+          run_cmd wget -q "$apt_fast_url"/apt-fast.conf -O /etc/apt-fast.conf
+        fi
+        EOF
+        chmod +x install_apt_fast.sh
+        sudo ./install_apt_fast.sh > apt_fast_setup.log 2>&1 || (cat apt_fast_setup.log && exit 1)
+        rm install_apt_fast.sh apt_fast_setup.log
+
     - name: Install required packages
       shell: bash
       run: |
-        echo "Updating package lists..."
-        sudo apt-get -y -qq update > apt.log 2>&1 || (cat apt.log && exit 1)
-        echo "Installing system dependencies..."
-        sudo apt-get -y -qq install p7zip-full lz4 android-sdk-libsparse-utils python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2 >> apt.log 2>&1 || (cat apt.log && exit 1)
+        echo "Updating package lists with apt-fast..."
+        sudo apt-fast -y -qq update > apt.log 2>&1 || (cat apt.log && exit 1)
+        echo "Installing system dependencies with apt-fast..."
+        sudo apt-fast -y -qq install p7zip-full lz4 android-sdk-libsparse-utils python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2 >> apt.log 2>&1 || (cat apt.log && exit 1)
         echo "Installing Python dependencies..."
         pip3 install -q liblp tgcrypto pyrogram gdown huggingface_hub hf_xet >> pip.log 2>&1 || (cat pip.log && exit 1)
         rm -f apt.log pip.log
