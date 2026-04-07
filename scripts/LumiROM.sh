@@ -1145,6 +1145,7 @@ APPLY_FEATURES() {
 }
 
 LUMI_BOMBS() {
+    local EXTRACTED_FIRM_DIR="$1"
     OVERLAY="$(pwd)/LumiROM/Mods/overlays"
 
     if [ -d "$OVERLAY" ]; then

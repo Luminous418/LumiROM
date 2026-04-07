@@ -15,7 +15,7 @@ class LumiROMBuilder:
         self.show_progress = show_progress and not verbose
         self.cache_dir = os.path.abspath(cache_dir)
         self.ws_root = os.getcwd()
-        
+
         self.total_steps = 12
         self.current_step = 0
         # Check for sudo upfront to cache credentials
@@ -52,7 +52,7 @@ class LumiROMBuilder:
         """Ensure transient build directories do not exist before starting."""
         transient = ["FIRMWARE", "WORK", "OUT", "TMP", "/dev/shm/WORK"]
         found = [d for d in transient if os.path.exists(d)]
-        
+
         if found:
             print(f"[!] Error: Workspace is dirty. Found existing build directories: {', '.join(found)}")
             print("    Please run './make clean' before starting a new build.")
@@ -65,7 +65,7 @@ class LumiROMBuilder:
         for b in required_bins:
             if not shutil.which(b):
                 missing.append(b)
-        
+
         if missing:
             print(f"[!] Missing system dependencies: {', '.join(missing)}")
             sys.exit(1)
@@ -80,7 +80,7 @@ class LumiROMBuilder:
             "bin/erofs-utils/mkfs.erofs",
             os.path.join(self.env["DEVICES_DIR"], self.device, "config")
         ]
-        
+
         for p in required_paths:
             if not os.path.exists(p):
                 print(f"[!] Missing project file/tool: {p}")
@@ -90,22 +90,22 @@ class LumiROMBuilder:
         """Render a two-line text-based progress bar."""
         if not self.show_progress:
             return
-            
+
         self.current_step += 1
         percent = int((self.current_step / self.total_steps) * 100)
         bar_length = 30
         filled_length = int(bar_length * self.current_step // self.total_steps)
         bar = '█' * filled_length + '-' * (bar_length - filled_length)
-        
+
         # Line 1: Main Progress Bar
         sys.stdout.write(f'\r>>> Progress: |{bar}| {percent}% [{milestone}]\033[K\n')
-        
+
         # Line 2: Active Task (shipped one line down)
         if sub_label:
             sys.stdout.write(f'    └─ Status: {sub_label}\033[K\r')
         else:
             sys.stdout.write('\033[K\r')
-            
+
         # Move cursor back up for next cycle
         sys.stdout.write('\033[A')
         sys.stdout.flush()
@@ -118,9 +118,9 @@ class LumiROMBuilder:
     def run_bash_cmd(self, cmd, label=None):
         if label and self.verbose:
             print(f"\n>>> {label}...")
-        
+
         full_cmd = f"source scripts/LumiROM.sh; source scripts/zip_creation.sh; source scripts/Knox_script.sh; {cmd}"
-        
+
         process = subprocess.run(
             ["bash", "-c", full_cmd],
             env=self.env,
@@ -128,7 +128,7 @@ class LumiROMBuilder:
             capture_output=not self.verbose,
             text=True
         )
-        
+
         if process.returncode != 0:
             print(f"\n[!] Error during: {label if label else cmd}")
             if not self.verbose:
@@ -148,41 +148,56 @@ class LumiROMBuilder:
             cache_name = "A34.tar.zst"
         else:
             cache_name = "A24.tar.zst"
-            
+
         cache_path = os.path.join(self.cache_dir, cache_name)
+        cache_vendor = os.path.join(self.cache_dir, f"{self.device}_vendor.img")  # per-device
         target_path = os.path.join(self.env["FIRM_DIR"], "BASE_FW.tar.zst")
+        target_vendor = os.path.join(self.env["FIRM_DIR"], "vendor.img")
 
         if os.path.exists(cache_path):
             shutil.copy2(cache_path, target_path)
         else:
             self.run_bash_cmd(
-                f"source $DEVICES_DIR/$STOCK_DEVICE/config; DOWNLOAD_FIRMWARE \"$TARGET_DEVICE\" \"$FIRM_DIR\"",
+                "source $DEVICES_DIR/$STOCK_DEVICE/config; DOWNLOAD_FIRMWARE \"$TARGET_DEVICE\" \"$FIRM_DIR\"",
                 "Firmware download"
             )
             shutil.copy2(target_path, cache_path)
+            if os.path.exists(target_vendor):
+                shutil.copy2(target_vendor, cache_vendor)
+
+        # Always ensure vendor.img is present
+        if os.path.exists(cache_vendor):
+            shutil.copy2(cache_vendor, target_vendor)
+        elif not os.path.exists(target_vendor):
+            self.run_bash_cmd(
+                "source $DEVICES_DIR/$STOCK_DEVICE/config; DOWNLOAD_FIRMWARE \"$TARGET_DEVICE\" \"$FIRM_DIR\"",
+                "Vendor download"
+            )
+            if os.path.exists(target_vendor):
+                shutil.copy2(target_vendor, cache_vendor)
 
     def build(self):
         try:
             self.check_workspace_cleanliness()
-            
+
             self.render_progress("Build Pipeline", "Dependency Check")
             self.check_dependencies()
-            
+
             self.render_progress("Build Pipeline", "Directory Setup")
             self.setup_directories()
-            
+
             self.render_progress("Build Pipeline", "Firmware Cache")
             self.handle_firmware()
-            
+
             self.render_progress("Extraction", "Archive Extraction")
             self.run_bash_cmd("EXTRACT_FIRMWARE \"FIRMWARE\"")
-            
+
             self.render_progress("Extraction", "Partition Selection")
             self.run_bash_cmd("PREPARE_PARTITIONS \"FIRMWARE\"")
-            
+
             self.render_progress("Extraction", "Image Extraction")
             self.run_bash_cmd("EXTRACT_FIRMWARE_IMG \"FIRMWARE\"")
-            
+
             self.render_progress("ROM Modification", "Patching & Debloating")
             patch_cmd = """
             (
@@ -204,7 +219,7 @@ class LumiROMBuilder:
             features_cmd = "APPLY_FEATURES \"FIRMWARE\" & LUMI_BOMBS \"FIRMWARE\" & wait"
             self.run_bash_cmd(features_cmd)
             self.run_bash_cmd("APPENDING_DISPLAY_ID \"FIRMWARE\"")
-            
+
             self.render_progress("ROM Modification", "Framework Patching")
             framework_cmd = """
             INSTALL_FRAMEWORK "FIRMWARE/system/system/framework/framework-res.apk"
@@ -228,17 +243,17 @@ class LumiROMBuilder:
 
             self.render_progress("Packaging", "Building Partitions")
             self.run_bash_cmd("BUILD_IMG \"FIRMWARE\" \"$OUTPUT_FILESYSTEM\" \"$OUT_DIR\"")
-            
+
             self.render_progress("Packaging", "Updating Metadata")
             self.run_bash_cmd("UPDATE_ZIP_SCRIPT \"FIRMWARE\" \"$OUT_DIR/ZIP_PACKAGE\"")
-            
+
             self.render_progress("Build Pipeline", "ZIP Package Creation")
             self.run_bash_cmd("FLASHABLE_ZIP_CREATION")
 
             print("\nBuild completed.")
             print(f"Output: {os.path.join(self.ws_root, 'OUT/*.zip')}")
             return True
-            
+
         finally:
             self.cleanup_workdir()
             self.restore_tool_permissions()
@@ -260,7 +275,7 @@ class LumiROMBuilder:
     def clean(clean_cache=False, cache_dir="./CACHE"):
         print(">>> Cleaning build environment...")
         paths_to_remove = ["FIRMWARE", "WORK", "OUT", "TMP", "/dev/shm/WORK"]
-        
+
         for p in paths_to_remove:
             if os.path.isdir(p):
                 shutil.rmtree(p)
@@ -287,7 +302,7 @@ def main():
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
+
     parser = argparse.ArgumentParser(description="LumiROM Build System")
     subparsers = parser.add_subparsers(dest="command", required=True, help="Available commands")
 
@@ -323,31 +338,31 @@ def main():
             print("\n>>> Entering Interactive Build Setup...")
             devices = os.listdir("LumiROM/Devices")
             print(f"Available models: {', '.join(devices)}")
-            
+
             d_input = input(f"Select device model [default: {args.device}]: ").strip()
             if d_input: args.device = d_input
-            
+
             t_input = input("Enable UI 8.5 Tethering patch? (y/N): ").strip().lower()
             args.tethering = t_input == 'y'
-            
+
             v_input = input("Enable verbose output? (y/N): ").strip().lower()
             args.verbose = v_input == 'y'
-            
+
             p_input = input("Show progress bar? (Y/n): ").strip().lower()
             args.no_progress = p_input == 'n'
-            
+
             u_input = input("Automatically upload after build? (y/N): ").strip().lower()
             args.upload = u_input == 'y'
             print("")
 
         builder = LumiROMBuilder(
-            device=args.device, 
-            verbose=args.verbose, 
-            cache_dir=args.cache, 
+            device=args.device,
+            verbose=args.verbose,
+            cache_dir=args.cache,
             tethering=args.tethering,
             show_progress=not args.no_progress
         )
-        
+
         start_time = datetime.now()
         success = builder.build()
         end_time = datetime.now()
