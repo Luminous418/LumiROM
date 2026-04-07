@@ -184,7 +184,6 @@ jobs:
         wait
         
         cp -fv "$WORK_DIR"/*_built.jar "FIRMWARE/system/system/framework/"
-        # Fix names: rename back to original if needed or ensure they match
         mv "FIRMWARE/system/system/framework/ssrm_built.jar" "FIRMWARE/system/system/framework/ssrm.jar"
         mv "FIRMWARE/system/system/framework/services_built.jar" "FIRMWARE/system/system/framework/services.jar"
 

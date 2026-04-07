@@ -186,23 +186,36 @@ EXTRACT_FIRMWARE_IMG() {
     fi
 
 	local FIRM_DIR="$1"
-
 	echo "Syncing partitions for extraction..."
     local PIDS=()
+    
     for imgfile in "$FIRM_DIR"/*.img; do
         [ -f "$imgfile" ] || continue
-        partition=$(basename "$imgfile" .img)
-        
-        # Determine filesystem type (EXT4 or EROFS)
+        [[ "$(basename "$imgfile")" == "boot.img" ]] && continue
+
         local fstype="Unknown"
-        if strings "$imgfile" | grep -q "MOD_SB" 2>/dev/null; then fstype="EROFS"
-        elif $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -l >/dev/null 2>&1; then fstype="EROFS"
-        elif file "$imgfile" | grep -q "ext4" 2>/dev/null; then fstype="Linux"
+        local INFO=$(file -b "$imgfile")
+
+        # 1. Handle Sparse Images
+        if echo "$INFO" | grep -qi "sparse"; then
+            echo "  [$(basename "$imgfile")] Detected sparse image, unsparsing..."
+            if ! simg2img "$imgfile" "$imgfile.raw" 2>/dev/null; then
+                echo "  [!] Failed to unsparse $(basename "$imgfile"), skipping..."
+                continue
+            fi
+            mv "$imgfile.raw" "$imgfile"
+            INFO=$(file -b "$imgfile") # Re-detect
+        fi
+
+        # 2. Detect Filesystem Type
+        if echo "$INFO" | grep -qi "erofs"; then fstype="EROFS"
+        elif echo "$INFO" | grep -qi "ext4"; then fstype="Linux"
         fi
 
         if [[ "$fstype" != "Unknown" ]]; then
+            echo "  [$(basename "$imgfile")] Detected $fstype. Extracting..."
             (
-                if [[ "$imgfile" == *.erofs ]] || [[ "$fstype" == "EROFS" ]]; then
+                if [[ "$fstype" == "EROFS" ]]; then
                     RUN_SILENT $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR"
                 else
                     RUN_SILENT sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR"
@@ -210,7 +223,7 @@ EXTRACT_FIRMWARE_IMG() {
             ) &
             PIDS+=($!)
         else
-            echo "[$imgfile] Unknown filesystem type ($fstype), skipping"
+            echo "  [$(basename "$imgfile")] Unknown filesystem type in $INFO, skipping"
         fi
     done
 
@@ -219,7 +232,7 @@ EXTRACT_FIRMWARE_IMG() {
         wait "$pid" || exit 1
     done
 
-    # Remove all original .img
+    # Remove original .img files
     rm -rf "$FIRM_DIR"/*.img
 }
 
