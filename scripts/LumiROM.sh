@@ -1116,6 +1116,11 @@ APPLY_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist2" "com.simplemobiletools.camera,net.sourceforge.opencamera,com.google.android.googlequicksearchbox,com.google.android.apps.translate,com.google.ar.lens,com.google.android.apps.bard"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.show_multiuserui" "1"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.max_users" "5"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.config.ringtone" "Over_the_Horizon_2026.ogg"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.config.notification_sound" "Brightline.ogg"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.config.alarm_alert" "Morning_Xylophone.ogg"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.config.ringtone_2" "Galaxy_Bells.ogg"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.config.notification_sound_2" "Three_Star.ogg"
 	
 
     if [ "$BUILD_STATUS" == "OFFICIAL" ]; then
