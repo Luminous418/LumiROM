@@ -212,8 +212,15 @@ jobs:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-        DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-        hf buckets sync ./OUT hf://buckets/Zears14/lumifiles/out/$DATE/ --include "*.zip"
+        TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
+        if [ -f "$OUT_DIR/$ZIP_NAME" ]; then
+          echo "Uploading $ZIP_NAME..."
+          hf buckets cp "$OUT_DIR/$ZIP_NAME" "hf://buckets/Zears14/lumifiles/out/$TIMESTAMP/$ZIP_NAME"
+        else
+          echo "Error: $ZIP_NAME not found in $OUT_DIR!"
+          ls -R "$OUT_DIR"
+          exit 1
+        fi
 
     - name: Cleanup
       run: |
