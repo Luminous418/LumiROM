@@ -186,10 +186,14 @@ jobs:
         source scripts/zip_creation.sh
         FLASHABLE_ZIP_CREATION
 
-    - name: Sending ROM to GoFile.
+    - name: Upload ROM to Hugging Face
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-          chmod +x ./upload.sh 
-          bash ./upload.sh "$(pwd)/template/${ZIP_NAME}"
+        pip install -q huggingface_hub hf_xet
+        DATE=$(date +%Y-%m-%d)
+        hf buckets sync ./template hf://buckets/Zears14/lumifiles/out/$DATE/ --include "*.zip"
 
     - name: Cleanup
       run: |

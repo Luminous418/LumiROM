@@ -108,7 +108,7 @@ FLASHABLE_ZIP_CREATION() {
 
         # ZIP the rom
         cd "$TEMPLATE_DIR"
-        zip -r "$ZIP_FILE" ./*
+        zip -0r "$ZIP_FILE" ./*
 
         echo "ZIP package created: $ZIP_FILE"
         echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV

@@ -1428,7 +1428,7 @@ IMG_TO_BROTLI() {
 
         (
             echo "Compressing $PARTITION.new.dat..."
-            brotli -f -q 4 --output="$OUT_FILE" "$DAT"
+            brotli -f -q 1 --output="$OUT_FILE" "$DAT"
             echo "Finished $PARTITION.new.dat.br"
         ) &
 
