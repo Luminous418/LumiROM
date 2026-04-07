@@ -1136,7 +1136,6 @@ APPLY_FEATURES() {
 
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/media/audio/"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/wallpaper-res/"
-    fi
 
 LUMI_BOMBS() {
     OVERLAY="$(pwd)/LumiROM/Mods/overlays"
