@@ -17,16 +17,17 @@ jobs:
     runs-on: ubuntu-latest
       
     steps:
+
     - name: Checkout repository
       uses: actions/checkout@v6
 
     - name: Install required packages
       run: |
-        sudo apt install -y \
+        sudo apt update -q
+        sudo apt install -y -q \
           p7zip-full lz4 android-sdk-libsparse-utils \
           python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2
-        pip3 install liblp tgcrypto pyrogram gdown
-
+        pip3 install -q liblp tgcrypto pyrogram gdown huggingface_hub hf_xet
         chmod +x bin/erofs-utils/extract.erofs
         chmod +x bin/erofs-utils/mkfs.erofs
 
@@ -46,7 +47,7 @@ jobs:
         echo "LUMIROM_VERSION=8.6.1" >> $GITHUB_ENV
 
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
-        echo "WORK_DIR=$PWD/WORK" >> $GITHUB_ENV
+        echo "WORK_DIR=/dev/shm/WORK" >> $GITHUB_ENV
         echo "FIRM_DIR=$PWD/FIRMWARE" >> $GITHUB_ENV
         echo "DEVICES_DIR=$PWD/LumiROM/Devices" >> $GITHUB_ENV
         echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
@@ -62,14 +63,6 @@ jobs:
         source scripts/LumiROM.sh
         IS_OFFICIAL
 
-    - name: Restore firmware cache
-      uses: actions/cache@v4
-      id: firmware-cache
-      with:
-        path: FIRMWARE
-        key: fw-latest
-        restore-keys: |
-          fw-
 
     - name: Download firmware
       shell: bash
@@ -138,9 +131,10 @@ jobs:
       run: |
         source scripts/LumiROM.sh
         DECOMPILE "$APKTOOL" \
-          "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR"
+          "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
         DECOMPILE "$APKTOOL" \
-          "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR"
+          "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+        wait
 
     - name: Patch Knox
       shell: bash
@@ -158,9 +152,10 @@ jobs:
       run: |
         source scripts/LumiROM.sh
         RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
-          "FIRMWARE/system/system/framework" "$WORK_DIR"
+          "FIRMWARE/system/system/framework" "$WORK_DIR" &
         RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
-          "FIRMWARE/system/system/framework" "$WORK_DIR"
+          "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        wait
         cp -fv "$WORK_DIR"/*.jar \
           "FIRMWARE/system/system/framework/"
 
@@ -183,10 +178,13 @@ jobs:
         source scripts/zip_creation.sh
         FLASHABLE_ZIP_CREATION
 
-    - name: Sending ROM to GoFile.
+    - name: Upload ROM to Hugging Face
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-          chmod +x ./upload.sh 
-          bash ./upload.sh "$(pwd)/template/${ZIP_NAME}"
+        DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        hf buckets sync ./template hf://buckets/Zears14/lumifiles/out/$DATE/ --include "*.zip"
 
     - name: Cleanup
       run: |

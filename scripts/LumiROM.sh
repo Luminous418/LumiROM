@@ -85,9 +85,10 @@ DOWNLOAD_FIRMWARE() {
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
-    aria2c -x 16 -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img"
+    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
     
-    # Cleanup any leftover .aria2 control files
+    # Cleanup any leftover .aria2 control files after everything finishes
+    wait
     find "$DOWN_DIR" -name "*.aria2" -exec rm -f {} +
 }
 
@@ -107,7 +108,7 @@ EXTRACT_FIRMWARE() {
         return 1
     fi
 
-    tar --use-compress-program="zstd -d --long=29" -xf "$FIRM_FILE" -C "$FIRM_DIR" || {
+    tar --use-compress-program="zstd -d -T0 --long=29" -xf "$FIRM_FILE" -C "$FIRM_DIR" || {
         echo "Extraction failed"
         return 1
     }
@@ -179,37 +180,36 @@ EXTRACT_FIRMWARE_IMG() {
             continue
         fi
 
-        local partition
-        local fstype
-        local IMG_SIZE
+        (
+            local partition
+            local fstype
+            local IMG_SIZE
 
-        partition="$(basename "${imgfile%.img}")"
-        fstype=$(file -b $imgfile | awk '{print $1}')
+            partition="$(basename "${imgfile%.img}")"
+            fstype=$(file -b $imgfile | awk '{print $1}')
 
-        # Why Linux below? Because ext4 isnt a thing when you put file -b to an ext4 file
-        # First line says Linux, later on says it is ext2 somehow, so thats quite the fix
-
-        case "$fstype" in
-            Linux)
-                IMG_SIZE=$(stat -c%s -- "$imgfile")
-				echo "$imgfile Detected ext4. Size: $IMG_SIZE bytes."
-                echo "Extracting $imgfile in $FIRM_DIR/$partition"
-                sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR"
-                ;;
-            EROFS)
-                echo ""
-                IMG_SIZE=$(stat -c%s -- "$imgfile")
-                echo "$imgfile Detected $fstype. Size: $IMG_SIZE bytes."
-                echo "Extracting $imgfile in $FIRM_DIR/$partition"
-                $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR" >/dev/null 2>&1
-                ;;
-            *)
-                echo "[$imgfile] Unknown filesystem type ($fstype), skipping"
-                return 1
-                ;;
-        esac
+            case "$fstype" in
+                Linux)
+                    IMG_SIZE=$(stat -c%s -- "$imgfile")
+                    echo "$imgfile Detected ext4. Size: $IMG_SIZE bytes."
+                    echo "Extracting $imgfile in $FIRM_DIR/$partition"
+                    sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR" > /dev/null 2>&1
+                    ;;
+                EROFS)
+                    echo ""
+                    IMG_SIZE=$(stat -c%s -- "$imgfile")
+                    echo "$imgfile Detected $fstype. Size: $IMG_SIZE bytes."
+                    echo "Extracting $imgfile in $FIRM_DIR/$partition"
+                    $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR" >/dev/null 2>&1
+                    ;;
+                *)
+                    echo "[$imgfile] Unknown filesystem type ($fstype), skipping"
+                    ;;
+            esac
+        ) &
     done
 
+    wait
     # Remove all original .img
     rm -rf "$FIRM_DIR"/*.img
 }
@@ -1339,42 +1339,42 @@ BUILD_IMG() {
         PARTITION="$(basename "$PART")"
         [[ "$PARTITION" == "config" ]] && continue 
 
-        local SRC_DIR="$EXTRACTED_FIRM_DIR/$PARTITION"
+        (
+            local SRC_DIR="$EXTRACTED_FIRM_DIR/$PARTITION"
+            local OUT_IMG="$OUT_DIR/${PARTITION}.img"
+            local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
+            local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
+            local MOUNT_POINT="/$PARTITION"
+
+            echo ""
+            [[ -f "$FS_CONFIG" ]] || { echo "Warning: $FS_CONFIG missing, skipping $PARTITION"; exit 0; }
+            [[ -f "$FILE_CONTEXTS" ]] || { echo "Warning: $FILE_CONTEXTS missing, skipping $PARTITION"; exit 0; }
+
+            sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
+            sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
+            sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/
+
+            if [[ "$FILE_SYSTEM" == "erofs" ]]; then
+                echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
+                sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
+                sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
+            else
+                echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
+            fi
+        ) &
+    done
+
+    wait
+
+    # Updates the list sequentially to avoid race conditions
+    for PART in "$EXTRACTED_FIRM_DIR"/*; do
+        [[ -d "$PART" ]] || continue    
+        PARTITION="$(basename "$PART")"
         local OUT_IMG="$OUT_DIR/${PARTITION}.img"
-        local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-        local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        local SIZE=$(sudo du -sb --apparent-size "$SRC_DIR" | awk '{printf "%.0f", $1 * 1.2}')
-		local MOUNT_POINT="/$PARTITION"
-
-
-        echo ""
-        [[ -f "$FS_CONFIG" ]] || { echo "Warning: $FS_CONFIG missing, skipping $PARTITION"; continue; }
-        [[ -f "$FILE_CONTEXTS" ]] || { echo "Warning: $FILE_CONTEXTS missing, skipping $PARTITION"; continue; }
-
-        sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
-        sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-        sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/
-
-        if [[ "$FILE_SYSTEM" == "erofs" ]]; then
-            echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
-            sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
-            sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
-        else
-            echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
-            continue
-        fi
-
-        # Updates the img size on the list 
-        if [[ -f "$OUT_IMG" ]]; then
+        if [[ -f "$OUT_IMG" && -f "$OP_LIST" ]]; then
             local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
             echo -e "\e[32mUpdating size of $PARTITION in op_list: $ACTUAL_SIZE bytes\e[0m"
-            
-            # Updates the img size on the resize lines to be able to be flashed
-            if [[ -f "$OP_LIST" ]]; then
-                sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
-            else
-                echo "Warning: $OP_LIST hasn't been found."
-            fi
+            sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
         fi
     done
 }
@@ -1404,48 +1404,41 @@ IMG_TO_BROTLI() {
 
     for f in "$IMG_DIR"/*.img; do
         [[ -f "$f" ]] || continue
-
         PARTITION="$(basename "$f" .img)"
 
-        echo "Converting $PARTITION.img..."
-
-        "$IMG2SDAT_BIN" \
-            -o "$TMP_DIR" \
-            -B "$TMP_DIR/$PARTITION.map" \
-            "$f"
-
-        
-        if [ $? -ne 0 ]; then
-            echo "Error converting $PARTITION"
-            return 1
-        fi
-        
-        touch "$TMP_DIR/$PARTITION.patch.dat"
-        echo "Created patch.dat for $PARTITION"
+        (
+            echo "Converting $PARTITION.img..."
+            "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$f" > /dev/null 2>&1
+            touch "$TMP_DIR/$PARTITION.patch.dat"
+            echo "Created patch.dat for $PARTITION"
+        ) &
     done
+
+    wait
 
     # Compress it to .new.dat.br to make later a .zip file
     echo ""
-    echo "=== Compressing DAT files with Brotli ==="
+    echo "=== Compressing DAT files with Brotli (Parallel) ==="
 
+    local JOBS=4 # Set to match vCPUs
     for DAT in "$TMP_DIR"/*.new.dat; do
         [[ -f "$DAT" ]] || continue
-
         PARTITION="$(basename "$DAT" .new.dat)"
         OUT_FILE="$TMP_DIR/$PARTITION.new.dat.br"
 
-        echo "Compressing $PARTITION.new.dat..."
+        (
+            echo "Compressing $PARTITION.new.dat..."
+            brotli -f -q 1 --output="$OUT_FILE" "$DAT"
+            echo "Finished $PARTITION.new.dat.br"
+        ) &
 
-        brotli -f --quality=6 \
-               --output="$OUT_FILE" \
-               "$DAT"
-
-        if [ $? -ne 0 ]; then
-            echo "Error compressing $PARTITION"
-            return 1
-        fi
+        # Limit concurrent jobs
+        while [ $(jobs -r | wc -l) -ge "$JOBS" ]; do
+            sleep 1
+        done
     done
 
+    wait
     echo ""
     echo "All partitions converted and compressed successfully."
 }
