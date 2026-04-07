@@ -183,7 +183,7 @@ jobs:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-        DATE=$(date -u +%Y-%m-%d-%Hh)
+        DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
         hf buckets sync ./template hf://buckets/Zears14/lumifiles/out/$DATE/ --include "*.zip"
 
     - name: Cleanup
