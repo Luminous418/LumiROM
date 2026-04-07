@@ -105,6 +105,8 @@ FLASHABLE_ZIP_CREATION() {
 
     # First add base template files (compressible)
     echo "  Adding scripts and metadata (Compress)..."
+    (
+        cd "$ZIP_WORK_DIR"
         RUN_SILENT 7z a -mx=6 -mmt=4 "$OUT_DIR/$ZIP_FILE" \
             ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list
     )
