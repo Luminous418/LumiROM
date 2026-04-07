@@ -197,7 +197,9 @@ jobs:
       shell: bash
       run: |
         source scripts/zip_creation.sh
-        UPDATE_ZIP_SCRIPT "FIRMWARE"
+        # Ensure workspace exists (usually done by BUILD_IMG, but for safety here too)
+        [ -d "$OUT_DIR/ZIP_PACKAGE" ] || (mkdir -p "$OUT_DIR/ZIP_PACKAGE" && cp -rp template/* "$OUT_DIR/ZIP_PACKAGE/")
+        UPDATE_ZIP_SCRIPT "FIRMWARE" "$OUT_DIR/ZIP_PACKAGE"
         
     - name: Prepare flashable zip
       shell: bash
@@ -211,7 +213,7 @@ jobs:
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
         DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-        hf buckets sync ./template hf://buckets/Zears14/lumifiles/out/$DATE/ --include "*.zip"
+        hf buckets sync ./OUT hf://buckets/Zears14/lumifiles/out/$DATE/ --include "*.zip"
 
     - name: Cleanup
       run: |

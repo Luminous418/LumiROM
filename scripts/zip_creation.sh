@@ -1,13 +1,18 @@
 #!/bin/bash
 
 UPDATE_ZIP_SCRIPT() {
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR> <ZIP_WORK_DIR>"
+        return 1
+    fi
     
-        local EXTRACTED_FIRM_DIR="$1"
-        BUILD_PROP_PATH="$EXTRACTED_FIRM_DIR/system/system/build.prop"
-        FINGERPRINT=$(grep -m 1 "ro.system.build.fingerprint=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
-        BUILD_DATE=$(date +'%d%m%Y')
-        DEVICE="$STOCK_DEVICE"
-        UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
+    local EXTRACTED_FIRM_DIR="$1"
+    local ZIP_WORK_DIR="$2"
+    BUILD_PROP_PATH="$EXTRACTED_FIRM_DIR/system/system/build.prop"
+    FINGERPRINT=$(grep -m 1 "ro.system.build.fingerprint=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
+    BUILD_DATE=$(date +'%d%m%Y')
+    DEVICE="$STOCK_DEVICE"
+    UPDATER_PATH="$ZIP_WORK_DIR/META-INF/com/google/android/updater-script"
 
         if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
             DEVICE_CODENAME="a32"
@@ -68,35 +73,41 @@ FLASHABLE_ZIP_CREATION() {
     elif [[ "$DEVICE" == "SM-A225M" ]]; then DEVICE_CODENAME="a22ub"
     elif [[ "$DEVICE" == "SM-A226B" ]]; then DEVICE_CODENAME="a22x"
     elif [[ "$DEVICE" == "SM-M325F" ]]; then DEVICE_CODENAME="m32"
+    elif [[ "$DEVICE" == "SM-M325F" ]]; then DEVICE_CODENAME="m32"
     elif [[ "$DEVICE" == "SM-E225F" ]]; then DEVICE_CODENAME="f22"
     elif [[ "$DEVICE" == "SM-M225F" ]]; then DEVICE_CODENAME="m22"
     else DEVICE_CODENAME="unknown"; fi
 
     echo "--- Preparing Flashable ZIP ($DEVICE_CODENAME) ---"
     
+    local ZIP_WORK_DIR="$OUT_DIR/ZIP_PACKAGE"
+    # Ensure fresh workspace based on static template
+    rm -rf "$ZIP_WORK_DIR" && mkdir -p "$ZIP_WORK_DIR"
+    cp -rp "$TEMPLATE_DIR/"* "$ZIP_WORK_DIR/"
+
     # Generate build info
     {
         echo "device=$DEVICE_CODENAME"
         echo "version=$LUMIROM_VERSION-$BUILD_DATE"
         echo "timestamp=$TIMESTAMP"
         echo "status=$BUILD_STATUS"
-    } > "$TEMPLATE_DIR/build_info.txt"
+    } > "$ZIP_WORK_DIR/build_info.txt"
 
     # Copy boot.img if specific one exists
     local SPECIFIC_BOOT="$WS_ROOT/LumiROM/Devices/$DEVICE/boot.img"
     if [ -f "$SPECIFIC_BOOT" ]; then
-        cp "$SPECIFIC_BOOT" "$TEMPLATE_DIR/boot.img"
+        cp "$SPECIFIC_BOOT" "$ZIP_WORK_DIR/boot.img"
     fi
 
     # 2. ZIP Creation (Multi-stage Zero Copy)
     local ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
-    [ -f "$WS_ROOT/$ZIP_FILE" ] && rm "$WS_ROOT/$ZIP_FILE"
+    [ -f "$OUT_DIR/$ZIP_FILE" ] && rm "$OUT_DIR/$ZIP_FILE"
 
     # First add base template files (compressible)
     echo "  Adding scripts and metadata (Compress)..."
     (
-        cd "$TEMPLATE_DIR"
-        RUN_SILENT 7z a -mx=6 -mmt=4 "$WS_ROOT/$ZIP_FILE" \
+        cd "$ZIP_WORK_DIR"
+        RUN_SILENT 7z a -mx=6 -mmt=4 "$OUT_DIR/$ZIP_FILE" \
             ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list
     ) 2>/dev/null || true
 
@@ -105,12 +116,11 @@ FLASHABLE_ZIP_CREATION() {
         echo "  Appending large ROM assets (Store)..."
         (
             cd "$TMP_DIR"
-            RUN_SILENT 7z a -mx=0 -mmt=4 "$WS_ROOT/$ZIP_FILE" \
+            RUN_SILENT 7z a -mx=0 -mmt=4 "$OUT_DIR/$ZIP_FILE" \
                 ./*.new.dat.br ./*.patch.dat
         ) 2>/dev/null || true
     fi
 
-    echo "ZIP package created: $ZIP_FILE"
-    mv "$WS_ROOT/$ZIP_FILE" "$TEMPLATE_DIR/$ZIP_FILE"
-    echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
+    echo "ZIP package created: $OUT_DIR/$ZIP_FILE"
+    [ -n "$GITHUB_ENV" ] && echo "ZIP_NAME=$ZIP_FILE" >> "$GITHUB_ENV" || true
 }

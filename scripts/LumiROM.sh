@@ -23,15 +23,13 @@ IS_OFFICIAL() {
     if [ "$CURRENT_SIGNATURE" == "$OFFICIAL_HASH" ]; then
         export BUILD_STATUS="OFFICIAL"
         export ROM_TAG="✨ LumiROM Official Build"
-        
-        echo "BUILD_STATUS=OFFICIAL" >> "$GITHUB_ENV"
-        echo "ROM_TAG=✨ LumiROM Official Build" >> "$GITHUB_ENV"
+        [ -n "$GITHUB_ENV" ] && echo "BUILD_STATUS=OFFICIAL" >> "$GITHUB_ENV"
+        [ -n "$GITHUB_ENV" ] && echo "ROM_TAG=✨ LumiROM Official Build" >> "$GITHUB_ENV"
     else
         export BUILD_STATUS="UNOFFICIAL"
         export ROM_TAG="🛠️ LumiROM Unofficial Build"
-        
-        echo "BUILD_STATUS=UNOFFICIAL" >> "$GITHUB_ENV"
-        echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
+        [ -n "$GITHUB_ENV" ] && echo "BUILD_STATUS=UNOFFICIAL" >> "$GITHUB_ENV"
+        [ -n "$GITHUB_ENV" ] && echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
     fi
 
     echo "--- $ROM_TAG detected ---"
@@ -1379,9 +1377,17 @@ BUILD_IMG() {
 	local OUT_DIR="$3"
     local TMP_DIR="TMP" # Default TMP dir
     local DEVICE_CONFIG="$(pwd)/LumiROM/Devices/${STOCK_DEVICE}/config"
-    local OP_LIST="$(pwd)/template/dynamic_partitions_op_list"
+    local ZIP_WORK_DIR="$OUT_DIR/ZIP_PACKAGE"
+    local OP_LIST="$ZIP_WORK_DIR/dynamic_partitions_op_list"
 
     mkdir -p "$TMP_DIR"
+    
+    # Initialize ZIP_PACKAGE if not already done (BUILD_IMG is usually first)
+    if [ ! -d "$ZIP_WORK_DIR" ]; then
+        echo "  Initializing ZIP workspace in OUT/..."
+        mkdir -p "$ZIP_WORK_DIR"
+        cp -rp template/* "$ZIP_WORK_DIR/"
+    fi
 
     if [[ -f "$DEVICE_CONFIG" ]]; then
         local SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')

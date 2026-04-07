@@ -1,0 +1,34 @@
+# LumiROM Build Artifacts
+FIRMWARE/
+WORK/
+OUT/
+TMP/
+CACHE/
+
+# Logs
+*.log
+apt.log
+pip.log
+apt_fast_setup.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# Firmware and Flashable ZIPs
+*.tar.zst
+*.img
+*.img.raw
+*.zip
+
+# Ignore generated/transient files in the template directory
+template/build_info.txt
+template/boot.img
+template/*.zip
+
+# OS Specific
+.DS_Store
+.thumbs.db
