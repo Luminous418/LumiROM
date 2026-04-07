@@ -26,13 +26,13 @@ jobs:
           python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2
         pip3 install -q liblp tgcrypto pyrogram gdown huggingface_hub hf_xet
 
-        chmod +x bin/erofs-utils/extract.erofs
-        chmod +x bin/erofs-utils/mkfs.erofs
 
     - name: Download and Extract Repository (High Speed)
       run: |
         aria2c -x 16 -s 16 -o repo.tar.gz ${{ github.server_url }}/${{ github.repository }}/archive/${{ github.sha }}.tar.gz
         tar -xzf repo.tar.gz --strip-components=1
+        chmod +x bin/erofs-utils/extract.erofs
+        chmod +x bin/erofs-utils/mkfs.erofs
         rm repo.tar.gz
 
     - name: Setup directories
