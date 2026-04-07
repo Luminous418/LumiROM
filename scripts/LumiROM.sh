@@ -93,11 +93,11 @@ DOWNLOAD_FIRMWARE() {
         find "$DOWN_DIR" -maxdepth 1 -type f -name '*.tar.zst' ! -name 'BASE_FW.tar.zst' -exec rm -f {} +
     else
         echo "Firmware not found, downloading..."
-        aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.tar.zst" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
+        RUN_SILENT aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.tar.zst" --allow-overwrite=true --auto-file-renaming=false "$FW_URL"
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
-    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
+    RUN_SILENT aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
     
     # Cleanup any leftover .aria2 control files after everything finishes
     wait
@@ -122,9 +122,6 @@ EXTRACT_FIRMWARE() {
 
     echo "--- Extracting firmware ---"
     RUN_SILENT "Extracting" tar --use-compress-program="zstd -d -T0 --long=29" -xf "$FIRM_FILE" -C "$FIRM_DIR"
-        echo "Extraction failed"
-        return 1
-    }
 
     rm -f "$FIRM_FILE"
 }
@@ -185,39 +182,38 @@ EXTRACT_FIRMWARE_IMG() {
 
 	local FIRM_DIR="$1"
 
-	echo "Extracting imges from $FIRM_DIR"
+	echo "Syncing partitions for extraction..."
+    local PIDS=()
     for imgfile in "$FIRM_DIR"/*.img; do
-        [ -e "$imgfile" ] || continue
-
-        if [[ "$(basename "$imgfile")" == "boot.img" ]]; then
-            continue
+        [ -f "$imgfile" ] || continue
+        partition=$(basename "$imgfile" .img)
+        
+        # Determine filesystem type (EXT4 or EROFS)
+        local fstype="Unknown"
+        if strings "$imgfile" | grep -q "MOD_SB" 2>/dev/null; then fstype="EROFS"
+        elif $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -l >/dev/null 2>&1; then fstype="EROFS"
+        elif file "$imgfile" | grep -q "ext4" 2>/dev/null; then fstype="Linux"
         fi
 
-        (
-            local partition
-            local fstype
-            local IMG_SIZE
-
-            partition="$(basename "${imgfile%.img}")"
-            fstype=$(file -b $imgfile | awk '{print $1}')
-
-            case "$fstype" in
-                Linux)
-                    IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    RUN_SILENT "Extracting $imgfile" sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR"
-                    ;;
-                EROFS)
-                    IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    RUN_SILENT "Extracting $imgfile" $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR"
-                    ;;
-                *)
-                    echo "[$imgfile] Unknown filesystem type ($fstype), skipping"
-                    ;;
-            esac
-        ) &
+        if [[ "$fstype" != "Unknown" ]]; then
+            (
+                if [[ "$imgfile" == *.erofs ]] || [[ "$fstype" == "EROFS" ]]; then
+                    RUN_SILENT $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR"
+                else
+                    RUN_SILENT sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR"
+                fi
+            ) &
+            PIDS+=($!)
+        else
+            echo "[$imgfile] Unknown filesystem type ($fstype), skipping"
+        fi
     done
 
-    wait
+    # Wait for all extractions and check for failures
+    for pid in "${PIDS[@]}"; do
+        wait "$pid" || exit 1
+    done
+
     # Remove all original .img
     rm -rf "$FIRM_DIR"/*.img
 }
@@ -1380,15 +1376,21 @@ BUILD_IMG() {
     fi
 
     echo "=== Starting Parallel ROM Build Pipeline (Per Partition) ==="
+    local PIDS=()
     for PART in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$PART" ]] || continue    
         PARTITION="$(basename "$PART")"
         [[ "$PARTITION" == "config" ]] && continue 
 
         BUILD_SINGLE_PARTITION "$EXTRACTED_FIRM_DIR" "$FILE_SYSTEM" "$OUT_DIR" "$PARTITION" "$TMP_DIR" &
+        PIDS+=($!)
     done
 
-    wait
+    # Wait for all partitions and ensure no failures
+    for pid in "${PIDS[@]}"; do
+        wait "$pid" || exit 1
+    done
+
     echo "=== All Partition Pipelines Finished ==="
 
     # Updates the list sequentially to avoid race conditions
