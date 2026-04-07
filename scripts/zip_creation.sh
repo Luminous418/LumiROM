@@ -111,5 +111,6 @@ FLASHABLE_ZIP_CREATION() {
     fi
 
     echo "ZIP package created: $ZIP_FILE"
+    mv "$WS_ROOT/$ZIP_FILE" "$TEMPLATE_DIR/$ZIP_FILE"
     echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
 }
