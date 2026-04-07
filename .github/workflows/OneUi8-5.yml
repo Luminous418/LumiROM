@@ -17,8 +17,11 @@ jobs:
     runs-on: ubuntu-latest
       
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+    - name: Download and Extract Repository (High Speed)
+      run: |
+        aria2c -x 16 -s 16 -o repo.tar.gz ${{ github.server_url }}/${{ github.repository }}/archive/${{ github.sha }}.tar.gz
+        tar -xzf repo.tar.gz --strip-components=1
+        rm repo.tar.gz
 
     - name: Install required packages
       run: |
