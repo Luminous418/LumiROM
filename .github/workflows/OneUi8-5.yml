@@ -204,6 +204,7 @@ jobs:
     - name: Prepare flashable zip
       shell: bash
       run: |
+        source scripts/LumiROM.sh
         source scripts/zip_creation.sh
         FLASHABLE_ZIP_CREATION
 
