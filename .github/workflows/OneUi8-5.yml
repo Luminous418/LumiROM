@@ -22,12 +22,15 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Install required packages
+      shell: bash
       run: |
-        sudo apt update -q
-        sudo apt install -y -q \
-          p7zip-full lz4 android-sdk-libsparse-utils \
-          python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2
-        pip3 install -q liblp tgcrypto pyrogram gdown huggingface_hub hf_xet
+        echo "Updating package lists..."
+        sudo apt-get -y -qq update > apt.log 2>&1 || (cat apt.log && exit 1)
+        echo "Installing system dependencies..."
+        sudo apt-get -y -qq install p7zip-full lz4 android-sdk-libsparse-utils python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2 >> apt.log 2>&1 || (cat apt.log && exit 1)
+        echo "Installing Python dependencies..."
+        pip3 install -q liblp tgcrypto pyrogram gdown huggingface_hub hf_xet >> pip.log 2>&1 || (cat pip.log && exit 1)
+        rm -f apt.log pip.log
         chmod +x bin/erofs-utils/extract.erofs
         chmod +x bin/erofs-utils/mkfs.erofs
 
@@ -125,12 +128,12 @@ jobs:
         source scripts/LumiROM.sh
         
         # Install framework-res first (needed for decompile)
-        INSTALL_FRAMEWORK "FIRMWARE/system/system/framework/framework-res.apk"
+        RUN_SILENT "Install Framework" java -jar "$APKTOOL" install-framework "FIRMWARE/system/system/framework/framework-res.apk"
         
         # Start Decompilation in background
-        echo "Starting background decompilation..."
-        DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
-        DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+        echo "--- Decompiling framework jars ---"
+        RUN_SILENT "Decompile SSRM" java -jar "$APKTOOL" d -f "FIRMWARE/system/system/framework/ssrm.jar" -o "$WORK_DIR/ssrm" &
+        RUN_SILENT "Decompile Services" java -jar "$APKTOOL" d -f "FIRMWARE/system/system/framework/services.jar" -o "$WORK_DIR/services" &
         
         # Wait for decompilation to finish before patching
         wait
@@ -145,12 +148,15 @@ jobs:
         DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
         
         # Recompile in parallel
-        echo "Starting parallel recompilation..."
-        RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" "FIRMWARE/system/system/framework" "$WORK_DIR" &
-        RECOMPILE "$APKTOOL" "$WORK_DIR/services" "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        echo "--- Recompiling framework jars ---"
+        RUN_SILENT "Recompile SSRM" java -jar "$APKTOOL" b "$WORK_DIR/ssrm" --copy-original -p "$WORK_DIR" -o "$WORK_DIR/ssrm_built.jar" &
+        RUN_SILENT "Recompile Services" java -jar "$APKTOOL" b "$WORK_DIR/services" --copy-original -p "$WORK_DIR" -o "$WORK_DIR/services_built.jar" &
         wait
         
-        cp -fv "$WORK_DIR"/*.jar "FIRMWARE/system/system/framework/"
+        cp -fv "$WORK_DIR"/*_built.jar "FIRMWARE/system/system/framework/"
+        # Fix names: rename back to original if needed or ensure they match
+        mv "FIRMWARE/system/system/framework/ssrm_built.jar" "FIRMWARE/system/system/framework/ssrm.jar"
+        mv "FIRMWARE/system/system/framework/services_built.jar" "FIRMWARE/system/system/framework/services.jar"
 
     - name: Build ROM
       shell: bash

@@ -1,4 +1,16 @@
-#!/bin/bash
+# --- Helper Functions ---
+RUN_SILENT() {
+    local LOG_FILE=$(mktemp)
+    if ! "$@" > "$LOG_FILE" 2>&1; then
+        echo -e "\e[31m[!] Command FAILED: $*\e[0m"
+        cat "$LOG_FILE"
+        rm -f "$LOG_FILE"
+        exit 1
+    fi
+    rm -f "$LOG_FILE"
+}
+
+# --- Build ROM Stage ---
 
 IS_OFFICIAL() {
     CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
@@ -108,7 +120,8 @@ EXTRACT_FIRMWARE() {
         return 1
     fi
 
-    tar --use-compress-program="zstd -d -T0 --long=29" -xf "$FIRM_FILE" -C "$FIRM_DIR" || {
+    echo "--- Extracting firmware ---"
+    RUN_SILENT "Extracting" tar --use-compress-program="zstd -d -T0 --long=29" -xf "$FIRM_FILE" -C "$FIRM_DIR"
         echo "Extraction failed"
         return 1
     }
@@ -191,16 +204,11 @@ EXTRACT_FIRMWARE_IMG() {
             case "$fstype" in
                 Linux)
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    echo "$imgfile Detected ext4. Size: $IMG_SIZE bytes."
-                    echo "Extracting $imgfile in $FIRM_DIR/$partition"
-                    sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR" > /dev/null 2>&1
+                    RUN_SILENT "Extracting $imgfile" sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR"
                     ;;
                 EROFS)
-                    echo ""
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    echo "$imgfile Detected $fstype. Size: $IMG_SIZE bytes."
-                    echo "Extracting $imgfile in $FIRM_DIR/$partition"
-                    $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR" >/dev/null 2>&1
+                    RUN_SILENT "Extracting $imgfile" $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR"
                     ;;
                 *)
                     echo "[$imgfile] Unknown filesystem type ($fstype), skipping"
@@ -1236,10 +1244,8 @@ GEN_FS_CONFIG_SINGLE() {
         if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
             local REL_PATH="${ENTRY#$PARTITION/}"
             if [[ -d "$ROOT/$REL_PATH" ]]; then
-                echo "  [${PARTITION}] Adding DIR: $ENTRY"
                 echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
             else
-                echo "  [${PARTITION}] Adding FILE: $ENTRY"
                 echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
             fi
         fi
@@ -1274,7 +1280,6 @@ GEN_FILE_CONTEXTS_SINGLE() {
 
     sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
         if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
-            echo "  [${PARTITION}] Context for: $PATH_ENTRY"
             local CONTEXT="u:object_r:system_file:s0"
             if [[ "$PARTITION" == "vendor" ]]; then
                 CONTEXT="u:object_r:vendor_file:s0"
@@ -1327,7 +1332,7 @@ BUILD_SINGLE_PARTITION() {
     sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/ 2>/dev/null || true
 
     if [[ "$FILE_SYSTEM" == "erofs" ]]; then
-        sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
+        RUN_SILENT sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR"
         sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
     else
         echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
@@ -1336,14 +1341,14 @@ BUILD_SINGLE_PARTITION() {
 
     # 3. Convert to SDAT
     echo "--- [${PARTITION}] Converting to SDAT ---"
-    "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$OUT_IMG" > /dev/null 2>&1
+    RUN_SILENT "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$OUT_IMG"
     touch "$TMP_DIR/$PARTITION.patch.dat"
 
     # 4. Compress to Brotli
     echo "--- [${PARTITION}] Compressing with Brotli ---"
     local DAT="$TMP_DIR/$PARTITION.new.dat"
     local OUT_BR="$TMP_DIR/$PARTITION.new.dat.br"
-    brotli -f -q 1 --output="$OUT_BR" "$DAT"
+    RUN_SILENT brotli -f -q 1 --output="$OUT_BR" "$DAT"
     rm -f "$DAT" # Free up space
 
     echo "--- [${PARTITION}] Done ---"
