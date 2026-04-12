@@ -9,14 +9,12 @@
 ## Features
 - Massive debloat.
 
-## Not working
-- Yet hotspot doesnt work.
-
 ## Device Specific
 - A32 got a new kernel with spoofed 5.10. (visual)
 - A22 got a new kernel with spoofed 6.12. (visual)
 
 ## Bugs
+- Yet hotspot doesnt work.
 - You tell me.
 
 # Download
