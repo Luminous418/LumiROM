@@ -15,6 +15,7 @@ Here are the ROM versions and their respective changelog documents.
 | ![LumiROM 8.1.1](https://img.shields.io/badge/LumiROM-8.1.1-EB0C2A?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.1.1.md) |
 | ![LumiROM 8.1.0](https://img.shields.io/badge/LumiROM-8.1.0-EB0C2A?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.1.0.md) |
 | ![LumiROM 8.0.1](https://img.shields.io/badge/LumiROM-8.0.1-EB0C2A?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.0.1.md) |
+| ![LumiROM 8.0.0](https://img.shields.io/badge/LumiROM-8.0.0-EB0C2A?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.0.0.md) |
 | ![LumiVENDOR](https://img.shields.io/badge/Lumi-VENDOR-green?logo=Android) | [Download](https://t.me/lumiromgroup/4896) |
 
 ## Note
