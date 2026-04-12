@@ -1,0 +1,32 @@
+name: Inline Message Workflow
+
+on:
+  push:
+    branches: [TestBombs]
+
+jobs:
+  send-inline-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Get SHORT sha of the commit
+        shell: bash
+        run: |
+          echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c 1-7)" >> $GITHUB_ENV
+
+      - name: Send Inline Telegram Message
+        uses: cbrgm/telegram-github-action@v1
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          parse-mode: "html"
+          message: |
+            <b>⚠️ New commit by <a href="https://github.com/${{ github.actor }}">${{ github.actor }}</a></b>
+            <b>Commit: </b>${{ github.event.head_commit.message }} | <code>${{ env.SHORT_SHA }}</code>
+            <b>Repository:</b> <code>${{ github.repository }}</code>
+            
+            <blockquote>View changes on GitHub:
+            <a href="https://github.com/${{ github.repository }}/commit/${{ github.sha }}">Click here to see the diff</a></blockquote>
+          disable-web-page-preview: true
