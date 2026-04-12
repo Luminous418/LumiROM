@@ -2,8 +2,15 @@
 
 Here are the ROM versions and their respective changelog documents.
 
-| Version | Document Link |
+| Version | Link |
 | :--- | :--- |
 | ![LumiROM 8.6.1](https://img.shields.io/badge/LumiROM-8.6.1-blue?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.6.1.md) |
 | ![LumiROM 8.6.0](https://img.shields.io/badge/LumiROM-8.6.0-blue?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.6.0.md) |
 | ![LumiROM 8.5.5](https://img.shields.io/badge/LumiROM-8.5.5-blue?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.5.5.md) |
+| ![LumiROM 8.5.0](https://img.shields.io/badge/LumiROM-8.5.0-blue?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.5.0.md) |
+| ![LumiVENDOR](https://img.shields.io/badge/Lumi-VENDOR-green?logo=Android) | [Download](https://t.me/lumiromgroup/4896) |
+
+## Note
+LumiVENDOR is only for A325FXXS7DWL1 and A325FXXSCDXL2 for make it able to install and use my roms.
+
+A325FXXSCDYB2 and A325MUBSBDYC2 (that is the latest A325X update) can install normally the rom without flashing LumiVENDOR.
