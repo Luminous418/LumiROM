@@ -7,6 +7,9 @@ This custom ROM is created to provide a totally new experience to Low end Mediat
 
 It downloads the imgs from the server, and adds the features implemented in the repository such as Galaxy AI, heavily debloat and improve the perfomance, aswell as make QoL improvements so the device can be used again!
 
+## Changelogs
+Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/README.md) folder to know more about releases and useful information.
+
 ## Features
 - System Optimization.
 - Heavy debloated system.
