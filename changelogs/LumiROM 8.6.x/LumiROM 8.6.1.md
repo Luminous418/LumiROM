@@ -23,7 +23,7 @@
 
 # Screenshots
 
-<img src="screenshots/homescreen.png" width="30%"> <img src="screenshots/software_info.png" width="30%"> <img src="screenshots/wallpapers.png" width="30%">
+<img src="../screenshots/homescreen.png" width="30%"> <img src="../screenshots/software_info.png" width="30%"> <img src="../screenshots/wallpapers.png" width="30%">
 
 # Download
 [Download LumiROM 8.6.1](https://t.me/LumiROMs)
