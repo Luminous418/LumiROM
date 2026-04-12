@@ -2,7 +2,7 @@ name: Inline Message Workflow
 
 on:
   push:
-    branches: [TestBombs]
+    branches: [OneUI8.5]
 
 jobs:
   send-inline-message:
