@@ -13,5 +13,11 @@
 - Yet hotspot doesnt work.
 
 ## Device Specific
-- A32 got a new kernel with spoofed 5.10 (visual)
-- A22 got a new kernel with spoofed 6.12 (visual)
+- A32 got a new kernel with spoofed 5.10. (visual)
+- A22 got a new kernel with spoofed 6.12. (visual)
+
+## Bugs
+- You tell me.
+
+# Download
+[Download LumiROM 8.5.5](https://t.me/LumiROMs)
