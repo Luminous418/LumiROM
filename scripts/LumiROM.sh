@@ -959,8 +959,10 @@ DEBLOAT() {
 DEODEX() {
     echo "- Deodexing ROM (removing oat folders)..."
     echo "  > OAT folders to remove:"
-    find "$EXTRACTED_FIRM_DIR/system" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
-    sudo find "$EXTRACTED_FIRM_DIR/system" -type d -name "oat" -exec rm -rf {} +
+    find "$EXTRACTED_FIRM_DIR/system/priv-app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
+    sudo find "$EXTRACTED_FIRM_DIR/system/priv-app" -type d -name "oat" -exec rm -rf {} +
+    find "$EXTRACTED_FIRM_DIR/system/app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
+    sudo find "$EXTRACTED_FIRM_DIR/system/app" -type d -name "oat" -exec rm -rf {} +
     echo "  > Deodex complete"
 }
 
