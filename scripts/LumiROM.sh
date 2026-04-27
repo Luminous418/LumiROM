@@ -61,11 +61,11 @@ DOWNLOAD_FIRMWARE() {
 
     # Determine FW URL and cached filename based on stock device
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/A346E.tar.zst?download=true"
+        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A346E.tar.zst?download=true"
         CACHE_FW="${DOWN_DIR}/A34.tar.zst"
 
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/A245F.tar.zst?download=true"
+        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A245F.tar.zst?download=true"
         CACHE_FW="${DOWN_DIR}/A24.tar.zst"
 
     else
