@@ -7,6 +7,10 @@ on:
         description: "Put the Model of your phone, remember it starts with SM-"
         required: true
         default: "SM-A325F"
+      USE_MODS:
+        description: "Add mods to the ROM, 'Yes' to add, 'No' to don't add"
+        required: true
+        default: "Yes"
       USE_UI_8_TETHERING_APEX:
         description: "Set True if your kernel BPF version is lower than 5.10"
         required: true
@@ -43,6 +47,7 @@ jobs:
       run: |
         echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
+        echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
         echo "LUMIROM_VERSION=8.6.1" >> $GITHUB_ENV
 
@@ -106,6 +111,12 @@ jobs:
       run: |
         source scripts/LumiROM.sh
         APPLY_FEATURES "FIRMWARE"
+
+    - name: Adding mods
+      shell: bash
+      run: |
+        source scripts/Mods.sh
+        ADD_MODS
 
     - name: Update Build ID
       shell: bash

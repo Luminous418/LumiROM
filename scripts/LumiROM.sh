@@ -1124,7 +1124,6 @@ APPLY_FEATURES() {
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "false"
     fi
 
-    ADD_MODS
 }
 
 APPEND_DISPLAY_ID() {
