@@ -1124,39 +1124,34 @@ APPLY_FEATURES() {
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "false"
     fi
 
-    # Fix Samsung AI Photo Editor Crash.
-	sed -i '0,/"ModelType": "MODEL_TYPE_INSTANCE_CAPTURE"/s//"ModelType": "MODEL_TYPE_OBJ_INSTANCE_CAPTURE"/' "$EXTRACTED_FIRM_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json"
-
-}
-
-LUMI_BOMBS() {
-    OVERLAY="$(pwd)/LumiROM/Mods/overlays"
-
-    if [ -d "$OVERLAY" ]; then
-        echo "Applying LumiBombs Mods..."
-
-        # Add every mod that is on Mods/overlay folder
-        # Need to be added like /system/system/priv-app/(file or folder)
-        for MOD in "$OVERLAY"/*; do
-            [ -d "$MOD" ] || continue
-
-            MOD_NAME=$(basename "$MOD")
-            echo "Applying Mod: $MOD_NAME"
-
-            echo "  > Files:"
-            find "$MOD" -type f | sed "s|$MOD/|    - |"
-
-            # Copy mod into firmware
-            sudo rsync -a "$MOD"/ "$EXTRACTED_FIRM_DIR"/
-
-            echo "Finished: $MOD_NAME"
-            echo "--------------------------------------------"
-        done
-
-        echo "All LumiBombs mods applied successfully"
-    else
-        echo "No LumiBombs overlay found, skipping..."
+        echo "- Adding Mods..."
+	if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
+        mkdir -p "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper"
+        cp -rfa "$(pwd)/LumiROM/Mods/Apps/AiWallpaper/"* "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper/"
     fi
+
+	if [ ! -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull" ]; then
+	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailasso"
+		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailassomatting"
+		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/inpainting"
+		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/objectremoval"
+		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/reflectionremoval"
+		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/shadowremoval"
+		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/style_transfer"
+	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
+        cp -rfa "$(pwd)/LumiROM/Mods/Apps/PhotoEditor_AIFull/"* "$EXTRACTED_FIRM_DIR/system/system/"
+		unzip -o "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip" -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/" >/dev/null 2>&1
+		rm -f "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip"
+    fi
+
+    # For every new mod, add it with all route, until I remake the script
+    sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/bin/"* "$EXTRACTED_FIRM_DIR/system/system/bin/"
+    sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/etc/"* "$EXTRACTED_FIRM_DIR/system/system/etc/"
+    sudo cp -rfa "$(pwd)/LumiROM/Mods/vulkan_fix/system/system/lib64/"* "$EXTRACTED_FIRM_DIR/system/system/lib64/"
+    sudo cp -rfa "$(pwd)/LumiROM/Mods/volte_fix/vendor/lib64/"* "$EXTRACTED_FIRM_DIR/vendor/lib64/"
+    sudo cp -rfa "$(pwd)/LumiROM/Mods/tweaks/system/system/etc/init/"* "$EXTRACTED_FIRM_DIR/system/system/etc/init/"
+    sudo cp -rfa "$(pwd)/LumiROM/Mods/wallpaper/system/system/priv-app/wallpaper-res/"* "$EXTRACTED_FIRM_DIR/system/system/priv-app/wallpaper-res/"
+
 }
 
 APPEND_DISPLAY_ID() {
