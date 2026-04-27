@@ -107,11 +107,13 @@ jobs:
         source scripts/LumiROM.sh
         APPLY_FEATURES "FIRMWARE"
 
+
     - name: Apply LumiBombs
       shell: bash
       run: |
         source scripts/LumiROM.sh
         LUMI_BOMBS "FIRMWARE"
+
 
     - name: Update Build ID
       shell: bash
