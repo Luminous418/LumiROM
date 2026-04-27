@@ -1,6 +1,14 @@
 #!/bin/bash
 
 ADD_MODS() {
+    echo ""
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
+        return 1
+    fi
+
+	local EXTRACTED_FIRM_DIR="$1"
+    
     if [ "$USE_MODS" == "Yes" ]; then
 
         echo "- Adding Mods..."
