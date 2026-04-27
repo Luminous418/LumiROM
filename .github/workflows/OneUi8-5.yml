@@ -116,7 +116,7 @@ jobs:
       shell: bash
       run: |
         source scripts/Mods.sh
-        ADD_MODS
+        ADD_MODS "FIRMWARE"
 
     - name: Update Build ID
       shell: bash
