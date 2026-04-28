@@ -112,8 +112,6 @@ EXTRACT_FIRMWARE() {
     find "$FIRM_DIR" -maxdepth 1 -name "*.zip" \
         -exec 7z x -y -bd -o"$FIRM_DIR" {} \; >/dev/null 2>&1
     rm -rf "$FIRM_DIR"/*.zip
-}
-    }
 
     rm -f "$FIRM_FILE"
 }
