@@ -61,12 +61,12 @@ DOWNLOAD_FIRMWARE() {
 
     # Determine FW URL and cached filename based on stock device
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A346E.tar.zst?download=true"
-        CACHE_FW="${DOWN_DIR}/A34.tar.zst"
+        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A346E.zip?download=true"
+        CACHE_FW="${DOWN_DIR}/A34.zip"
 
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A245F.tar.zst?download=true"
-        CACHE_FW="${DOWN_DIR}/A24.tar.zst"
+        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A245F.zip?download=true"
+        CACHE_FW="${DOWN_DIR}/A24.zip"
 
     else
         echo "Unknown device: $STOCK_DEVICE"
@@ -81,7 +81,7 @@ DOWNLOAD_FIRMWARE() {
         find "$DOWN_DIR" -maxdepth 1 -type f -name '*.tar.zst' ! -name 'BASE_FW.tar.zst' -exec rm -f {} +
     else
         echo "Firmware not found, downloading..."
-        aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.tar.zst" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.zip" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
@@ -99,18 +99,20 @@ EXTRACT_FIRMWARE() {
     fi
 
     local FIRM_DIR="$1"
-    local FIRM_FILE="$FIRM_DIR/BASE_FW.tar.zst"
+    local FIRM_FILE="$FIRM_DIR/BASE_FW.zip"
 
     echo "Extracting downloaded firmware."
 
     if [ ! -f "$FIRM_FILE" ]; then
-        echo "Error: BASE_FW.tar.zst not found in $FIRM_DIR"
+        echo "Error: BASE_FW.zip not found in $FIRM_DIR"
         return 1
     fi
 
-    tar --use-compress-program="zstd -d -T0 --long=29" -xf "$FIRM_FILE" -C "$FIRM_DIR" || {
-        echo "Extraction failed"
-        return 1
+    echo "- Extracting zip file."
+    find "$FIRM_DIR" -maxdepth 1 -name "*.zip" \
+        -exec 7z x -y -bd -o"$FIRM_DIR" {} \; >/dev/null 2>&1
+    rm -rf "$FIRM_DIR"/*.zip
+}
     }
 
     rm -f "$FIRM_FILE"
