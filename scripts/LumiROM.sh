@@ -54,18 +54,42 @@ DOWNLOAD_FIRMWARE() {
 
     mkdir -p "$DOWN_DIR" || return 1
     
-    echo "Downloading ROM images for $STOCK_DEVICE"
+    echo "Preparing ROM images for $STOCK_DEVICE"
 
+    FW_FILE="${DOWN_DIR}/BASE_FW.tar.zst"
+    FW_URL=""
+
+    # Determine FW URL and cached filename based on stock device
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        gdown 1j_iVNugaOKvUP-HZek_9b81uFJjFQ0D0 -O "${DOWN_DIR}/SM-A346B_OneUi85_firmware.zip"
+        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A346E.zip?download=true"
+        CACHE_FW="${DOWN_DIR}/A34.zip"
+
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        gdown 1IVKD0cLtfMQPhc5oMVZKdmtujkjTUw0J -O "${DOWN_DIR}/SM-A245F_OneUi85_firmware.zip"
+        FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A245F.zip?download=true"
+        CACHE_FW="${DOWN_DIR}/A24.zip"
+
     else
-        STOCK_DEVICE="unknown"
+        echo "Unknown device: $STOCK_DEVICE"
+        return 1
+    fi
+
+    # Check for cached firmware and rename it
+    if [ -f "$CACHE_FW" ]; then
+        echo "Using cached firmware: $CACHE_FW"
+        mv "$CACHE_FW" "$FW_FILE"
+        # Remove any other compressed files in the folder
+        find "$DOWN_DIR" -maxdepth 1 -type f -name '*.tar.zst' ! -name 'BASE_FW.tar.zst' -exec rm -f {} +
+    else
+        echo "Firmware not found, downloading..."
+        aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.tar.zst" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
-    wget -q "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" -O "${DOWN_DIR}/vendor.img"
+    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
+    
+    # Cleanup any leftover .aria2 control files after everything finishes
+    wait
+    find "$DOWN_DIR" -name "*.aria2" -exec rm -f {} +
 }
 
 EXTRACT_FIRMWARE() {
@@ -1069,37 +1093,6 @@ APPLY_FEATURES() {
     else
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "false"
     fi
-
-    echo "- Adding Mods..."
-	if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
-        mkdir -p "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper"
-        cp -rfa "$(pwd)/LumiROM/Mods/Apps/AiWallpaper/"* "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper/"
-    fi
-
-	if [ ! -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull" ]; then
-	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailasso"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailassomatting"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/inpainting"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/objectremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/reflectionremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/shadowremoval"
-		rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/style_transfer"
-	    rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
-        cp -rfa "$(pwd)/LumiROM/Mods/Apps/PhotoEditor_AIFull/"* "$EXTRACTED_FIRM_DIR/system/system/"
-		unzip -o "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip" -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/" >/dev/null 2>&1
-		rm -f "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip"
-    fi
-
-    # For every new mod, add it with all route, until I remake the script
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/bin/"* "$EXTRACTED_FIRM_DIR/system/system/bin/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/Files/system/system/etc/"* "$EXTRACTED_FIRM_DIR/system/system/etc/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/vulkan_fix/system/system/lib64/"* "$EXTRACTED_FIRM_DIR/system/system/lib64/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/volte_fix/vendor/lib64/"* "$EXTRACTED_FIRM_DIR/vendor/lib64/"
-    sudo cp -rfa "$(pwd)/LumiROM/Mods/tweaks/system/system/etc/init/"* "$EXTRACTED_FIRM_DIR/system/system/etc/init/"
-
-    # Fix Samsung AI Photo Editor Crash.
-	sed -i '0,/"ModelType": "MODEL_TYPE_INSTANCE_CAPTURE"/s//"ModelType": "MODEL_TYPE_OBJ_INSTANCE_CAPTURE"/' "$EXTRACTED_FIRM_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json"
-
 }
 
 APPEND_DISPLAY_ID() {
