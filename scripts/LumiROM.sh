@@ -354,10 +354,16 @@ INSTALL_FRAMEWORK() {
         return 1
     fi
 
-    # Installing stock overlay
-    echo ""
     local framework_res_apk="$1"
-    echo "Installing Framework."
+
+    echo "Checking framework-res.apk integrity..."
+    if ! unzip -t "$framework_res_apk" >/dev/null 2>&1; then
+        echo "Warning: $framework_res_apk failed integrity check, using fallback from bin/framework-res.apk"
+        cp -f "$(pwd)/bin/framework-res.apk" "$framework_res_apk"
+    fi
+
+    # Installing stock overlay
+    echo "Installing Framework..."
     java -jar "$APKTOOL" install-framework "$framework_res_apk"
 }
 
