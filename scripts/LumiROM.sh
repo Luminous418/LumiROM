@@ -56,7 +56,7 @@ DOWNLOAD_FIRMWARE() {
     
     echo "Preparing ROM images for $STOCK_DEVICE"
 
-    FW_FILE="${DOWN_DIR}/BASE_FW.tar.zst"
+    FW_FILE="${DOWN_DIR}/BASE_FW.zip"
     FW_URL=""
 
     # Determine FW URL and cached filename based on stock device
@@ -78,10 +78,10 @@ DOWNLOAD_FIRMWARE() {
         echo "Using cached firmware: $CACHE_FW"
         mv "$CACHE_FW" "$FW_FILE"
         # Remove any other compressed files in the folder
-        find "$DOWN_DIR" -maxdepth 1 -type f -name '*.tar.zst' ! -name 'BASE_FW.tar.zst' -exec rm -f {} +
+        find "$DOWN_DIR" -maxdepth 1 -type f -name '*.zip' ! -name 'BASE_FW.zip' -exec rm -f {} +
     else
         echo "Firmware not found, downloading..."
-        aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.tar.zst" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "BASE_FW.zip" --allow-overwrite=true --auto-file-renaming=false "$FW_URL" || return 1
     fi
 
     echo "Downloading vendor for ${STOCK_DEVICE}"
@@ -870,7 +870,7 @@ APPLY_STOCK_CONFIG() {
 
     # Fix unsupported BPF error for kernels lower than 5.10.
     if [ "$USE_UI_8_TETHERING_APEX" = "True" ]; then
-        cp -rfa "$(pwd)/LumiROM/Mods/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
+        cp -rfa "$(pwd)/LumiROM/Mods/device_specific/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
     fi
 
 	# Replace Stock Files.
