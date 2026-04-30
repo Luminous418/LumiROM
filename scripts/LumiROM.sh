@@ -63,12 +63,10 @@ DOWNLOAD_FIRMWARE() {
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
         FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A346E.zip?download=true"
         CACHE_FW="${DOWN_DIR}/A34.zip"
-        echo "TARGET_DEVICE=A346X" >> $GITHUB_ENV
 
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
         FW_URL="https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A245F.zip?download=true"
         CACHE_FW="${DOWN_DIR}/A24.zip"
-        echo "TARGET_DEVICE=A245X" >> $GITHUB_ENV
 
     else
         echo "Unknown device: $STOCK_DEVICE"
