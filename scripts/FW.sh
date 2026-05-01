@@ -87,7 +87,7 @@ DOWNLOAD_OTA() {
     mkdir -p "$DOWN_DIR"
 
     echo "Downloading OTA for $MODEL"
-    aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/OTA/A346E_FZD1.zip?download=true" || return 1
+    aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
 
     # Cleanup any leftover .aria2 control files after everything finishes
     wait

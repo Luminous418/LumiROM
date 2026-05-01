@@ -1,4 +1,4 @@
-name: LumiROM Tools Ui 8.5
+name: LumiROM Tools
 
 on:
   workflow_dispatch:
@@ -18,19 +18,19 @@ on:
       TARGET_DEVICE:
         description: "TARGET_DEVICE_MODEL."
         required: true
-        default: "SM-A346E"
+        default: "SM-A346B"
       TARGET_DEVICE_CSC:
         description: "TARGET_DEVICE_CSC."
         required: true
-        default: "INS"
+        default: "EUX"
       TARGET_DEVICE_IMEI:
         description: "TARGET_DEVICE_IMEI."
         required: true
-        default: "353435774197736"
+        default: "351648442869815"
       TARGET_FW_VERSION:
         description: "Any specific firmware (optional)"
         required: false
-        default: "A346EXXSDEZB6/A346EODMDEZB6/A346EXXSDEZB6/A346EXXSDEZB6"
+        default: "A346BXXSFEZC7/A346BOXMFEZC7/A346BXXSFEZC7/A346BXXSFEZC7"
 
 jobs:
   build:
