@@ -120,6 +120,12 @@ jobs:
         source scripts/FW.sh
         MERGE_OTA "FIRMWARE" "OTA"
 
+    - name: Download vendor for ${{ github.event.inputs.STOCK_DEVICE }}
+      shell: bash
+      run: |
+        source scripts/FW.sh
+        DOWNLOAD_VENDOR "FIRMWARE"
+
 
     - name: Extract firmware
       shell: bash

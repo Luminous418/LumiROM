@@ -124,6 +124,22 @@ MERGE_OTA() {
     rmdir ./out/    
 }
 
+DOWNLOAD_VENDOR() {
+    if [ "$#" -lt 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <DOWNLOAD_DIRECTORY>"
+        return 1
+    fi
+
+    local DOWN_DIR="${1}"
+
+    echo "Downloading vendor for ${STOCK_DEVICE}"
+    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Lumi-ROM/Vendors/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
+    
+    # Cleanup any leftover .aria2 control files after everything finishes
+    wait
+    find "$DOWN_DIR" -name "*.aria2" -exec rm -f {} +
+}
+
 EXTRACT_FIRMWARE() {
     if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
