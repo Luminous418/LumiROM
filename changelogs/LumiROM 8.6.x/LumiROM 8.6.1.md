@@ -2,7 +2,7 @@
 
 ## Fixes
 - Fixed the apps that were crashing like X, Snapchat, others were significantly laggy like Telegram, should have been fixed too.
-- Fixed the UI lag, should be smoother now.
+- Fixed the QS and UI lag, should be smoother now.
 - Fixed VoLTE.
 
 ## Features
@@ -12,7 +12,7 @@
 - Added A226B (Galaxy A22 5G) support as OFFICIAL builds.
 
 ## Device Specific
-- New A34 base: A346EXXUEFZC6 with 05-04-2026 security patch.
+- New A34 base: A346BXXUFFZD5 with 05-04-2026 security patch.
 - New A24 base: A245FXXUBFZD1 with 05-04-2026 security patch.
 
 ## More
@@ -23,7 +23,7 @@
 
 # Screenshots
 
-<img src="../screenshots/homescreen.png" width="30%"> <img src="../screenshots/software_info.png" width="30%"> <img src="../screenshots/wallpapers.png" width="30%">
+<img src="../screenshots/homescreen.jpg" width="30%" style="border-radius: 12px;"> <img src="../screenshots/software_info.jpg" width="30%" style="border-radius: 12px;"> <img src="../screenshots/wallpapers.jpg" width="30%" style="border-radius: 12px;">
 
 # Download
 [Download LumiROM 8.6.1](https://t.me/LumiROMs)
