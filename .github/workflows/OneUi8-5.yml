@@ -1,4 +1,4 @@
-name: LumiROM Tools
+name: LumiROM Tools for specific device
 
 on:
   workflow_dispatch:
