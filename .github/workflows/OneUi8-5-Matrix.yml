@@ -1,0 +1,245 @@
+name: LumiROM Tools for all devices
+
+on:
+  workflow_dispatch:
+    inputs:
+      USE_MODS:
+        description: "Add mods to the ROM, 'Yes' to add, 'No' to don't add"
+        required: true
+        default: "Yes"
+      USE_UI_8_TETHERING_APEX:
+        description: "Set True if your kernel BPF version is lower than 5.10"
+        required: true
+        default: "False"
+      TARGET_DEVICE:
+        description: "TARGET_DEVICE_MODEL."
+        required: true
+        default: "SM-A346B"
+      TARGET_DEVICE_CSC:
+        description: "TARGET_DEVICE_CSC."
+        required: true
+        default: "EUX"
+      TARGET_DEVICE_IMEI:
+        description: "TARGET_DEVICE_IMEI."
+        required: true
+        default: "351648442869815"
+      TARGET_FW_VERSION:
+        description: "Any specific firmware (optional)"
+        required: false
+        default: "A346BXXSFEZC7/A346BOXMFEZC7/A346BXXSFEZC7/A346BXXSFEZC7"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false 
+      matrix:
+        device: [SM-A325F, SM-A325M, SM-M325F, SM-A225F, SM-E225F, SM-A226B]
+      
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Free disk space (1/3)
+      run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+        sudo docker image prune --all --force
+        sudo docker builder prune -a
+
+    - name: Free disk space (2/3)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: true
+
+    - name: Free disk space (3/3)
+      uses: rokibhasansagar/slimhub_actions@main
+
+    - name: Install required packages
+      run: |
+        sudo apt update -q
+        sudo apt install -y -q \
+          p7zip-full android-sdk-libsparse-utils \
+          python3 python3-pip zipalign default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2 \
+          unzip tar lz4 tree git-core gnupg flex bison build-essential zip curl zlib1g-dev libncurses5-dev libssl-dev libelf-dev libxml2-utils xsltproc unzip fontconfig python3 python3-protobuf
+        pip3 install -q liblp tgcrypto pyrogram huggingface_hub hf_xet
+        pip3 install git+https://github.com/martinetd/samloader.git
+        chmod +x bin/erofs-utils/extract.erofs
+        chmod +x bin/erofs-utils/mkfs.erofs
+        chmod +x bin/MergeOTA/MergeAll.sh
+
+    - name: Setup directories
+      run: |
+        chmod +x scripts/setup_directories.sh
+        chmod +x scripts/zip_creation.sh
+        chmod +x scripts/Knox_script.sh
+        chmod +x scripts/FW.sh
+        bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA
+    
+    - name: Set build environment
+      shell: bash
+      run: |
+        echo "STOCK_DEVICE=${{ matrix.device }}" >> $GITHUB_ENV
+        echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
+        echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
+        echo "TARGET_DEVICE=${{ github.event.inputs.TARGET_DEVICE }}" >> $GITHUB_ENV
+        echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
+        echo "LUMIROM_VERSION=8.6.1" >> $GITHUB_ENV
+
+        echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
+        echo "WORK_DIR=/dev/shm/WORK" >> $GITHUB_ENV
+        echo "FIRM_DIR=$PWD/FIRMWARE" >> $GITHUB_ENV
+        echo "DEVICES_DIR=$PWD/LumiROM/Devices" >> $GITHUB_ENV
+        echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
+        echo "VNDKS_COLLECTION=$PWD/LumiROM/vndks" >> $GITHUB_ENV
+        echo "BUILD_PARTITIONS=product,vendor,odm,system_ext,system" >> $GITHUB_ENV
+
+    - name: Check repo
+      shell: bash
+      env:
+        LUMIROM_BUILD: ${{ secrets.LUMIROM_BUILD }}
+        OFFICIAL_HASH: ${{ secrets.OFFICIAL_HASH }}
+      run: |
+        source scripts/LumiROM.sh
+        IS_OFFICIAL
+
+    - name: Download firmware
+      shell: bash
+      run: |
+        source scripts/FW.sh
+        source "$DEVICES_DIR/$STOCK_DEVICE/config"
+        DOWNLOAD_FIRMWARE "${{ github.event.inputs.TARGET_DEVICE }}" "${{ github.event.inputs.TARGET_DEVICE_CSC }}" "${{ github.event.inputs.TARGET_DEVICE_IMEI }}" "FIRMWARE" "${{ github.event.inputs.TARGET_FW_VERSION }}"
+
+    - name: Download OTA
+      run: |
+        source scripts/FW.sh
+        DOWNLOAD_OTA "OTA"
+
+    - name: Merge OTA and FW
+      run: |
+        source scripts/FW.sh
+        MERGE_OTA "FIRMWARE" "OTA"
+
+    - name: Download vendor for ${{ matrix.device }}
+      shell: bash
+      run: |
+        source scripts/FW.sh
+        DOWNLOAD_VENDOR "FIRMWARE"
+
+
+    - name: Extract firmware
+      shell: bash
+      run: |
+        source scripts/FW.sh
+        PREPARE_PARTITIONS "FIRMWARE"
+        EXTRACT_FIRMWARE_IMG "FIRMWARE"
+
+    - name: Apply vendor patches
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        DISABLE_FBE "FIRMWARE"
+        DISABLE_FDE "FIRMWARE"
+        DELETE_ICCC "FIRMWARE"
+        DEBLOAT_VENDOR "FIRMWARE"
+        PATCH_FSTAB_EROFS "FIRMWARE"
+
+    - name: Apply stock config
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        APPLY_STOCK_CONFIG "FIRMWARE"
+
+    - name: Debloat ROM
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        DEBLOAT "FIRMWARE"
+
+    - name: Apply features
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        APPLY_FEATURES "FIRMWARE"
+
+    - name: Adding mods
+      shell: bash
+      run: |
+        source scripts/Mods.sh
+        ADD_MODS "FIRMWARE"
+
+    - name: Update Build ID
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        APPENDING_DISPLAY_ID "FIRMWARE"
+
+    - name: Install stock framework-res
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        INSTALL_FRAMEWORK \
+          "FIRMWARE/system/system/framework/framework-res.apk"
+
+    - name: Decompile framework jars
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        DECOMPILE "$APKTOOL" \
+          "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
+        DECOMPILE "$APKTOOL" \
+          "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+        wait
+
+    - name: Patch Knox
+      shell: bash
+      run: |
+        source scripts/Knox_script.sh
+        PATCH_SSRM "$WORK_DIR/ssrm"
+        PATCH_KNOX_GUARD "$WORK_DIR/services"
+        PATCH_FLAG_SECURE "$WORK_DIR/services"
+        PATCH_SECURE_FOLDER "$WORK_DIR/services"
+        PATCH_PRIVATE_SHARE "$WORK_DIR/services"
+        DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
+
+    - name: Recompile framework
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
+          "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
+          "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        wait
+        cp -fv "$WORK_DIR"/*.jar \
+          "FIRMWARE/system/system/framework/"
+
+    - name: Build ROM
+      shell: bash
+      run: |
+        source scripts/LumiROM.sh
+        BUILD_IMG "FIRMWARE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
+        IMG_TO_BROTLI "$OUT_DIR" "TMP"
+
+    - name: Update updater-script
+      shell: bash
+      run: |
+        source scripts/zip_creation.sh
+        UPDATE_ZIP_SCRIPT "FIRMWARE"
+        
+    - name: Prepare flashable zip
+      shell: bash
+      run: |
+        source scripts/zip_creation.sh
+        FLASHABLE_ZIP_CREATION
+
+    - name: Upload ROM to Hugging Face
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_XET_HIGH_PERFORMANCE: "1"
+      run: |
+        hf buckets sync ./template hf://buckets/LuminousJD418/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
+
+    - name: Cleanup
+      run: |
+        sudo rm -rf *
