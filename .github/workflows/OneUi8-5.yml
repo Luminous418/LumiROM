@@ -64,16 +64,13 @@ jobs:
           unzip tar lz4 tree git-core gnupg flex bison build-essential zip curl zlib1g-dev libncurses5-dev libssl-dev libelf-dev libxml2-utils xsltproc unzip fontconfig python3 python3-protobuf
         pip3 install -q liblp tgcrypto pyrogram huggingface_hub hf_xet
         pip3 install git+https://github.com/martinetd/samloader.git
+        chmod +x scripts/*.sh
         chmod +x bin/erofs-utils/extract.erofs
         chmod +x bin/erofs-utils/mkfs.erofs
         chmod +x bin/MergeOTA/MergeAll.sh
 
     - name: Setup directories
       run: |
-        chmod +x scripts/setup_directories.sh
-        chmod +x scripts/zip_creation.sh
-        chmod +x scripts/Knox_script.sh
-        chmod +x scripts/FW.sh
         bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA
     
     - name: Set build environment
