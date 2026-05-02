@@ -15,65 +15,74 @@ DOWNLOAD_FIRMWARE() {
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
-    echo -e "======================================"
-    echo -e "       Samsung FW Downloader"
-    echo -e "======================================"
-    echo -e "MODEL: $MODEL | CSC: $CSC"
+    if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
+        echo -e "======================================"
+        echo -e "       Samsung FW Downloader"
+        echo -e "======================================"
+        echo -e "MODEL: $MODEL | CSC: $CSC"
 
-    # --- Step 1: Determine Version ---
-    if [ -n "$VERSION" ]; then
-        echo -e "- ✅ Downloading provided version: $VERSION"
-    else
-        echo -e "- Fetching latest firmware..."
+        # --- Step 1: Determine Version ---
+        if [ -n "$VERSION" ]; then
+            echo -e "- ✅ Downloading provided version: $VERSION"
+        else
+            echo -e "- Fetching latest firmware..."
 
-        VERSION=$(python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" checkupdate 2>&1)
+            VERSION=$(python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" checkupdate 2>&1)
 
-        if [ $? -ne 0 ] || [ -z "$VERSION" ]; then
-            echo -e "- ⛔️ MODEL/CSC/IMEI not valid or no update found."
-            echo -e "- Error: $VERSION"
-            return 1
+            if [ $? -ne 0 ] || [ -z "$VERSION" ]; then
+                echo -e "- ⛔️ MODEL/CSC/IMEI not valid or no update found."
+                echo -e "- Error: $VERSION"
+                return 1
+            fi
+
+            echo -e "- ✅ Latest version found: $VERSION"
+            if [ -n "$GITHUB_ENV" ]; then
+                echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+            fi
         fi
 
-        echo -e "- ✅ Latest version found: $VERSION"
-        if [ -n "$GITHUB_ENV" ]; then
-            echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+        # --- Step 2: Download Firmware ---
+        python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -v "$VERSION" -O "$DOWN_DIR"
+        if [ $? -ne 0 ]; then
+            echo -e "- ⛔️ Download failed. Check IMEI/MODEL/CSC."
+            exit 1
         fi
+
+        # --- Step 3: Decrypt Firmware ---
+        enc_file=$(find "$DOWN_DIR" -name "*.enc*" | head -n 1)
+
+        if [ -z "$enc_file" ]; then
+            echo -e "- ⛔️ No encrypted firmware file found!"
+            exit 1
+        fi
+
+        python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" decrypt \
+            -v "$VERSION" \
+            -i "$enc_file" \
+            -o "${DOWN_DIR}/${MODEL}.zip" >/dev/null 2>&1
+
+        if [ $? -ne 0 ]; then
+            echo -e "- ⛔️ Decryption failed."
+            exit 1
+        fi
+
+        # --- Show Firmware Info ---
+        file_size=$(du -m "${DOWN_DIR}/${MODEL}.zip" | cut -f1)
+
+        echo
+        echo -e "- ✅ Firmware decrypted successfully! Firmware Size: ${file_size} MB"
+        echo -e "- Saved to: ${DOWN_DIR}/${MODEL}.zip"
+
+        # --- Cleanup ---
+        rm -f "$enc_file"
+
+    # This will be temporary
+    elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
+        aria2c -x 16 -d "./FIRMWARE/${MODEL}" -o "${MODEL}_FW.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A24/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" || return 1
+        # Cleanup any leftover .aria2 control files after everything finishes
+        wait
+        find "./FIRMWARE/${MODEL}" -name "*.aria2" -exec rm -f {} +
     fi
-
-    # --- Step 2: Download Firmware ---
-    python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -v "$VERSION" -O "$DOWN_DIR"
-    if [ $? -ne 0 ]; then
-        echo -e "- ⛔️ Download failed. Check IMEI/MODEL/CSC."
-        exit 1
-    fi
-
-    # --- Step 3: Decrypt Firmware ---
-    enc_file=$(find "$DOWN_DIR" -name "*.enc*" | head -n 1)
-
-    if [ -z "$enc_file" ]; then
-        echo -e "- ⛔️ No encrypted firmware file found!"
-        exit 1
-    fi
-
-    python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" decrypt \
-        -v "$VERSION" \
-        -i "$enc_file" \
-        -o "${DOWN_DIR}/${MODEL}.zip" >/dev/null 2>&1
-
-    if [ $? -ne 0 ]; then
-        echo -e "- ⛔️ Decryption failed."
-        exit 1
-    fi
-
-    # --- Show Firmware Info ---
-    file_size=$(du -m "${DOWN_DIR}/${MODEL}.zip" | cut -f1)
-
-    echo
-    echo -e "- ✅ Firmware decrypted successfully! Firmware Size: ${file_size} MB"
-    echo -e "- Saved to: ${DOWN_DIR}/${MODEL}.zip"
-
-    # --- Cleanup ---
-    rm -f "$enc_file"
 }
 
 DOWNLOAD_OTA() {
@@ -87,8 +96,11 @@ DOWNLOAD_OTA() {
     mkdir -p "$DOWN_DIR"
 
     echo "Downloading OTA for $MODEL"
-    aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
-
+    if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
+        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
+    elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
+        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A24/a24.zip?download=true" || return 1
+    fi
     # Cleanup any leftover .aria2 control files after everything finishes
     wait
     find "$DOWN_DIR" -name "*.aria2" -exec rm -f {} +

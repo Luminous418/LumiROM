@@ -192,11 +192,11 @@ INSTALL_FRAMEWORK() {
 
     local framework_res_apk="$1"
 
-    echo "Checking framework-res.apk integrity..."
-    if ! unzip -t "$framework_res_apk" >/dev/null 2>&1; then
-        echo "Warning: $framework_res_apk failed integrity check, using fallback from bin/framework-res.apk"
-        cp -f "$(pwd)/bin/framework-res.apk" "$framework_res_apk"
-    fi
+    # echo "Checking framework-res.apk integrity..."
+    # if ! unzip -t "$framework_res_apk" >/dev/null 2>&1; then
+    #     echo "Warning: $framework_res_apk failed integrity check, using fallback from bin/framework-res.apk"
+    #     cp -f "$(pwd)/bin/framework-res.apk" "$framework_res_apk"
+    # fi
 
     # Installing stock overlay
     echo "Installing Framework..."
