@@ -80,7 +80,7 @@ DOWNLOAD_FIRMWARE() {
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
         echo "TARGET_DEVICE=SM-A245F" >> $GITHUB_ENV
         export TARGET_DEVICE="SM-A245F"
-        aria2c -x 16 -d "./FIRMWARE/${TARGET_DEVICE}" -o "${TARGET_DEVICE}_FW.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A24/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" || return 1
+        aria2c -x 16 -d "./FIRMWARE/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/Zears14/lumifiles/resolve/OneUI8.5/A24/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" || return 1
         # Cleanup any leftover .aria2 control files after everything finishes
         wait
         find "./FIRMWARE/${TARGET_DEVICE}" -name "*.aria2" -exec rm -f {} +
