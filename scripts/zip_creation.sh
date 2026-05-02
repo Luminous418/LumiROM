@@ -59,8 +59,10 @@ FLASHABLE_ZIP_CREATION() {
         TIMESTAMP=$(date +'%s')
         DEVICE="$STOCK_DEVICE"
 
-        if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
+        if [[ "$DEVICE" == "SM-A325F" ]]; then
             DEVICE_CODENAME="a32"
+        elif [[ "$DEVICE" == "SM-A325M" ]]; then
+            DEVICE_CODENAME="a32m"
         elif [[ "$DEVICE" == "SM-A225F" ]]; then
             DEVICE_CODENAME="a22"
         elif [[ "$DEVICE" == "SM-A225M" ]]; then
