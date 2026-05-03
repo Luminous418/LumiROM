@@ -100,7 +100,7 @@ GALAXY_AI() {
         # Adding Now Brief
         echo "Adding Now Brief"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk"
-        wget -O "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk" "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/SamsungSmartSuggestions.apk?download=true"
+        wget -O "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk" "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/SamsungSmartSuggestions.apk?download=true" >/dev/null 2>&1
     else
         echo "The use of Galaxy AI for this build have been disabled by the user"
     fi
