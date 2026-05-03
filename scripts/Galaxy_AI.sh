@@ -7,8 +7,7 @@ GALAXY_AI() {
         return 1
     fi
 
-    local DIRECTORY=$(dirname "$(readlink -f "$0")")
-    source "$DIRECTORY/LumiROM.sh"
+    source "scripts/LumiROM.sh"
 
     local EXTRACTED_FIRM_DIR="$1"
     local STOCK_FLOATING_FEATURE="$DEVICES_DIR/$STOCK_DEVICE/floating_feature.xml"
