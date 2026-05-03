@@ -1,0 +1,9 @@
+{
+	"version_id": "v2",
+	"tag" : "v2.7",
+	"model_type" : "gpu",
+	"precision" : "float16",
+	"complier" : "gpu",
+	"latency" : "0",
+	"model_path" : "/vendor/etc/saiv/image_understanding/db/aic_detector/aic_detector_cnn_light.caffemodel"
+}
