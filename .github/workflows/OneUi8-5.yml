@@ -235,7 +235,7 @@ jobs:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-        hf buckets sync ./template hf://buckets/LuminousJD418/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
+        hf buckets sync ./template hf://buckets/LuminousJD418/LumiTest/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
 
     - name: Cleanup
       run: |
