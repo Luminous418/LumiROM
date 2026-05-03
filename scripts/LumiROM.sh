@@ -1081,7 +1081,9 @@ GEN_FILE_CONTEXTS() {
 
                 local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
                 
-                echo "$ESCAPED_PATH $CONTEXT" >> "$FILE_CONTEXTS"
+                if ! echo "$ESCAPED_PATH $CONTEXT" >> "$FILE_CONTEXTS" 2>/dev/null; then
+                    echo "$ESCAPED_PATH $CONTEXT" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
+                fi
                 
                 echo "$PATH_ENTRY" >> "$TMP_EXISTING"
             fi
