@@ -2,12 +2,10 @@
 
 # Linux setup.
 # Installing necessary packages.
-sudo apt install -y p7zip-full lz4 android-sdk-libsparse-utils python3 python3-pip zipalign unzip default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2
+sudo apt install -y -q p7zip-full android-sdk-libsparse-utils python3 python3-pip zipalign default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2 unzip tar lz4 tree git-core gnupg flex bison build-essential zip curl zlib1g-dev libncurses5-dev libssl-dev libelf-dev libxml2-utils xsltproc unzip fontconfig python3 python3-protobuf
 
 # Installing Python packages.
 pip3 install liblp tgcrypto pyrogram
-
-# Run with sudo to avoid path problem.
 pip3 install git+https://github.com/martinetd/samloader.git
 
 # Cleanup.
