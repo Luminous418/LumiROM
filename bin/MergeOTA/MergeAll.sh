@@ -74,6 +74,7 @@ echo "Found HOME_CSC package: $HOME_TAR"
 
 # Extract super.img.lz4 from AP
 echo
+mkdir -p _lz4tmp
 echo "Extracting super.img.lz4 from AP..."
 tar -xf "$AP_TAR" --wildcards --no-same-owner -C _lz4tmp 'super.img.lz4'
 
