@@ -39,7 +39,7 @@ bash scripts/install_packages.sh
 
 echo "--- Setting up directories ---"
 mkdir -p "$WORK_DIR"
-bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA
+bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM
 
 echo "--- Verifying enviroment ---"
 source scripts/LumiROM.sh

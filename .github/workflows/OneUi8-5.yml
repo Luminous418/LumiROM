@@ -75,7 +75,7 @@ jobs:
 
     - name: Setup directories
       run: |
-        bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA
+        bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM
     
     - name: Set build environment
       shell: bash
@@ -246,7 +246,7 @@ jobs:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-        hf buckets sync ./template hf://buckets/LuminousJD418/LumiTest/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
+        hf buckets sync ./ROM hf://buckets/LuminousJD418/LumiTest/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
 
     - name: Cleanup
       run: |
