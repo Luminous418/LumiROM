@@ -13,6 +13,9 @@
 
 # Screenshots
 
+<div align="center">
+<img src="../screenshots/homescreen_v2.jpg" height="500" style="border-radius: 12px;"> <img src="../screenshots/lockscreen.jpg" height="500" style="border-radius: 12px;"> <img src="../screenshots/galaxy_ai1.jpg" height="500" style="border-radius: 12px;"> <img src="../screenshots/galaxy_ai2.jpg" height="500" style="border-radius: 12px;">
+</div>
 
 
 # Download
