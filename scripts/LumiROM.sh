@@ -502,11 +502,11 @@ UPDATE_FLOATING_FEATURE() {
         indent=$(echo "$current_line" | sed -E "s/(<${key}>.*<\/${key}>).*//")
         local line="${indent}<${key}>${value}</${key}>"
         sed -i "s|${indent}<${key}>.*</${key}>|$line|" "$TARGET_FLOATING_FEATURE"
-        echo "✳️ Updated $key with ▶️ $value"
+        echo "✳️ Updated $key with => $value"
     else
         local line="    <$key>$value</$key>"
         sed -i "3i\\$line" "$TARGET_FLOATING_FEATURE"
-        echo "✅️ Added $key with value ▶️ $value"
+        echo "✅️ Added $key with value => $value"
     fi
 }
 
