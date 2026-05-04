@@ -117,7 +117,7 @@ FLASHABLE_ZIP_CREATION() {
         echo "Adding scripts and compressible data (Compress)..."
         7z a -mx=6 -mmt=4 "$ZIP_FILE" ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list 2>/dev/null || true
 
-        mv "$ZIP_FILE" "$(pwd)/ROM/"
+        mv "$ZIP_FILE" "../ROM/"
 
         echo "ZIP package created: $ZIP_FILE"
         echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
