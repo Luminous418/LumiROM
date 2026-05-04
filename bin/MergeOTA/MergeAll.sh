@@ -95,12 +95,6 @@ echo "Unsparsing super..."
 ./bin/MergeOTA/imjtool _images/super.img extract
 mv _images/super.img _images/super.img-old 2>/dev/null
 mv extracted/image.img _images/super.img
-./bin/MergeOTA/imjtool _images/prism.img extract
-mv _images/prism.img _images/prism.img-old 2>/dev/null
-mv extracted/image.img _images/prism.img
-./bin/MergeOTA/imjtool _images/optics.img extract
-mv _images/optics.img _images/optics.img-old 2>/dev/null
-mv extracted/image.img _images/optics.img
 rm -rf extracted
 
 # Extract super
@@ -158,7 +152,6 @@ unzip -q "$UPDATE_ZIP" -d _update_bin
 echo "Update BIN Extracted."
 
 PARTITIONS=("system" "product" "odm" "system_ext")
-EXTRAPARTITIONS=("optics" "prism")
 
 echo "Starting merge..."
 
