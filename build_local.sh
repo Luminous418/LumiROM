@@ -80,6 +80,7 @@ if [ "$USE_GALAXY_AI" = "Yes" ]; then
     GALAXY_AI "FIRMWARE"
 fi
 
+echo "--- Appending Display ID ---"
 APPENDING_DISPLAY_ID "FIRMWARE"
 INSTALL_FRAMEWORK "FIRMWARE/system/system/framework/framework-res.apk"
 
@@ -88,6 +89,7 @@ DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
 DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
 wait
 
+echo "--- Applying Knox and Framework patches ---"
 source scripts/Knox_script.sh
 PATCH_SSRM "$WORK_DIR/ssrm"
 PATCH_KNOX_GUARD "$WORK_DIR/services"
@@ -96,6 +98,7 @@ PATCH_SECURE_FOLDER "$WORK_DIR/services"
 PATCH_PRIVATE_SHARE "$WORK_DIR/services"
 DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
 
+echo "--- Recompiling Knox and Framework ---"
 RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" "FIRMWARE/system/system/framework" "$WORK_DIR" &
 RECOMPILE "$APKTOOL" "$WORK_DIR/services" "FIRMWARE/system/system/framework" "$WORK_DIR" &
 wait
