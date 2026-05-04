@@ -72,12 +72,6 @@ echo "Found CP package: $CP_TAR"
 echo "Found CSC package: $CSC_TAR"
 echo "Found HOME_CSC package: $HOME_TAR"
 
-# Extract optics and prism from csc
-echo
-echo "Extracting optics.img.lz4 and prism.img.lz4 from CSC..."
-mkdir -p _lz4tmp
-tar -xf "$CSC_TAR" --no-same-owner -C _lz4tmp optics.img.lz4 prism.img.lz4
-
 # Extract super.img.lz4 from AP
 echo
 echo "Extracting super.img.lz4 from AP..."
@@ -92,8 +86,6 @@ fi
 echo
 echo "Decompressing lz4 images..."
 mkdir _images
-lz4 -d _lz4tmp/optics.img.lz4 _images/optics.img
-lz4 -d _lz4tmp/prism.img.lz4 _images/prism.img
 lz4 -d _lz4tmp/super.img.lz4 _images/super.img
 rm -rf _lz4tmp
 
