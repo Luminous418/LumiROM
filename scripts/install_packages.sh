@@ -13,6 +13,3 @@ sudo apt clean
 rm -rf ~/.cache/*
 sudo apt autoclean
 sudo apt autoremove -y
-
-simg2img
-lpunpack
