@@ -103,5 +103,6 @@ GALAXY_AI() {
         wget -O "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk" "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/SamsungSmartSuggestions.apk?download=true" >/dev/null 2>&1
     else
         echo "The use of Galaxy AI for this build have been disabled by the user"
+        UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_COMMON_DISABLE_NATIVE_AI" "TRUE"
     fi
 }
