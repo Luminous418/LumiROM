@@ -41,7 +41,7 @@ REMOVE_LINE() {
     local LINE="$1"
     local FILE="$2"
 
-    echo "- Deleting $LINE from $FILE"
+    echo -e "${YELLOW}Deleting${RESET} $LINE ${YELLOW}from${RESET} $FILE"
     grep -vxF "$LINE" "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
 }
 
@@ -61,7 +61,7 @@ DISABLE_FBE() {
       echo "- Found $i."
       # If found file-encryption, comments it
       sudo sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-      echo -e "${GREEN}Disabled file-encryption on $i${RESET}"
+      echo -e "${GREEN}Disabled file-encryption on${RESET} $i"
     fi
   done
 }
@@ -83,7 +83,7 @@ DISABLE_FDE() {
       echo "- Found $i."
       # If found force-encryption, comments it
       sudo sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-      echo -e "${GREEN}Disabled force-encryption on $i${RESET}"
+      echo -e "${GREEN}Disabled force-encryption on${RESET} $i"
     fi
   done
 }
@@ -104,9 +104,9 @@ DELETE_ICCC() {
     for file in "${targets[@]}"; do
         if [ -e "$file" ] || [ -L "$file" ]; then
             sudo rm -rf "$file"
-            echo -e "${GREEN}Deleted $file${RESET}"
+            echo -e "${GREEN}Deleted${RESET} $file"
         else
-            echo -e "${RED}[Omitted] $file not found${RESET}"
+            echo -e "${RED}[Omitted]${RESET} $file ${RED}not found${RESET}"
         fi
     done
 
@@ -134,9 +134,9 @@ DEBLOAT_VENDOR() {
     for file in "${targets[@]}"; do
         if [ -e "$file" ] || [ -L "$file" ]; then
             sudo rm -rf "$file"
-            echo -e "${GREEN}Deleted $file${RESET}"
+            echo -e "${GREEN}Deleted${RESET} $file"
         else
-            echo -e "${RED}[Omitted] $file not found${RESET}"
+            echo -e "${RED}[Omitted]${RESET} $file ${RED}not found${RESET}"
         fi
     done
 
@@ -177,9 +177,9 @@ PATCH_FSTAB_EROFS() {
             # odm
             sudo sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
             
-            echo -e "${GREEN}Done, now $STOCK_DEVICE is EROFS-enabled.${RESET}"
+            echo -e "${GREEN}Done, now${RESET} $STOCK_DEVICE ${GREEN}is EROFS-enabled.${RESET}"
         else
-            echo -e "${RED}[Omitted] $fstab not found${RESET}"
+            echo -e "${RED}[Omitted]${RESET} $fstab ${RED}not found${RESET}"
         fi
     done
 
@@ -201,7 +201,7 @@ INSTALL_FRAMEWORK() {
     # fi
 
     # Installing stock overlay
-    echo "Installing Framework..."
+    echo -e "${YELLOW}Installing Framework...${RESET}"
     java -jar "$APKTOOL" install-framework "$framework_res_apk"
 }
 
@@ -219,7 +219,7 @@ DECOMPILE() {
     local BASENAME="$(basename "${FILE%.*}")"
     local OUT="$DECOMPILE_DIR/$BASENAME"
 
-    echo "Decompiling: $FILE"
+    echo -e "${YELLOW}Decompiling:${RESET} $FILE"
 	rm -rf "$OUT"
     java -jar "$APKTOOL" d -f "$FILE" -o "$OUT"
 }
@@ -244,7 +244,7 @@ RECOMPILE() {
     local built_file="$WORK_DIR/${name}_unsigned.$ext"
     local final_file="$WORK_DIR/$org_file_name"
 
-    echo "Recompiling: $DECOMPILED_DIR"
+    echo -e "${YELLOW}Recompiling:${RESET} $DECOMPILED_DIR"
     java -jar "$APKTOOL" b "$DECOMPILED_DIR" --copy-original -p "$FRAMEWORK_DIR" -o "$built_file"
 
     # Zipalign
@@ -270,11 +270,11 @@ HEX_PATCH() {
     [ ! -f "$FILE" ] && { echo "File not found: $FILE"; return 1; }
 
     xxd -p -c 0 "$FILE" | grep -q "$FROM" || {
-        echo "- Pattern not found: $FROM"
+        echo "- ${RED}Pattern not found${RESET}: $FROM"
         return 1
     }
 
-    echo "- Patching: $FILE"
+    echo -e "${YELLOW}Patching:${RESET} $FILE"
     echo "- From $FROM to $TO"
     [ -f "$FILE.bak" ] || cp "$FILE" "$FILE.bak"
 
@@ -287,7 +287,7 @@ HEX_PATCH() {
         return 0
     }
 
-    echo "- Patch failed, restoring backup"
+    echo -e "${RED}Patch failed, restoring backup${RESET}"
     mv "$FILE.bak" "$FILE"
     return 1
 }
@@ -303,7 +303,7 @@ PATCH_BT_LIB() {
 	local WORK_DIR="$2"
 	local BT_LIB_FILE="$WORK_DIR/libbluetooth_jni.so"
 
-    echo "Patching Bluetooth library."
+    echo -e "${YELLOW}Patching Bluetooth library...${RESET}"
     # Get libbluetooth_jni.so
     unzip "$EXTRACTED_FIRM_DIR/system/system/apex/com.android.bt.apex" "apex_payload.img" -d "$WORK_DIR"
 	debugfs -R "dump /lib64/libbluetooth_jni.so $WORK_DIR/libbluetooth_jni.so" "$WORK_DIR/apex_payload.img"  >/dev/null 2>&1
@@ -406,11 +406,11 @@ FIX_SYSTEM_EXT() {
     # Make system_ext merged with system
     if [[ "$STOCK_HAS_SEPARATE_SYSTEM_EXT" == FALSE && -d "$EXTRACTED_FIRM_DIR/system_ext" ]]; then
 	    echo -e "${YELLOW}Fixing system_ext according to $STOCK_DEVICE${RESET}"
-        echo -e "- Copying system_ext content into system root${RESET}"
+        echo -e "${YELLOW}Copying system_ext content into system root${RESET}"
 		rm -rf "$EXTRACTED_FIRM_DIR/system/system_ext"
         cp -a --preserve=all "$EXTRACTED_FIRM_DIR/system_ext" "$EXTRACTED_FIRM_DIR/system"
 
-        echo -e "${YELLOW}- Cleaning and merging system_ext file contexts and configs${RESET}"
+        echo -e "${YELLOW}Cleaning and merging system_ext file contexts and configs${RESET}"
         # File paths
         SYSTEM_EXT_CONFIG_FILE="$EXTRACTED_FIRM_DIR/config/system_ext_fs_config"
         SYSTEM_EXT_CONTEXTS_FILE="$EXTRACTED_FIRM_DIR/config/system_ext_file_contexts"
@@ -652,7 +652,7 @@ JDM_DEBLOAT() {
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothMidiService"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
     else
-        echo -e "${YELLOW}[Omitted] Device is not JDM → skipping JDM debloating${RESET}"
+        echo -e "${RED}[Omitted] Device is not JDM → skipping JDM debloating${RESET}"
     fi
 
     shopt -u nocasematch

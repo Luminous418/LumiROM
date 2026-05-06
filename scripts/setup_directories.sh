@@ -17,5 +17,5 @@ for DIR in "$@"; do
     # Recreate dir
     mkdir -p "$DIR"
     # Show result
-    echo -e "${GREEN}Directory prepared: $DIR${RESET}"
+    echo -e "${GREEN}Directory prepared:${RESET} $DIR"
 done

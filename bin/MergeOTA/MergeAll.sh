@@ -23,8 +23,8 @@ BASE_ZIP="$1"
 UPDATE_ZIP="$2"
 echo
 echo -e "${CYAN}===== Samsung Beta Firmware Merger =====${RESET}"
-echo -e "${GREEN}Base firmware: $BASE_ZIP${RESET}"
-echo -e "${GREEN}Update binary: $UPDATE_ZIP${RESET}"
+echo -e "${GREEN}Base firmware:${RESET} $BASE_ZIP"
+echo -e "${GREEN}Update binary:${RESET} $UPDATE_ZIP"
 echo
 
 # Check dependencies
