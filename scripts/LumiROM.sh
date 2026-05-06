@@ -804,7 +804,7 @@ BUILD_PROP() {
         else
             if sudo grep -q "^${KEY}=" "$PROP"; then
                 sudo sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" "$PROP"
-                echo "✳️Updated: $KEY with value => $VALUE"
+                echo "✳️ Updated: $KEY with value => $VALUE"
             else
                 echo "${KEY}=${VALUE}" | sudo tee -a "$PROP" > /dev/null
                 echo "✅ Added: $KEY with value => $VALUE"
@@ -814,7 +814,7 @@ BUILD_PROP() {
 }
 
 
-APPLY_FEATURES() {
+APPLY_PROP_FEATURES() {
     echo ""
     if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"

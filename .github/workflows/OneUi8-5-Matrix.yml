@@ -162,7 +162,7 @@ jobs:
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        APPLY_FEATURES "FIRMWARE"
+        APPLY_PROP_FEATURES "FIRMWARE"
 
     - name: Adding mods
       shell: bash
