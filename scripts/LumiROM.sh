@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source scripts/bash_colors.sh
+
 IS_OFFICIAL() {
     CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
 
@@ -55,11 +57,11 @@ DISABLE_FBE() {
 
     for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
     if [ -f $i ]; then
-      echo "Disabling full-based encryption (FBE) for /data..."
+      echo -e "${YELLOW}Disabling full-based encryption (FBE) for /data...${RESET}"
       echo "- Found $i."
       # If found file-encryption, comments it
       sudo sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-      echo "Disabled file-encryption on $i"
+      echo -e "${GREEN}Disabled file-encryption on $i${RESET}"
     fi
   done
 }
@@ -77,18 +79,18 @@ DISABLE_FDE() {
 
     for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
     if [ -f $i ]; then
-      echo "Disabling full-disk encryption (FDE) for /data..."
+      echo -e "${YELLOW}Disabling full-disk encryption (FDE) for /data...${RESET}"
       echo "- Found $i."
       # If found force-encryption, comments it
       sudo sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-      echo "Disabled force-encryption on $i"
+      echo -e "${GREEN}Disabled force-encryption on $i${RESET}"
     fi
   done
 }
 
 DELETE_ICCC() {
     local EXTRACTED_FIRM_DIR="$1"
-    echo "Starting wipe..."
+    echo -e "${YELLOW}Starting wipe...${RESET}"
     # Delete iccc to prevent soft-bootloop
 
     local targets=(
@@ -108,12 +110,12 @@ DELETE_ICCC() {
         fi
     done
 
-    echo "Wipe iccc completed"
+    echo -e "${GREEN}Wipe iccc completed${RESET}"
 }
 
 DEBLOAT_VENDOR() {
     local EXTRACTED_FIRM_DIR="$1"
-    echo "Starting Debloat..."
+    echo -e "${YELLOW}Starting Debloat...${RESET}"
 
     local targets=(
         "$EXTRACTED_FIRM_DIR/vendor/bin/create_factory_efs_file"
@@ -132,13 +134,13 @@ DEBLOAT_VENDOR() {
     for file in "${targets[@]}"; do
         if [ -e "$file" ] || [ -L "$file" ]; then
             sudo rm -rf "$file"
-            echo "Deleted $file"
+            echo -e "${GREEN}Deleted $file${RESET}"
         else
-            echo "[Omitted] $file not found"
+            echo -e "${RED}[Omitted] $file not found${RESET}"
         fi
     done
 
-    echo "Vendor debloat completed"
+    echo -e "${GREEN}Vendor debloat completed${RESET}"
 }
 
 PATCH_FSTAB_EROFS() {
@@ -149,7 +151,7 @@ PATCH_FSTAB_EROFS() {
         return 1
     fi
 
-    echo "Applying patches EROFS to fstab..."
+    echo -e "${YELLOW}Applying patches EROFS to fstab...${RESET}"
 
     local fstab_files="
         vendor/etc/fstab.mt6768
@@ -175,13 +177,13 @@ PATCH_FSTAB_EROFS() {
             # odm
             sudo sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
             
-            echo "Done, now $STOCK_DEVICE is EROFS-enabled."
+            echo -e "${GREEN}Done, now $STOCK_DEVICE is EROFS-enabled.${RESET}"
         else
-            echo "- Omitted: $fstab not found"
+            echo -e "${RED}[Omitted] $fstab not found${RESET}"
         fi
     done
 
-    echo "--- EROFS patching completed ---"
+    echo -e "${GREEN}EROFS patching completed${RESET}"
 }
 
 INSTALL_FRAMEWORK() {
@@ -376,11 +378,12 @@ PATCH_BT_LIB() {
 
 
 FIX_VNDK() {
-    echo "- Checking $STOCK_DEVICE and $TARGET_DEVICE vndk version."
+    echo -e "${YELLOW}- Checking $STOCK_DEVICE and $TARGET_DEVICE vndk version.${RESET}"
     if [ -f "$TARGET_ROM_SYSTEM_EXT_DIR/apex/com.android.vndk.v${STOCK_VNDK_VERSION}.apex" ]; then
-        echo "- VNDK matched."
+        echo -e "${GREEN}- VNDK matched.${RESET}"
     else
-        echo "- VNDK mismatch or missing."
+        echo -e "${RED}- VNDK mismatch or missing.${RESET}"
+        echo -e "${YELLOW}- Extracting VNDK from $STOCK_DEVICE${RESET}"
         rm -f "$TARGET_ROM_SYSTEM_EXT_DIR/apex/com.android.vndk"*.apex
         cp -rfa "$VNDKS_COLLECTION/vndk31-a16/com.android.vndk.v${STOCK_VNDK_VERSION}.apex" "$TARGET_ROM_SYSTEM_EXT_DIR/apex/"
         sed -i "/<vendor-ndk>/,/<\/vendor-ndk>/ s|<version>[0-9]\+</version>|<version>${STOCK_VNDK_VERSION}</version>|" "$TARGET_ROM_SYSTEM_EXT_DIR/etc/vintf/manifest.xml"
@@ -402,12 +405,12 @@ FIX_SYSTEM_EXT() {
 
     # Make system_ext merged with system
     if [[ "$STOCK_HAS_SEPARATE_SYSTEM_EXT" == FALSE && -d "$EXTRACTED_FIRM_DIR/system_ext" ]]; then
-	    echo "Fixing system_ext according to $STOCK_DEVICE"
-        echo "- Copying system_ext content into system root"
+	    echo -e "${YELLOW}Fixing system_ext according to $STOCK_DEVICE${RESET}"
+        echo -e "- Copying system_ext content into system root${RESET}"
 		rm -rf "$EXTRACTED_FIRM_DIR/system/system_ext"
         cp -a --preserve=all "$EXTRACTED_FIRM_DIR/system_ext" "$EXTRACTED_FIRM_DIR/system"
 
-        echo "- Cleaning and merging system_ext file contexts and configs"
+        echo -e "${YELLOW}- Cleaning and merging system_ext file contexts and configs${RESET}"
         # File paths
         SYSTEM_EXT_CONFIG_FILE="$EXTRACTED_FIRM_DIR/config/system_ext_fs_config"
         SYSTEM_EXT_CONTEXTS_FILE="$EXTRACTED_FIRM_DIR/config/system_ext_file_contexts"
@@ -464,7 +467,7 @@ FIX_SELINUX() {
         return 1
     fi
 
-    echo "Fixing selinux for $STOCK_DEVICE."
+    echo -e "${YELLOW}Fixing selinux for $STOCK_DEVICE.${RESET}"
 
     UNSUPPORTED_SELINUX=("audiomirroring" "fabriccrypto" "hal_dsms_default" "qb_id_prop" "hal_dsms_service" "proc_compaction_proactiveness" "sbauth" "ker_app" "kpp_app" "kpp_data" "attiqi_app" "kpoc_charger")
 
@@ -484,7 +487,7 @@ UPDATE_FLOATING_FEATURE() {
     local key="$1"
     local value="$2"
     if [[ -z "$value" ]]; then
-        echo "⛔️️ Skipping $key — no value found."
+        echo -e "${RED}[Omitted] $key — no value found.${RESET}"
         return
     fi
 
@@ -502,11 +505,11 @@ UPDATE_FLOATING_FEATURE() {
         indent=$(echo "$current_line" | sed -E "s/(<${key}>.*<\/${key}>).*//")
         local line="${indent}<${key}>${value}</${key}>"
         sed -i "s|${indent}<${key}>.*</${key}>|$line|" "$TARGET_FLOATING_FEATURE"
-        echo "✳️ Updated $key with => $value"
+        echo -e "${GREEN}Updated $key with => $value${RESET}"
     else
         local line="    <$key>$value</$key>"
         sed -i "3i\\$line" "$TARGET_FLOATING_FEATURE"
-        echo "✅️ Added $key with value => $value"
+        echo -e "${GREEN}Added $key with value => $value${RESET}"
     fi
 }
 
@@ -594,7 +597,7 @@ REMOVE_ESIM_FILES() {
 
     # Remove ESIM files as we dont need it
 	local EXTRACTED_FIRM_DIR="$1"
-    echo "- Removing ESIM files."
+    echo -e "${YELLOW}- Removing ESIM files.${RESET}"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/EsimClient"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/EsimKeyString"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/EuiccService"
@@ -614,7 +617,7 @@ REMOVE_FABRIC_CRYPTO() {
 
     # Yes, we dont need that, it spams logs
 	local EXTRACTED_FIRM_DIR="$1"
-    echo "- Removing fabric crypto."
+    echo -e "${YELLOW}- Removing fabric crypto.${RESET}"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/bin/fabric_crypto"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/fabric_crypto.rc"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/permissions/FabricCryptoLib.xml"
@@ -644,12 +647,12 @@ JDM_DEBLOAT() {
     shopt -s nocasematch
 
     if [[ "$MANUF_TYPE" == *jdm* ]]; then
-        echo "JDM detected → debloating unnecessary files"
+        echo -e "${GREEN}JDM detected → debloating unnecessary files${RESET}"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothAgent"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothMidiService"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
     else
-        echo "Device is not JDM → skipping JDM debloating"
+        echo -e "${YELLOW}[Omitted] Device is not JDM → skipping JDM debloating${RESET}"
     fi
 
     shopt -u nocasematch
@@ -666,12 +669,12 @@ APPLY_STOCK_CONFIG() {
     local EXTRACTED_FIRM_DIR="$1"
 
     if [ ! -f "$DEVICES_DIR/$STOCK_DEVICE/config" ]; then
-        echo "- Config file for $STOCK_DEVICE not found in $DEVICES_DIR"
+        echo -e "${RED}[Omitted] Config file for $STOCK_DEVICE not found in $DEVICES_DIR${RESET}"
         return 1
 	fi
 
     if [ -f "$DEVICES_DIR/$STOCK_DEVICE/config" ]; then
-        echo "- $STOCK_DEVICE config found."
+        echo -e "${GREEN}- $STOCK_DEVICE config found.${RESET}"
         export STOCK_VNDK_VERSION="$(grep -m1 '^STOCK_VNDK_VERSION=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"
         export STOCK_HAS_SEPARATE_SYSTEM_EXT="$(grep -m1 '^STOCK_HAS_SEPARATE_SYSTEM_EXT=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"
 		export STOCK_DVFS_FILENAME="$(grep -m1 '^STOCK_DVFS_FILENAME=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"
@@ -714,7 +717,7 @@ KICK() {
     
 	local EXTRACTED_FIRM_DIR="$1"
 
-    echo "- Debloating apps."
+    echo -e "${YELLOW}- Debloating apps.${RESET}"
     local APP_DIRS=(
         "$EXTRACTED_FIRM_DIR/system/system/app"
         "$EXTRACTED_FIRM_DIR/system/system/priv-app"
@@ -742,13 +745,14 @@ DEBLOAT() {
     fi
 
 	local EXTRACTED_FIRM_DIR="$1"
-    echo "Debloating."
+
     KICK "$EXTRACTED_FIRM_DIR"
     REMOVE_ESIM_FILES "$EXTRACTED_FIRM_DIR"
 	REMOVE_FABRIC_CRYPTO "$EXTRACTED_FIRM_DIR"
     JDM_DEBLOAT "$EXTRACTED_FIRM_DIR"
     DEODEX "$EXTRACTED_FIRM_DIR"
-	echo "- Deleting unnecessary files and folders."
+    
+	echo -e "${YELLOW}- Deleting unnecessary files and folders.${RESET}"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.bprof"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.prof"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/hidden"
@@ -762,13 +766,13 @@ DEBLOAT() {
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc-sec.so"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc_sec_jni.so"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib/libnfc_sec_jni.so"
-        echo "Removed NFC from stock image"
+        echo -e "${GREEN}Removed NFC from stock image${RESET}"
     fi
     
 }
 
 DEODEX() {
-    echo "- Deodexing ROM (removing oat folders)..."
+    echo -e "${YELLOW}- Deodexing ROM (removing oat folders)...${RESET}"
     echo "  > OAT folders to remove:"
     find "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
     sudo find "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app" -type d -name "oat" -exec rm -rf {} +
@@ -779,7 +783,7 @@ DEODEX() {
     find "$EXTRACTED_FIRM_DIR/system/system/app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
     sudo find "$EXTRACTED_FIRM_DIR/system/system/app" -type d -name "oat" -exec rm -rf {} +
 
-    echo "  > Deodex complete"
+    echo -e "${GREEN}Deodex complete${RESET}"
 }
 
 BUILD_PROP() {
@@ -800,14 +804,14 @@ BUILD_PROP() {
 
         if [ -z "$VALUE" ]; then
             sudo sed -i "/^${KEY}=.*/d" "$PROP"
-            echo "⛔️ Removed: $KEY"
+            echo -e "${RED}Removed: $KEY${RESET}"
         else
             if sudo grep -q "^${KEY}=" "$PROP"; then
                 sudo sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" "$PROP"
-                echo "✳️ Updated: $KEY with value => $VALUE"
+                echo -e "${GREEN}Updated: $KEY with value => $VALUE${RESET}"
             else
                 echo "${KEY}=${VALUE}" | sudo tee -a "$PROP" > /dev/null
-                echo "✅ Added: $KEY with value => $VALUE"
+                echo -e "${GREEN}Added: $KEY with value => $VALUE${RESET}"
             fi
         fi
     done
@@ -824,8 +828,7 @@ APPLY_PROP_FEATURES() {
 	local EXTRACTED_FIRM_DIR="$1"
 
     # Add build.prop features
-    echo "Applying useful features."
-	echo " Adding build prop tweak."
+	echo -e "${YELLOW}Adding build prop tweak.${RESET}"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
@@ -965,7 +968,7 @@ APPEND_DISPLAY_ID() {
             # Try to not update it, if it was already there
             if [[ "$CURRENT" != *"$SUFFIX"* ]]; then
                 sed -i "s|^ro.build.display.id=.*|ro.build.display.id=${CURRENT} - ${SUFFIX}|" "$PROP"
-                echo "Updated ro.build.display.id in $PROP"
+                echo -e "${GREEN}Updated ro.build.display.id in $PROP${RESET}"
             fi
         fi
     done
@@ -993,10 +996,10 @@ GEN_FS_CONFIG() {
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
 
-        echo "--- Synchronizing $PARTITION ---"
+        echo -e "${YELLOW}--- Synchronizing $PARTITION ---${RESET}"
 
         if [[ "$PARTITION" == "vendor" ]]; then
-            echo "  [*] Fixing vendor_fs_config..."
+            echo -e "${YELLOW}  [*] Fixing vendor_fs_config...${RESET}"
             
             local TMP_CLEAN=$(mktemp)
             
@@ -1016,11 +1019,11 @@ GEN_FS_CONFIG() {
             sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" > /dev/null
             
             rm "$TMP_CLEAN"
-            echo "  [+] vendor_fs_config fixed."
+            echo -e "${GREEN}  [+] vendor_fs_config fixed.${RESET}"
         fi
         
         if [[ ! -f "$FS_CONFIG" ]]; then
-            echo "--- Creating new fs_config for $PARTITION ---"
+            echo -e "${YELLOW}  --- Creating new fs_config for $PARTITION ---${RESET}"
             echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
         fi
 
@@ -1052,7 +1055,7 @@ GEN_FILE_CONTEXTS() {
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
         [[ ! -f "$FILE_CONTEXTS" ]] && touch "$FILE_CONTEXTS"
 
-        echo "--- Syncing contexts for: $PARTITION ---"
+        echo -e "${YELLOW}--- Syncing contexts for: $PARTITION ---${RESET}"
         
         local TMP_EXISTING=$(mktemp)
         sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
@@ -1105,13 +1108,13 @@ BUILD_IMG() {
         
         # Update the super size on the list according to the device
         if [[ -n "$SUPER_SIZE" && -f "$OP_LIST" ]]; then
-            echo -e "\e[32mUpdating super size on op_list: $SUPER_SIZE bytes\e[0m"
+            echo -e "${GREEN}Updating super size on op_list: $SUPER_SIZE bytes${RESET}"
             sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
         else
-            echo "Warning: STOCK_SUPER_SIZE hasn't been found on $DEVICE_CONFIG"
+            echo -e "${RED}Warning: STOCK_SUPER_SIZE hasn't been found on $DEVICE_CONFIG${RESET}"
         fi
     else
-        echo "Error: config file not found"
+        echo -e "${RED}Error: config file not found${RESET}"
     fi
 
 
@@ -1139,11 +1142,11 @@ BUILD_IMG() {
             sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/
 
             if [[ "$FILE_SYSTEM" == "erofs" ]]; then
-                echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
+                echo -e "${YELLOW}Building EROFS image: $OUT_IMG${RESET}"
                 sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
                 sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
             else
-                echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
+                echo -e "${RED}Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION${RESET}"
             fi
         ) &
     done
@@ -1157,7 +1160,7 @@ BUILD_IMG() {
         local OUT_IMG="$OUT_DIR/${PARTITION}.img"
         if [[ -f "$OUT_IMG" && -f "$OP_LIST" ]]; then
             local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
-            echo -e "\e[32mUpdating size of $PARTITION in op_list: $ACTUAL_SIZE bytes\e[0m"
+            echo -e "${GREEN}Updating size of $PARTITION in op_list: $ACTUAL_SIZE bytes${RESET}"
             sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
         fi
     done
@@ -1177,7 +1180,7 @@ IMG_TO_BROTLI() {
 
     # Check if img2sdat binary exists
     if [[ ! -f "$IMG2SDAT_BIN" ]]; then
-        echo "Error: img2sdat binary not found at $IMG2SDAT_BIN"
+        echo -e "${RED}Error: img2sdat binary not found at $IMG2SDAT_BIN${RESET}"
         return 1
     fi
 
@@ -1191,10 +1194,10 @@ IMG_TO_BROTLI() {
         PARTITION="$(basename "$f" .img)"
 
         (
-            echo "Converting $PARTITION.img..."
+            echo -e "${GREEN}Converting $PARTITION.img...${RESET}"
             "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$f" > /dev/null 2>&1
             touch "$TMP_DIR/$PARTITION.patch.dat"
-            echo "Created patch.dat for $PARTITION"
+            echo -e "${GREEN}Created patch.dat for $PARTITION${RESET}"
         ) &
     done
 
@@ -1211,9 +1214,9 @@ IMG_TO_BROTLI() {
         OUT_FILE="$TMP_DIR/$PARTITION.new.dat.br"
 
         (
-            echo "Compressing $PARTITION.new.dat..."
+            echo -e "${YELLOW}Compressing $PARTITION.new.dat...${RESET}"
             brotli -f -q 1 --output="$OUT_FILE" "$DAT"
-            echo "Finished $PARTITION.new.dat.br"
+            echo -e "${GREEN}Finished $PARTITION.new.dat.br${RESET}"
         ) &
 
         # Limit concurrent jobs
@@ -1224,5 +1227,5 @@ IMG_TO_BROTLI() {
 
     wait
     echo ""
-    echo "All partitions converted and compressed successfully."
+    echo -e "${GREEN}All partitions converted and compressed successfully.${RESET}"
 }

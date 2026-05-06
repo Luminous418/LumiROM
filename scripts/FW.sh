@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source scripts/bash_colors.sh
+
 DOWNLOAD_FIRMWARE() {
     if [ "$#" -lt 4 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY> [VERSION]"
@@ -146,7 +148,7 @@ DOWNLOAD_VENDOR() {
 
     local DOWN_DIR="${1}"
 
-    echo "Downloading vendor for ${STOCK_DEVICE}"
+    echo -e "${YELLOW}Downloading vendor for ${STOCK_DEVICE}${RESET}"
     aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
     
     # Cleanup any leftover .aria2 control files after everything finishes
@@ -234,7 +236,7 @@ EXTRACT_FIRMWARE_IMG() {
 
 	local FIRM_DIR="$1"
 
-	echo "Extracting images from $FIRM_DIR"
+	echo -e "${YELLOW}Extracting images from $FIRM_DIR${RESET}"
     for imgfile in "$FIRM_DIR"/*.img; do
         [ -e "$imgfile" ] || continue
 

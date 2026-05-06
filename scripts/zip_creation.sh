@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source scripts/bash_colors.sh
+
 UPDATE_ZIP_SCRIPT() {
     
         local EXTRACTED_FIRM_DIR="$1"
@@ -36,16 +38,16 @@ UPDATE_ZIP_SCRIPT() {
         fi
 
         if [ -z "$FINGERPRINT" ]; then
-            echo "Warning: Fingerprint not found, using generic value."
+            echo -e "${YELLOW}Warning: Fingerprint not found, using generic value.${RESET}"
             FINGERPRINT="Unknown/Release-Keys"
         fi
 
-        echo "Detected Fingerprint: $FINGERPRINT"
+        echo -e "${GREEN}Detected Fingerprint:${RESET} $FINGERPRINT"
         sed -i "s!ui_print(\"Source: .*\");!ui_print(\"Source: $FINGERPRINT\");!" "$UPDATER_PATH"
         
         NEW_CHECK="getprop(\"ro.boot.em.model\") == \"$DEVICE\" || abort(\"E3004: This package is for $DEVICE_CODENAME\");"
 
-        echo "Updating device on updater-script for $DISPLAY_NAME..."
+        echo -e "${GREEN}Updating device on updater-script for${RESET} $DISPLAY_NAME..."
       
         sed -i "s!^getprop(\"ro.boot.em.model\").*!$NEW_CHECK!" "$UPDATER_PATH"
 
@@ -93,32 +95,32 @@ FLASHABLE_ZIP_CREATION() {
         SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$DEVICE/boot.img"
 
         if [ -f "$SPECIFIC_BOOT" ]; then
-            echo "-> Copying boot.img from $DEVICE..."
+            echo -e "${GREEN}-> Copying boot.img from${RESET} $DEVICE..."
             cp "$SPECIFIC_BOOT" "$TEMPLATE_DIR/boot.img"
         else
-            echo "There is no boot.img for $DEVICE"
+            echo -e "${RED}There is no boot.img for${RESET} $DEVICE"
         fi
 
-        echo "Copying compressed DAT files to template..."
+        echo -e "${GREEN}Copying compressed DAT files to template...${RESET}"
         cp TMP/*.new.dat.br "$TEMPLATE_DIR"/
         cp TMP/*.patch.dat "$TEMPLATE_DIR"/
         cp TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
 
-        echo "Creating ZIP package..."
+        echo -e "${GREEN}Creating ZIP package...${RESET}"
         ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
         [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
 
         # ZIP the rom with mixed compression levels (Multithreaded 7z)
         cd "$TEMPLATE_DIR"
         
-        echo "Adding large/compressed files (Store)..."
+        echo -e "${YELLOW}Adding large/compressed files (Store)...${RESET}"
         7z a -mx=0 -mmt=4 "$ZIP_FILE" ./*.new.dat.br ./*.patch.dat 2>/dev/null || true
         
-        echo "Adding scripts and compressible data (Compress)..."
+        echo -e "${YELLOW}Adding scripts and compressible data (Compress)...${RESET}"
         7z a -mx=6 -mmt=4 "$ZIP_FILE" ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list 2>/dev/null || true
 
         mv "$ZIP_FILE" "../ROM/"
 
-        echo "ZIP package created: $ZIP_FILE"
+        echo -e "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
         echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
 }

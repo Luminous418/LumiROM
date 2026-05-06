@@ -1,4 +1,7 @@
 #!/bin/bash
+
+source scripts/bash_colors.sh
+
 START_TIME=$(date +%s)
 if [ "$1" == "cleanup" ]; then
     echo "Cleaning up work dirs..."
@@ -19,9 +22,9 @@ fi
 BASE_ZIP="$1"
 UPDATE_ZIP="$2"
 echo
-echo "===== Samsung Beta Firmware Merger ====="
-echo "Base firmware: $BASE_ZIP"
-echo "Update binary: $UPDATE_ZIP"
+echo -e "${CYAN}===== Samsung Beta Firmware Merger =====${RESET}"
+echo -e "${GREEN}Base firmware: $BASE_ZIP${RESET}"
+echo -e "${GREEN}Update binary: $UPDATE_ZIP${RESET}"
 echo
 
 # Check dependencies
@@ -34,7 +37,7 @@ done
 
 # Extract base firmware zip
 echo
-echo "Extracting ODIN firmware ZIP..."
+echo -e "${GREEN}Extracting ODIN firmware ZIP...${RESET}"
 mkdir -p _odin_extracted
 unzip -q "$BASE_ZIP" -d _odin_extracted
 
@@ -154,7 +157,7 @@ echo "Update BIN Extracted."
 
 PARTITIONS=("system" "product" "odm" "system_ext")
 
-echo "Starting merge..."
+echo -e "${CYAN}Starting merge...${RESET}"
 
 for partition in "${PARTITIONS[@]}"; do
     img_file="./_images/super/images/${partition}.img"
@@ -180,11 +183,12 @@ for partition in "${EXTRAPARTITIONS[@]}"; do
     
     if [ -f "$img_file" ] && [ -f "$transfer_list" ] && [ -f "$new_dat" ] && [ -f "$patch_dat" ]; then
     	echo
-        echo "Merging ${partition}..."
+        echo -e "${YELLOW}Merging ${partition}...${RESET}"
         ./bin/MergeOTA/BlockImageUpdate "$img_file" "$transfer_list" "$new_dat" "$patch_dat" > /dev/null 2>&1
-        echo "${partition} merge complete!"
+        echo -e "${GREEN}${partition} merge complete!${RESET}"
     else
-        echo "Skipping ${partition} (doesn't exist)"
+    	echo
+        echo -e "${RED}Skipping ${partition} (doesn't exist)${RESET}"
     fi
 done
 rm -rf cache

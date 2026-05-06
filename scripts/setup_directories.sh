@@ -1,4 +1,7 @@
 #!/bin/bash
+
+source scripts/bash_colors.sh
+
 set -e
 
 echo "Running script: $(basename "$0")"
@@ -14,5 +17,5 @@ for DIR in "$@"; do
     # Recreate dir
     mkdir -p "$DIR"
     # Show result
-    echo "Directory prepared: $DIR"
+    echo -e "${GREEN}Directory prepared: $DIR${RESET}"
 done
