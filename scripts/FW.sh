@@ -274,4 +274,8 @@ EXTRACT_FIRMWARE_IMG() {
     wait
     # Remove all original .img
     rm -rf "$FIRM_DIR"/*.img
+
+    # Correct owner and permissions of the extracted configs
+    sudo chown -R $USER:$USER "$FIRM_DIR/config/"
+    sudo chmod -R 755 "$FIRM_DIR/config/"
 }

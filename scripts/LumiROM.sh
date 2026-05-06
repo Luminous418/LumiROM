@@ -1044,9 +1044,6 @@ GEN_FS_CONFIG() {
 GEN_FILE_CONTEXTS() {
     local EXTRACTED_FIRM_DIR="${1%/}"
 
-    sudo chown -R $USER:$USER "$EXTRACTED_FIRM_DIR/config/"
-    sudo chmod -R 755 "$EXTRACTED_FIRM_DIR/config/"
-
     for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
         [[ -d "$ROOT" ]] || continue
         PARTITION=$(basename "$ROOT")
