@@ -114,4 +114,6 @@ source scripts/zip_creation.sh
 UPDATE_ZIP_SCRIPT "FIRMWARE"
 FLASHABLE_ZIP_CREATION
 
+echo "LumiROM $LUMIROM_VERSION for $STOCK_DEVICE is ready, you can find it on ROM folder"
+
 echo "--- Process finished ---"
