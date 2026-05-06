@@ -365,7 +365,7 @@ PATCH_BT_LIB() {
     done
 
     if [ "$PATCHED" -eq 0 ]; then
-        echo "- No known Bluetooth patch pattern matched."
+        echo -e "${RED}- No known Bluetooth patch pattern matched.${RESET}"
 		rm -rf "$BT_LIB_FILE"
         return 1
     fi
@@ -375,7 +375,7 @@ PATCH_BT_LIB() {
 
 
 FIX_VNDK() {
-    echo -e "${YELLOW}- Checking ${RESET}$STOCK_DEVICE ${YELLOW}and ${RESET}$TARGET_DEVICE vndk version.${RESET}"
+    echo -e "${YELLOW}- Checking ${RESET}$STOCK_DEVICE ${YELLOW}and${RESET} $TARGET_DEVICE ${YELLOW}vndk version.${RESET}"
     if [ -f "$TARGET_ROM_SYSTEM_EXT_DIR/apex/com.android.vndk.v${STOCK_VNDK_VERSION}.apex" ]; then
         echo -e "${GREEN}- VNDK matched.${RESET}"
     else
@@ -460,11 +460,11 @@ FIX_SELINUX() {
 
     # Self explanatory, fixes selinux that prevents booting
     if [ ! -f "$SELINUX_FILE" ]; then
-        echo "Error: SELinux file not found at $SELINUX_FILE"
+        echo -e "${RED}Error: SELinux file not found at${RESET} $SELINUX_FILE"
         return 1
     fi
 
-    echo -e "${YELLOW}Fixing selinux for ${RESET}$STOCK_DEVICE."
+    echo -e "${YELLOW}Fixing selinux for${RESET} $STOCK_DEVICE."
 
     UNSUPPORTED_SELINUX=("audiomirroring" "fabriccrypto" "hal_dsms_default" "qb_id_prop" "hal_dsms_service" "proc_compaction_proactiveness" "sbauth" "ker_app" "kpp_app" "kpp_data" "attiqi_app" "kpoc_charger")
 
@@ -671,7 +671,7 @@ APPLY_STOCK_CONFIG() {
 	fi
 
     if [ -f "$DEVICES_DIR/$STOCK_DEVICE/config" ]; then
-        echo -e "${GREEN}- $STOCK_DEVICE config found.${RESET}"
+        echo -e "${GREEN}-${RESET} $STOCK_DEVICE ${GREEN}config found.${RESET}"
         export STOCK_VNDK_VERSION="$(grep -m1 '^STOCK_VNDK_VERSION=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"
         export STOCK_HAS_SEPARATE_SYSTEM_EXT="$(grep -m1 '^STOCK_HAS_SEPARATE_SYSTEM_EXT=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"
 		export STOCK_DVFS_FILENAME="$(grep -m1 '^STOCK_DVFS_FILENAME=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"

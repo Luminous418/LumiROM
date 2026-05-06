@@ -37,7 +37,7 @@ done
 
 # Extract base firmware zip
 echo
-echo -e "${GREEN}Extracting ODIN firmware ZIP...${RESET}"
+echo -e "${YELLOW}Extracting ODIN firmware ZIP...${RESET}"
 mkdir -p _odin_extracted
 unzip -q "$BASE_ZIP" -d _odin_extracted
 
@@ -139,7 +139,7 @@ extract_super_properties() {
     METADATA_SIZE=$(grep "Metadata max size:" "$lpdump_file" | awk '{print $4}')
     METADATA_SLOTS=$(grep "Metadata slot count:" "$lpdump_file" | awk '{print $4}')
     
-    echo "Super properties:"
+    echo -e "${PURPLE}Super properties:${RESET}"
     echo "  Size: $SUPER_SIZE bytes"
     echo "  Metadata size: $METADATA_SIZE bytes"
     echo "  Metadata slots: $METADATA_SLOTS"

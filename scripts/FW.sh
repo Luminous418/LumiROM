@@ -164,7 +164,7 @@ DOWNLOAD_VENDOR() {
 
     local DOWN_DIR="${1}"
 
-    echo -e "${YELLOW}Downloading vendor for ${STOCK_DEVICE}${RESET}"
+    echo -e "${YELLOW}Downloading vendor for${RESET} ${STOCK_DEVICE}"
     aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
     
     # Cleanup any leftover .aria2 control files after everything finishes
@@ -181,7 +181,7 @@ EXTRACT_FIRMWARE() {
     local FIRM_DIR="$1"
     local FIRM_FILE="$FIRM_DIR/BASE_FW.zip"
 
-    echo "Extracting downloaded firmware."
+    echo -e "${YELLOW}Extracting downloaded firmware.${RESET}"
 
     if [ ! -f "$FIRM_FILE" ]; then
         echo "Error: BASE_FW.zip not found in $FIRM_DIR"
@@ -232,10 +232,9 @@ PREPARE_PARTITIONS() {
         done
 
         if [[ $keep_this -eq 0 ]]; then
-            # echo "- Deleting: $item"
             rm -rf -- "$item"
         else
-            echo "- Keeping: $item"
+            echo -e "${GREEN}- Keeping:${RESET} $item"
         fi
     done
 
@@ -271,14 +270,14 @@ EXTRACT_FIRMWARE_IMG() {
             case "$fstype" in
                 Linux)
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    echo "$imgfile Detected ext4. Size: $IMG_SIZE bytes."
+                    echo -e "$imgfile Detected ${BLUE}ext4${RESET}. Size: $IMG_SIZE bytes."
                     echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
                     sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR" > /dev/null 2>&1
                     ;;
                 EROFS)
                     echo ""
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    echo "$imgfile Detected $fstype. Size: $IMG_SIZE bytes."
+                    echo -e "$imgfile Detected ${BLUE}$fstype${RESET}. Size: $IMG_SIZE bytes."
                     echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
                     $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR" >/dev/null 2>&1
                     ;;
