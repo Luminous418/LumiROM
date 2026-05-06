@@ -826,7 +826,6 @@ APPLY_FEATURES() {
     # Add build.prop features
     echo "Applying useful features."
 	echo " Adding build prop tweak."
-	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.frp.pst"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
