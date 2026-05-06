@@ -163,7 +163,7 @@ DOWNLOAD_VENDOR() {
     local DOWN_DIR="${1}"
 
     echo -e "${YELLOW}Downloading vendor for ${STOCK_DEVICE}${RESET}"
-    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
+    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
     
     # Cleanup any leftover .aria2 control files after everything finishes
     wait
