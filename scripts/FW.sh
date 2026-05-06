@@ -18,10 +18,10 @@ DOWNLOAD_FIRMWARE() {
     mkdir -p "$DOWN_DIR"
 
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        echo -e "======================================"
-        echo -e "       Samsung FW Downloader"
-        echo -e "======================================"
-        echo -e "MODEL: $MODEL | CSC: $CSC"
+        echo -e "${BLUE}======================================${RESET}"
+        echo -e "${BLUE}       Samsung FW Downloader${RESET}"
+        echo -e "${BLUE}======================================${RESET}"
+        echo -e "${PURPLE}MODEL:${RESET} $MODEL | ${PURPLE}CSC:${RESET} $CSC"
 
         # --- Step 1: Determine Version ---
         if [ -n "$VERSION" ]; then
@@ -99,7 +99,7 @@ DOWNLOAD_OTA() {
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
-    echo "Downloading OTA for $MODEL"
+    echo -e "${YELLOW}Downloading OTA for${RESET} ${TARGET_DEVICE}"
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
         aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
@@ -256,14 +256,14 @@ EXTRACT_FIRMWARE_IMG() {
                 Linux)
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
                     echo "$imgfile Detected ext4. Size: $IMG_SIZE bytes."
-                    echo "Extracting $imgfile in $FIRM_DIR/$partition"
+                    echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
                     sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR" > /dev/null 2>&1
                     ;;
                 EROFS)
                     echo ""
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
                     echo "$imgfile Detected $fstype. Size: $IMG_SIZE bytes."
-                    echo "Extracting $imgfile in $FIRM_DIR/$partition"
+                    echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
                     $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR" >/dev/null 2>&1
                     ;;
                 *)

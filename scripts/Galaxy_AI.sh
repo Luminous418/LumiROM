@@ -16,7 +16,7 @@ GALAXY_AI() {
     local TARGET_FLOATING_FEATURE="$EXTRACTED_FIRM_DIR/system/system/etc/floating_feature.xml"
 
     if [ "$USE_GALAXY_AI" == "Yes" ]; then
-    	echo -e "${GREEN}Adding Galaxy AI${RESET}"
+    	echo -e "${YELLOW}Adding Galaxy AI${RESET}"
 
         sed -i '/SEC_FLOATING_FEATURE_COMMON_DISABLE_NATIVE_AI/d' "$TARGET_FLOATING_FEATURE"
         # Adding the Galaxy AI versioning
@@ -75,7 +75,7 @@ GALAXY_AI() {
 
         # Adding Wallpaper AI
         if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
-        	echo -e "${GREEN}Adding Wallpaper AI${RESET}"
+        	echo -e "${YELLOW}Adding Wallpaper AI${RESET}"
             mkdir -p "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper"
             cp -rfa "$(pwd)/LumiROM/Mods/Apps/AiWallpaper/"* "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper/"
 
@@ -85,7 +85,7 @@ GALAXY_AI() {
 
         # Adding Photo Editor AI Full
         if [ ! -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull" ]; then
-        	echo -e "${GREEN}Adding Photo Editor AI Full${RESET}"
+        	echo -e "${YELLOW}Adding Photo Editor AI Full${RESET}"
             rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailasso"
             rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/ailassomatting"
             rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/inpainting"
@@ -100,7 +100,7 @@ GALAXY_AI() {
         fi
 
         # Adding Now Brief
-        echo -e "${GREEN}Adding Now Brief${RESET}"
+        echo -e "${YELLOW}Adding Now Brief${RESET}"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk"
         wget -O "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk" "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/SamsungSmartSuggestions.apk?download=true" >/dev/null 2>&1
     else

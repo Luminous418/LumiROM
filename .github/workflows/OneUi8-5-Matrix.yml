@@ -158,7 +158,7 @@ jobs:
         source scripts/LumiROM.sh
         DEBLOAT "FIRMWARE"
 
-    - name: Apply features
+    - name: Apply prop features
       shell: bash
       run: |
         source scripts/LumiROM.sh

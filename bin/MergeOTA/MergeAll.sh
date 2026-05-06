@@ -69,11 +69,11 @@ if [ -z "$HOME_TAR" ]; then
     echo "Error: Could not find HOME_CSC*.tar.md5 in base ZIP!"
     exit 1
 fi
-echo "Found AP package: $AP_TAR"
-echo "Found BL package: $BL_TAR"
-echo "Found CP package: $CP_TAR"
-echo "Found CSC package: $CSC_TAR"
-echo "Found HOME_CSC package: $HOME_TAR"
+echo -e "${GREEN}Found AP package:${RESET} $AP_TAR"
+echo -e "${GREEN}Found BL package:${RESET} $BL_TAR"
+echo -e "${GREEN}Found CP package:${RESET} $CP_TAR"
+echo -e "${GREEN}Found CSC package:${RESET} $CSC_TAR"
+echo -e "${GREEN}Found HOME_CSC package:${RESET} $HOME_TAR"
 
 # Extract super.img.lz4 from AP
 echo
@@ -95,7 +95,7 @@ rm -rf _lz4tmp
 
 # Desparse super
 echo
-echo "Unsparsing super..."
+echo -e "${YELLOW}Unsparsing super${RESET}"
 ./bin/MergeOTA/imjtool _images/super.img extract
 mv _images/super.img _images/super.img-old 2>/dev/null
 mv extracted/image.img _images/super.img
@@ -103,12 +103,12 @@ rm -rf extracted
 
 # Extract super
 echo
-echo "Extracting super"
+echo -e "${YELLOW}Extracting super${RESET}"
 mkdir _images/super
 mkdir _images/super/images
 ./bin/MergeOTA/lpdump _images/super.img > _images/super/superlpdump.txt
 ./bin/MergeOTA/lpunpack _images/super.img _images/super/images
-echo "Super Extracted"
+echo -e "${GREEN}Super extracted${RESET}"
 
 # Parse super
 parse_super_partitions() {
@@ -132,7 +132,7 @@ extract_super_properties() {
     local lpdump_file="$1"
     
     echo
-    echo "Extracting super properties..."
+    echo -e "${YELLOW}Extracting super properties${RESET}"
     
     # Parse the specific format from your lpdump output
     SUPER_SIZE=$(grep "Size:" "$lpdump_file" | grep "bytes" | awk '{print $(NF-1)}')
@@ -150,14 +150,14 @@ extract_super_properties "./_images/super/superlpdump.txt"
 
 # Extract update bin
 echo
-echo "Extracting update bin..."
+echo -e "${YELLOW}Extracting update bin${RESET}"
 mkdir -p _update_bin
 unzip -q "$UPDATE_ZIP" -d _update_bin
-echo "Update BIN Extracted."
+echo -e "${GREEN}Update BIN extracted${RESET}"
 
 PARTITIONS=("system" "product" "odm" "system_ext")
 
-echo -e "${CYAN}Starting merge...${RESET}"
+echo -e "${CYAN}Starting merge${RESET}"
 
 for partition in "${PARTITIONS[@]}"; do
     img_file="./_images/super/images/${partition}.img"
@@ -167,12 +167,12 @@ for partition in "${PARTITIONS[@]}"; do
     
     if [ -f "$img_file" ] && [ -f "$transfer_list" ] && [ -f "$new_dat" ] && [ -f "$patch_dat" ]; then
     	echo
-        echo "Merging ${partition}..."
+        echo -e "${YELLOW}Merging ${partition}...${RESET}"
         ./bin/MergeOTA/BlockImageUpdate "$img_file" "$transfer_list" "$new_dat" "$patch_dat" > /dev/null 2>&1
-        echo "${partition} merge complete!"
+        echo -e "${GREEN}${partition} merge complete!${RESET}"
     else
     	echo
-        echo "Skipping ${partition} (doesn't exist)"
+        echo -e "${RED}Skipping ${partition} (doesn't exist)${RESET}"
     fi
 done
 for partition in "${EXTRAPARTITIONS[@]}"; do

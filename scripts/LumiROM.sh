@@ -104,9 +104,9 @@ DELETE_ICCC() {
     for file in "${targets[@]}"; do
         if [ -e "$file" ] || [ -L "$file" ]; then
             sudo rm -rf "$file"
-            echo "Deleted $file"
+            echo -e "${GREEN}Deleted $file${RESET}"
         else
-            echo "[Omitted] $file not found"
+            echo -e "${RED}[Omitted] $file not found${RESET}"
         fi
     done
 
@@ -487,7 +487,7 @@ UPDATE_FLOATING_FEATURE() {
     local key="$1"
     local value="$2"
     if [[ -z "$value" ]]; then
-        echo -e "${RED}[Omitted] $key — no value found.${RESET}"
+        echo -e "${RED}[Omitted]${RESET} $key ${RED}— no value found.${RESET}"
         return
     fi
 
@@ -505,11 +505,11 @@ UPDATE_FLOATING_FEATURE() {
         indent=$(echo "$current_line" | sed -E "s/(<${key}>.*<\/${key}>).*//")
         local line="${indent}<${key}>${value}</${key}>"
         sed -i "s|${indent}<${key}>.*</${key}>|$line|" "$TARGET_FLOATING_FEATURE"
-        echo -e "${GREEN}Updated $key with => $value${RESET}"
+        echo -e "${GREEN}Updated ${RESET}$key${GREEN} with => ${RESET}$value"
     else
         local line="    <$key>$value</$key>"
         sed -i "3i\\$line" "$TARGET_FLOATING_FEATURE"
-        echo -e "${GREEN}Added $key with value => $value${RESET}"
+        echo -e "${GREEN}Added ${RESET}$key${GREEN} with value => ${RESET}$value"
     fi
 }
 
@@ -773,7 +773,7 @@ DEBLOAT() {
 
 DEODEX() {
     echo -e "${YELLOW}- Deodexing ROM (removing oat folders)...${RESET}"
-    echo "  > OAT folders to remove:"
+    echo -e "${YELLOW}- OAT folders to remove:${RESET}"
     find "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
     sudo find "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app" -type d -name "oat" -exec rm -rf {} +
     find "$EXTRACTED_FIRM_DIR/system/system_ext/app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
@@ -804,14 +804,14 @@ BUILD_PROP() {
 
         if [ -z "$VALUE" ]; then
             sudo sed -i "/^${KEY}=.*/d" "$PROP"
-            echo -e "${RED}Removed: $KEY${RESET}"
+            echo -e "${RED}Removed ${RESET}$KEY"
         else
             if sudo grep -q "^${KEY}=" "$PROP"; then
                 sudo sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" "$PROP"
-                echo -e "${GREEN}Updated: $KEY with value => $VALUE${RESET}"
+                echo -e "${GREEN}Updated ${RESET}$KEY${GREEN} with value => ${RESET}$VALUE${RESET}"
             else
                 echo "${KEY}=${VALUE}" | sudo tee -a "$PROP" > /dev/null
-                echo -e "${GREEN}Added: $KEY with value => $VALUE${RESET}"
+                echo -e "${GREEN}Added ${RESET}$KEY${GREEN} with value => ${RESET}$VALUE${RESET}"
             fi
         fi
     done
@@ -968,7 +968,7 @@ APPEND_DISPLAY_ID() {
             # Try to not update it, if it was already there
             if [[ "$CURRENT" != *"$SUFFIX"* ]]; then
                 sed -i "s|^ro.build.display.id=.*|ro.build.display.id=${CURRENT} - ${SUFFIX}|" "$PROP"
-                echo -e "${GREEN}Updated ro.build.display.id in $PROP${RESET}"
+                echo -e "${GREEN}Updated ${RESET}ro.build.display.id${GREEN} in ${RESET}$PROP"
             fi
         fi
     done
@@ -1033,10 +1033,10 @@ GEN_FS_CONFIG() {
             if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
                 local REL_PATH="${ENTRY#$PARTITION/}"
                 if [[ -d "$ROOT/$REL_PATH" ]]; then
-                    echo "  [+] Adding DIR: $ENTRY"
+                    echo -e "  ${GREEN}[+]${RESET} Adding DIR: $ENTRY"
                     echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
                 else
-                    echo "  [+] Adding FILE: $ENTRY"
+                    echo -e "  ${GREEN}[+]${RESET} Adding FILE: $ENTRY"
                     echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
                 fi
             fi
@@ -1063,7 +1063,7 @@ GEN_FILE_CONTEXTS() {
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
             
             if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
-                echo "  [+] Context for: $PATH_ENTRY"
+                echo -e "  ${GREEN}[+]${RESET} Context for: $PATH_ENTRY"
                 
                 local CONTEXT="u:object_r:system_file:s0"
 
