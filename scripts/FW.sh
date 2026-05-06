@@ -91,10 +91,12 @@ DOWNLOAD_FIRMWARE_LUMI() {
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
         echo "TARGET_DEVICE=SM-A346B" >> $GITHUB_ENV
         export TARGET_DEVICE="SM-A346B"
+        echo -e "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
         aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A346B/SM-A346B.zip?download=true" || return 1
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
         echo "TARGET_DEVICE=SM-A245F" >> $GITHUB_ENV
         export TARGET_DEVICE="SM-A245F"
+        echo -e "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
         aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" || return 1
     fi
 
@@ -215,7 +217,7 @@ PREPARE_PARTITIONS() {
     done
 
     echo ""
-    echo "Preparing partitions."
+    echo -e "${YELLOW}Preparing partitions.${RESET}"
 
     shopt -s nullglob dotglob
 

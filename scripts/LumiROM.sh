@@ -176,14 +176,11 @@ PATCH_FSTAB_EROFS() {
             
             # odm
             sudo sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
-            
-            echo -e "${GREEN}Done, now${RESET} $STOCK_DEVICE ${GREEN}is EROFS-enabled.${RESET}"
         else
             echo -e "${RED}[Omitted]${RESET} $fstab ${RED}not found${RESET}"
         fi
     done
-
-    echo -e "${GREEN}EROFS patching completed${RESET}"
+    echo -e "${GREEN}Done, now${RESET} $STOCK_DEVICE ${GREEN}is EROFS-enabled.${RESET}"
 }
 
 INSTALL_FRAMEWORK() {
@@ -378,7 +375,7 @@ PATCH_BT_LIB() {
 
 
 FIX_VNDK() {
-    echo -e "${YELLOW}- Checking $STOCK_DEVICE and $TARGET_DEVICE vndk version.${RESET}"
+    echo -e "${YELLOW}- Checking ${RESET}$STOCK_DEVICE ${YELLOW}and ${RESET}$TARGET_DEVICE vndk version.${RESET}"
     if [ -f "$TARGET_ROM_SYSTEM_EXT_DIR/apex/com.android.vndk.v${STOCK_VNDK_VERSION}.apex" ]; then
         echo -e "${GREEN}- VNDK matched.${RESET}"
     else
@@ -405,7 +402,7 @@ FIX_SYSTEM_EXT() {
 
     # Make system_ext merged with system
     if [[ "$STOCK_HAS_SEPARATE_SYSTEM_EXT" == FALSE && -d "$EXTRACTED_FIRM_DIR/system_ext" ]]; then
-	    echo -e "${YELLOW}Fixing system_ext according to $STOCK_DEVICE${RESET}"
+	    echo -e "${YELLOW}Fixing system_ext according to ${RESET}$STOCK_DEVICE"
         echo -e "${YELLOW}Copying system_ext content into system root${RESET}"
 		rm -rf "$EXTRACTED_FIRM_DIR/system/system_ext"
         cp -a --preserve=all "$EXTRACTED_FIRM_DIR/system_ext" "$EXTRACTED_FIRM_DIR/system"
@@ -467,7 +464,7 @@ FIX_SELINUX() {
         return 1
     fi
 
-    echo -e "${YELLOW}Fixing selinux for $STOCK_DEVICE.${RESET}"
+    echo -e "${YELLOW}Fixing selinux for ${RESET}$STOCK_DEVICE."
 
     UNSUPPORTED_SELINUX=("audiomirroring" "fabriccrypto" "hal_dsms_default" "qb_id_prop" "hal_dsms_service" "proc_compaction_proactiveness" "sbauth" "ker_app" "kpp_app" "kpp_data" "attiqi_app" "kpoc_charger")
 
@@ -660,7 +657,7 @@ JDM_DEBLOAT() {
 
 APPLY_STOCK_CONFIG() {
     echo ""
-	echo "Applying $STOCK_DEVICE device config."
+	echo -e "${GREEN}Applying ${RESET}$STOCK_DEVICE ${GREEN}device config.${RESET}"
     if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
         return 1

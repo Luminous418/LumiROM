@@ -196,15 +196,15 @@ rm -rf Progress.txt
 
 # Move raw images to out
 echo
-echo "Moving raw images to out/images"
+echo -e "${YELLOW}Moving raw images to out/images${RESET}"
 mv _images/super/images out/
-echo "Done"
+echo -e "${GREEN}Done${RESET}"
 echo
 
 # Nuke work dirs
-echo "Cleaning up work dirs"
+echo -e "${YELLOW}Cleaning up work dirs${RESET}"
 rm -rf _AP _CSC _images _update_bin _odin_extracted 
-echo "Cleanup complete."
+echo -e "${GREEN}Cleanup complete.${RESET}"
 
 END_TIME=$(date +%s)
 ELAPSED=$((END_TIME - START_TIME))
