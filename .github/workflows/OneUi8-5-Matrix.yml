@@ -15,22 +15,6 @@ on:
         description: "Set True if your kernel BPF version is lower than 5.10"
         required: true
         default: "False"
-      TARGET_DEVICE:
-        description: "TARGET_DEVICE_MODEL."
-        required: true
-        default: "SM-A346B"
-      TARGET_DEVICE_CSC:
-        description: "TARGET_DEVICE_CSC."
-        required: true
-        default: "EUX"
-      TARGET_DEVICE_IMEI:
-        description: "TARGET_DEVICE_IMEI."
-        required: true
-        default: "351648442869815"
-      TARGET_FW_VERSION:
-        description: "Any specific firmware (optional)"
-        required: false
-        default: "A346BXXSFEZC7/A346BOXMFEZC7/A346BXXSFEZC7/A346BXXSFEZC7"
 
 jobs:
   build:
@@ -84,7 +68,6 @@ jobs:
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
         echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
         echo "USE_GALAXY_AI=${{ github.event.inputs.USE_GALAXY_AI }}" >> $GITHUB_ENV
-        echo "TARGET_DEVICE=${{ github.event.inputs.TARGET_DEVICE }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
         echo "LUMIROM_VERSION=8.6.2" >> $GITHUB_ENV
 
@@ -110,7 +93,7 @@ jobs:
       run: |
         source scripts/FW.sh
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
-        DOWNLOAD_FIRMWARE "${{ github.event.inputs.TARGET_DEVICE }}" "${{ github.event.inputs.TARGET_DEVICE_CSC }}" "${{ github.event.inputs.TARGET_DEVICE_IMEI }}" "FIRMWARE" "${{ github.event.inputs.TARGET_FW_VERSION }}"
+        DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
 
     - name: Download OTA
       run: |

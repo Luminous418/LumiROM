@@ -19,12 +19,12 @@ IS_OFFICIAL() {
         echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
     fi
 
-    echo "--- $ROM_TAG detected ---"
+    echo -e "${BLUE}--- $ROM_TAG detected ---${RESET}"
 }
 
 CHECK_FILE() {
     if [ ! -f "$1" ]; then
-        echo "[!] File not found: $1"
+        echo -e "${RED}[!] File not found:${RESET} $1"
         echo "- Skipping..."
         return 1
     fi
