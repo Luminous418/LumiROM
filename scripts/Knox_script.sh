@@ -11,7 +11,7 @@ REPLACE_SMALI_METHOD() {
     echo -e "  Method: $METHOD_NAME"
 
     if ! grep -Fq "$METHOD_NAME" "$FILE"; then
-        echo -e "${RED}- Method not found → Skipped${RESET}"
+        echo -e "${RED}- Method not found${RESET}"
         return 0
     fi
 
@@ -221,9 +221,8 @@ PATCH_SSRM() {
     local SSRM_DIR="$1"
 	local FILE="$SSRM_DIR/smali/com/android/server/ssrm/Feature.smali"
 
-	echo "${YELLOW}Patching ssrm${RESET}"
-	echo "- Updating stock SIOP_FILENAME > $STOCK_SIOP_FILENAME and STOCK_DVFS_FILENAME > $STOCK_DVFS_FILENAME in ssrm.jar"
-	echo "  $FILE"
+	echo -e "${YELLOW}Patching ssrm${RESET}"
+	echo -e "${YELLOW}Updating stock SIOP_FILENAME >${RESET} $STOCK_SIOP_FILENAME ${YELLOW}and STOCK_DVFS_FILENAME >${RESET} $STOCK_DVFS_FILENAME ${YELLOW}in ssrm.jar${RESET}"
 
     sed -i "s/\(const-string v[0-9]\+,\s*\"\)siop_[^\"]*\"/\1$STOCK_SIOP_FILENAME\"/g" "$FILE"
     sed -i "/dvfs_policy_default/! s/\(const-string v[0-9]\+,\s*\"\)dvfs_policy_[^\"]*\"/\1$STOCK_DVFS_FILENAME\"/g" "$FILE"

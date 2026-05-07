@@ -140,9 +140,9 @@ extract_super_properties() {
     METADATA_SLOTS=$(grep "Metadata slot count:" "$lpdump_file" | awk '{print $4}')
     
     echo -e "${PURPLE}Super properties:${RESET}"
-    echo "  Size: $SUPER_SIZE bytes"
-    echo "  Metadata size: $METADATA_SIZE bytes"
-    echo "  Metadata slots: $METADATA_SLOTS"
+    echo -e "  ${PURPLE}Size:${RESET} $SUPER_SIZE bytes"
+    echo -e "  ${PURPLE}Metadata size:${RESET} $METADATA_SIZE bytes"
+    echo -e "  ${PURPLE}Metadata slots:${RESET} $METADATA_SLOTS"
 }
 
 SUPER_PARTITIONS=($(parse_super_partitions "./_images/super/superlpdump.txt"))
