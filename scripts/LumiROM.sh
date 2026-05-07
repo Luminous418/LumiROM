@@ -513,7 +513,7 @@ UPDATE_FLOATING_FEATURE() {
 
 APPLY_FLOATING_FEATURE() {
     echo ""
-	echo "============ Floating Feature ============"
+	echo -e "${BLUE}============ Floating Feature ============${RESET}"
     #========== COMMON ==========#
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_COMMON_CONFIG_SEP_CATEGORY" "sep_basic"
 
@@ -825,7 +825,7 @@ APPLY_PROP_FEATURES() {
 	local EXTRACTED_FIRM_DIR="$1"
 
     # Add build.prop features
-	echo -e "${YELLOW}Adding build prop tweak.${RESET}"
+	echo -e "${BLUE}============ Build Prop Features ============${RESET}"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
@@ -1184,7 +1184,7 @@ IMG_TO_BROTLI() {
     chmod +x "$IMG2SDAT_BIN"
 
     # This is for compressing to .new.dat
-    echo "=== Converting IMG to SDAT ==="
+    echo -e "${BLUE}=== Converting IMG to SDAT ===${RESET}"
 
     for f in "$IMG_DIR"/*.img; do
         [[ -f "$f" ]] || continue
@@ -1202,7 +1202,7 @@ IMG_TO_BROTLI() {
 
     # Compress it to .new.dat.br to make later a .zip file
     echo ""
-    echo "=== Compressing DAT files with Brotli (Parallel) ==="
+    echo -e "${BLUE}=== Compressing DAT files with Brotli (Parallel) ===${RESET}"
 
     local JOBS=4 # Set to match vCPUs
     for DAT in "$TMP_DIR"/*.new.dat; do
