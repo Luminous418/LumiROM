@@ -78,17 +78,17 @@ echo -e "${GREEN}Found HOME_CSC package:${RESET} $HOME_TAR"
 # Extract super.img.lz4 from AP
 echo
 mkdir -p _lz4tmp
-echo "Extracting super.img.lz4 from AP..."
+echo -e "${YELLOW}Extracting super.img.lz4 from AP...${RESET}"
 tar -xf "$AP_TAR" --wildcards --no-same-owner -C _lz4tmp 'super.img.lz4'
 
 if [ ! -f _lz4tmp/super.img.lz4 ]; then
-    echo "Error: super.img.lz4 not found in AP package!"
+    echo -e "${RED}Error: super.img.lz4 not found in AP package!${RESET}"
     exit 1
 fi
 
 # De-LZ4
 echo
-echo "Decompressing lz4 images..."
+echo -e "${YELLOW}Decompressing lz4 images...${RESET}"
 mkdir _images
 lz4 -d _lz4tmp/super.img.lz4 _images/super.img
 rm -rf _lz4tmp

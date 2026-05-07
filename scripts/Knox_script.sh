@@ -222,7 +222,6 @@ PATCH_SSRM() {
 	local FILE="$SSRM_DIR/smali/com/android/server/ssrm/Feature.smali"
 
 	echo -e "${YELLOW}Patching ssrm${RESET}"
-	echo -e "${YELLOW}Updating stock SIOP_FILENAME >${RESET} $STOCK_SIOP_FILENAME ${YELLOW}and STOCK_DVFS_FILENAME >${RESET} $STOCK_DVFS_FILENAME ${YELLOW}in ssrm.jar${RESET}"
 
     sed -i "s/\(const-string v[0-9]\+,\s*\"\)siop_[^\"]*\"/\1$STOCK_SIOP_FILENAME\"/g" "$FILE"
     sed -i "/dvfs_policy_default/! s/\(const-string v[0-9]\+,\s*\"\)dvfs_policy_[^\"]*\"/\1$STOCK_DVFS_FILENAME\"/g" "$FILE"
