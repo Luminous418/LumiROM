@@ -5,7 +5,7 @@
 
 source scripts/bash_colors.sh
 
-CACHE_DIR="./FIRMWARE"
+CACHE_DIR="./IMGs"
 BUILD_PARTITIONS_DEFAULT="product,vendor,odm,system_ext,system"
 
 print_usage() {
