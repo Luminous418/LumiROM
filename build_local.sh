@@ -21,6 +21,7 @@ export LUMIROM_VERSION="8.6.2"
 export OUT_DIR="$PWD/OUT"
 export WORK_DIR="$PWD/TMP/LumiWORK"
 export FIRM_DIR="$PWD/FIRMWARE"
+export IMGS_DIR="$PWD/IMGs"
 export DEVICES_DIR="$PWD/LumiROM/Devices"
 export APKTOOL="$PWD/bin/apktool/apktool.jar"
 export VNDKS_COLLECTION="$PWD/LumiROM/vndks"
@@ -47,7 +48,7 @@ source scripts/FW.sh
 source "$DEVICES_DIR/$STOCK_DEVICE/config"
 
 # Check if firmware images are already cached
-if CHECK_FIRMWARE_IMAGES "$FIRM_DIR" "$BUILD_PARTITIONS"; then
+if CHECK_FIRMWARE_IMAGES "$IMGS_DIR" "$BUILD_PARTITIONS"; then
     echo -e "${GREEN}Firmware cache found. Skipping download...${RESET}"
 else
     echo -e "${YELLOW}No firmware cache found. Proceeding with download...${RESET}"
@@ -57,7 +58,7 @@ else
 fi
 
 # Check if vendor image is already cached
-if CHECK_VENDOR_IMAGE "$FIRM_DIR"; then
+if CHECK_VENDOR_IMAGE "$IMGS_DIR"; then
     echo -e "${GREEN}Vendor cache found. Skipping download...${RESET}"
 else
     echo -e "${YELLOW}No vendor cache found. Proceeding with download...${RESET}"
