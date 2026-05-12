@@ -11,6 +11,7 @@
 ## More
 - Most of fixes has been added onto the script, I have been working hard to add more features and make the scripts a bit more stable and user-friendly.
 - Added color to script, for better understanding.
+- Also added a builder for local use, yet in beta phase, I will work more on it.
 
 # Screenshots
 
