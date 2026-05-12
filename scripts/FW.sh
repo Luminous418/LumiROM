@@ -2,10 +2,6 @@
 
 source scripts/bash_colors.sh
 
-# ============================================
-# FIRMWARE IMAGE CACHE SYSTEM
-# ============================================
-
 CHECK_FIRMWARE_IMAGES() {
     if [ "$#" -lt 2 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <PARTITION_LIST>"
@@ -75,10 +71,6 @@ CHECK_VENDOR_IMAGE() {
         return 1
     fi
 }
-
-# ============================================
-# END FIRMWARE IMAGE CACHE SYSTEM
-# ============================================
 
 DOWNLOAD_FIRMWARE() {
     if [ "$#" -lt 4 ]; then
