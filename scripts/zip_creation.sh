@@ -123,4 +123,6 @@ FLASHABLE_ZIP_CREATION() {
 
         echo -e "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
         echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
+
+        cd ..
 }

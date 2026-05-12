@@ -117,7 +117,7 @@ source scripts/zip_creation.sh
 UPDATE_ZIP_SCRIPT "FIRMWARE"
 FLASHABLE_ZIP_CREATION
 
-sudo rm -rf ./OTA/ ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/
+rm -rf ./OTA/ ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/
 
 echo -e "${GREEN}LumiROM $LUMIROM_VERSION for${RESET} $STOCK_DEVICE ${GREEN}is ready, you can find it on${RESET} ${CYAN}ROM${RESET} ${GREEN}folder${RESET}"
 
