@@ -2,6 +2,84 @@
 
 source scripts/bash_colors.sh
 
+# ============================================
+# FIRMWARE IMAGE CACHE SYSTEM
+# ============================================
+
+CHECK_FIRMWARE_IMAGES() {
+    if [ "$#" -lt 2 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <PARTITION_LIST>"
+        return 1
+    fi
+
+    local FIRM_DIR="$1"
+    local PARTITION_LIST="$2"
+
+    if [ ! -d "$FIRM_DIR" ]; then
+        return 1
+    fi
+
+    IFS=',' read -r -a PARTITIONS <<< "$PARTITION_LIST"
+
+    for i in "${!PARTITIONS[@]}"; do
+        PARTITIONS[$i]=$(echo "${PARTITIONS[$i]}" | xargs)
+    done
+
+    local all_exist=1
+    for partition in "${PARTITIONS[@]}"; do
+        if [ ! -f "$FIRM_DIR/${partition}.img" ]; then
+            all_exist=0
+            break
+        fi
+    done
+
+    if [ $all_exist -eq 1 ]; then
+        echo -e "${GREEN}✅ All firmware images found in cache!${RESET}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  Some firmware images are missing.${RESET}"
+        return 1
+    fi
+}
+
+CLEAR_FIRMWARE_CACHE() {
+    if [ "$#" -ne 1 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR>"
+        return 1
+    fi
+
+    local FIRM_DIR="$1"
+    echo -e "${YELLOW}Clearing firmware cache...${RESET}"
+    rm -rf "$FIRM_DIR"
+    mkdir -p "$FIRM_DIR"
+    echo -e "${GREEN}Cache cleared.${RESET}"
+}
+
+CHECK_VENDOR_IMAGE() {
+    if [ "$#" -lt 1 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR>"
+        return 1
+    fi
+
+    local FIRM_DIR="$1"
+
+    if [ ! -d "$FIRM_DIR" ]; then
+        return 1
+    fi
+
+    if [ -f "$FIRM_DIR/vendor.img" ]; then
+        echo -e "${GREEN}✅ Vendor image found in cache!${RESET}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  Vendor image not found in cache.${RESET}"
+        return 1
+    fi
+}
+
+# ============================================
+# END FIRMWARE IMAGE CACHE SYSTEM
+# ============================================
+
 DOWNLOAD_FIRMWARE() {
     if [ "$#" -lt 4 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY> [VERSION]"

@@ -49,10 +49,24 @@ IS_OFFICIAL
 echo "--- Downloading Firmware and OTA ---"
 source scripts/FW.sh
 source "$DEVICES_DIR/$STOCK_DEVICE/config"
-DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
-DOWNLOAD_OTA "OTA"
-MERGE_OTA "FIRMWARE" "OTA"
-DOWNLOAD_VENDOR "FIRMWARE"
+
+# Check if firmware images are already cached
+if CHECK_FIRMWARE_IMAGES "$FIRM_DIR" "$BUILD_PARTITIONS"; then
+    echo -e "${GREEN}Firmware cache found. Skipping download...${RESET}"
+else
+    echo -e "${YELLOW}No firmware cache found. Proceeding with download...${RESET}"
+    DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
+    DOWNLOAD_OTA "OTA"
+    MERGE_OTA "FIRMWARE" "OTA"
+fi
+
+# Check if vendor image is already cached
+if CHECK_VENDOR_IMAGE "$FIRM_DIR"; then
+    echo -e "${GREEN}Vendor cache found. Skipping download...${RESET}"
+else
+    echo -e "${YELLOW}No vendor cache found. Proceeding with download...${RESET}"
+    DOWNLOAD_VENDOR "FIRMWARE"
+fi
 
 echo "--- Extracting and patching ---"
 PREPARE_PARTITIONS "FIRMWARE"
