@@ -41,11 +41,6 @@ echo "--- Setting up directories ---"
 mkdir -p "$WORK_DIR"
 bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM
 
-echo "--- Verifying enviroment ---"
-source scripts/LumiROM.sh
-export LUMIROM_BUILD OFFICIAL_HASH
-IS_OFFICIAL
-
 echo "--- Downloading Firmware and OTA ---"
 source scripts/FW.sh
 source "$DEVICES_DIR/$STOCK_DEVICE/config"
