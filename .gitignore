@@ -1,0 +1,30 @@
+# LumiROM Build Artifacts
+FIRMWARE/
+WORK/
+OUT/
+OTA/
+ROM/
+TMP/
+CACHE/
+.local/
+
+# Logs
+*.log
+apt.log
+pip.log
+apt_fast_setup.log
+logs/
+
+# Firmware and Flashable ZIPs
+*.img
+*.img.raw
+*.zip
+
+# Ignore generated/transient files in the template directory
+template/build_info.txt
+template/boot.img
+template/*.zip
+
+# OS Specific
+.DS_Store
+.thumbs.db

@@ -11,26 +11,14 @@ on:
         description: "Add mods to the ROM, 'Yes' to add, 'No' to don't add"
         required: true
         default: "Yes"
+      USE_GALAXY_AI:
+        description: "Add Galaxy AI to the ROM, 'Yes' to add, 'No' to don't add"
+        required: true
+        default: "Yes"
       USE_UI_8_TETHERING_APEX:
         description: "Set True if your kernel BPF version is lower than 5.10"
         required: true
         default: "False"
-      TARGET_DEVICE:
-        description: "TARGET_DEVICE_MODEL."
-        required: true
-        default: "SM-A346B"
-      TARGET_DEVICE_CSC:
-        description: "TARGET_DEVICE_CSC."
-        required: true
-        default: "EUX"
-      TARGET_DEVICE_IMEI:
-        description: "TARGET_DEVICE_IMEI."
-        required: true
-        default: "351648442869815"
-      TARGET_FW_VERSION:
-        description: "Any specific firmware (optional)"
-        required: false
-        default: "A346BXXSFEZC7/A346BOXMFEZC7/A346BXXSFEZC7/A346BXXSFEZC7"
 
 jobs:
   build:
@@ -41,20 +29,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
 
-    - name: Free disk space (1/3)
-      run: |
-        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
-        sudo docker image prune --all --force
-        sudo docker builder prune -a
-
-    - name: Free disk space (2/3)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        tool-cache: true
-
-    - name: Free disk space (3/3)
-      uses: rokibhasansagar/slimhub_actions@main
-
     - name: Install required packages
       run: |
         sudo apt update -q
@@ -63,7 +37,6 @@ jobs:
           python3 python3-pip zipalign default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2 \
           unzip tar lz4 tree git-core gnupg flex bison build-essential zip curl zlib1g-dev libncurses5-dev libssl-dev libelf-dev libxml2-utils xsltproc unzip fontconfig python3 python3-protobuf
         pip3 install -q liblp tgcrypto pyrogram huggingface_hub hf_xet
-        pip3 install git+https://github.com/martinetd/samloader.git
         chmod +x scripts/*.sh
         chmod +x bin/erofs-utils/extract.erofs
         chmod +x bin/erofs-utils/mkfs.erofs
@@ -71,7 +44,7 @@ jobs:
 
     - name: Setup directories
       run: |
-        bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA
+        bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM
     
     - name: Set build environment
       shell: bash
@@ -79,9 +52,9 @@ jobs:
         echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
         echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
-        echo "TARGET_DEVICE=${{ github.event.inputs.TARGET_DEVICE }}" >> $GITHUB_ENV
+        echo "USE_GALAXY_AI=${{ github.event.inputs.USE_GALAXY_AI }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
-        echo "LUMIROM_VERSION=8.6.1" >> $GITHUB_ENV
+        echo "LUMIROM_VERSION=8.6.2" >> $GITHUB_ENV
 
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
         echo "WORK_DIR=/dev/shm/WORK" >> $GITHUB_ENV
@@ -105,7 +78,7 @@ jobs:
       run: |
         source scripts/FW.sh
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
-        DOWNLOAD_FIRMWARE "${{ github.event.inputs.TARGET_DEVICE }}" "${{ github.event.inputs.TARGET_DEVICE_CSC }}" "${{ github.event.inputs.TARGET_DEVICE_IMEI }}" "FIRMWARE" "${{ github.event.inputs.TARGET_FW_VERSION }}"
+        DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
 
     - name: Download OTA
       run: |
@@ -153,17 +126,23 @@ jobs:
         source scripts/LumiROM.sh
         DEBLOAT "FIRMWARE"
 
-    - name: Apply features
+    - name: Apply prop features
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        APPLY_FEATURES "FIRMWARE"
+        APPLY_PROP_FEATURES "FIRMWARE"
 
     - name: Adding mods
       shell: bash
       run: |
         source scripts/Mods.sh
         ADD_MODS "FIRMWARE"
+
+    - name: Adding Galaxy AI
+      shell: bash
+      run: |
+        source scripts/Galaxy_AI.sh
+        GALAXY_AI "FIRMWARE"
 
     - name: Update Build ID
       shell: bash
@@ -235,7 +214,8 @@ jobs:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-        hf buckets sync ./template hf://buckets/LuminousJD418/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
+        DATE=$(TZ='Europe/Madrid' date | cut -d " " -f 5)
+        hf buckets sync ./ROM hf://buckets/LuminousJD418/LumiTest/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/$DATE/ --include "*.zip"
 
     - name: Cleanup
       run: |

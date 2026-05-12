@@ -1,4 +1,7 @@
 #!/bin/bash
+
+source scripts/bash_colors.sh
+
 START_TIME=$(date +%s)
 if [ "$1" == "cleanup" ]; then
     echo "Cleaning up work dirs..."
@@ -19,9 +22,9 @@ fi
 BASE_ZIP="$1"
 UPDATE_ZIP="$2"
 echo
-echo "===== Samsung Beta Firmware Merger ====="
-echo "Base firmware: $BASE_ZIP"
-echo "Update binary: $UPDATE_ZIP"
+echo -e "${CYAN}===== Samsung Beta Firmware Merger =====${RESET}"
+echo -e "${GREEN}Base firmware:${RESET} $BASE_ZIP"
+echo -e "${GREEN}Update binary:${RESET} $UPDATE_ZIP"
 echo
 
 # Check dependencies
@@ -34,7 +37,7 @@ done
 
 # Extract base firmware zip
 echo
-echo "Extracting ODIN firmware ZIP..."
+echo -e "${YELLOW}Extracting ODIN firmware ZIP...${RESET}"
 mkdir -p _odin_extracted
 unzip -q "$BASE_ZIP" -d _odin_extracted
 
@@ -66,59 +69,46 @@ if [ -z "$HOME_TAR" ]; then
     echo "Error: Could not find HOME_CSC*.tar.md5 in base ZIP!"
     exit 1
 fi
-echo "Found AP package: $AP_TAR"
-echo "Found BL package: $BL_TAR"
-echo "Found CP package: $CP_TAR"
-echo "Found CSC package: $CSC_TAR"
-echo "Found HOME_CSC package: $HOME_TAR"
-
-# Extract optics and prism from csc
-echo
-echo "Extracting optics.img.lz4 and prism.img.lz4 from CSC..."
-mkdir -p _lz4tmp
-tar -xf "$CSC_TAR" --no-same-owner -C _lz4tmp optics.img.lz4 prism.img.lz4
+echo -e "${GREEN}Found AP package:${RESET} $AP_TAR"
+echo -e "${GREEN}Found BL package:${RESET} $BL_TAR"
+echo -e "${GREEN}Found CP package:${RESET} $CP_TAR"
+echo -e "${GREEN}Found CSC package:${RESET} $CSC_TAR"
+echo -e "${GREEN}Found HOME_CSC package:${RESET} $HOME_TAR"
 
 # Extract super.img.lz4 from AP
 echo
-echo "Extracting super.img.lz4 from AP..."
+mkdir -p _lz4tmp
+echo -e "${YELLOW}Extracting super.img.lz4 from AP...${RESET}"
 tar -xf "$AP_TAR" --wildcards --no-same-owner -C _lz4tmp 'super.img.lz4'
 
 if [ ! -f _lz4tmp/super.img.lz4 ]; then
-    echo "Error: super.img.lz4 not found in AP package!"
+    echo -e "${RED}Error: super.img.lz4 not found in AP package!${RESET}"
     exit 1
 fi
 
 # De-LZ4
 echo
-echo "Decompressing lz4 images..."
+echo -e "${YELLOW}Decompressing lz4 images...${RESET}"
 mkdir _images
-lz4 -d _lz4tmp/optics.img.lz4 _images/optics.img
-lz4 -d _lz4tmp/prism.img.lz4 _images/prism.img
 lz4 -d _lz4tmp/super.img.lz4 _images/super.img
 rm -rf _lz4tmp
 
 # Desparse super
 echo
-echo "Unsparsing super..."
+echo -e "${YELLOW}Unsparsing super${RESET}"
 ./bin/MergeOTA/imjtool _images/super.img extract
 mv _images/super.img _images/super.img-old 2>/dev/null
 mv extracted/image.img _images/super.img
-./bin/MergeOTA/imjtool _images/prism.img extract
-mv _images/prism.img _images/prism.img-old 2>/dev/null
-mv extracted/image.img _images/prism.img
-./bin/MergeOTA/imjtool _images/optics.img extract
-mv _images/optics.img _images/optics.img-old 2>/dev/null
-mv extracted/image.img _images/optics.img
 rm -rf extracted
 
 # Extract super
 echo
-echo "Extracting super"
+echo -e "${YELLOW}Extracting super${RESET}"
 mkdir _images/super
 mkdir _images/super/images
 ./bin/MergeOTA/lpdump _images/super.img > _images/super/superlpdump.txt
 ./bin/MergeOTA/lpunpack _images/super.img _images/super/images
-echo "Super Extracted"
+echo -e "${GREEN}Super extracted${RESET}"
 
 # Parse super
 parse_super_partitions() {
@@ -142,17 +132,17 @@ extract_super_properties() {
     local lpdump_file="$1"
     
     echo
-    echo "Extracting super properties..."
+    echo -e "${YELLOW}Extracting super properties${RESET}"
     
     # Parse the specific format from your lpdump output
     SUPER_SIZE=$(grep "Size:" "$lpdump_file" | grep "bytes" | awk '{print $(NF-1)}')
     METADATA_SIZE=$(grep "Metadata max size:" "$lpdump_file" | awk '{print $4}')
     METADATA_SLOTS=$(grep "Metadata slot count:" "$lpdump_file" | awk '{print $4}')
     
-    echo "Super properties:"
-    echo "  Size: $SUPER_SIZE bytes"
-    echo "  Metadata size: $METADATA_SIZE bytes"
-    echo "  Metadata slots: $METADATA_SLOTS"
+    echo -e "${PURPLE}Super properties:${RESET}"
+    echo -e "  ${PURPLE}Size:${RESET} $SUPER_SIZE bytes"
+    echo -e "  ${PURPLE}Metadata size:${RESET} $METADATA_SIZE bytes"
+    echo -e "  ${PURPLE}Metadata slots:${RESET} $METADATA_SLOTS"
 }
 
 SUPER_PARTITIONS=($(parse_super_partitions "./_images/super/superlpdump.txt"))
@@ -160,15 +150,14 @@ extract_super_properties "./_images/super/superlpdump.txt"
 
 # Extract update bin
 echo
-echo "Extracting update bin..."
+echo -e "${YELLOW}Extracting update bin${RESET}"
 mkdir -p _update_bin
 unzip -q "$UPDATE_ZIP" -d _update_bin
-echo "Update BIN Extracted."
+echo -e "${GREEN}Update BIN extracted${RESET}"
 
 PARTITIONS=("system" "product" "odm" "system_ext")
-EXTRAPARTITIONS=("optics" "prism")
 
-echo "Starting merge..."
+echo -e "${CYAN}Starting merge${RESET}"
 
 for partition in "${PARTITIONS[@]}"; do
     img_file="./_images/super/images/${partition}.img"
@@ -178,12 +167,12 @@ for partition in "${PARTITIONS[@]}"; do
     
     if [ -f "$img_file" ] && [ -f "$transfer_list" ] && [ -f "$new_dat" ] && [ -f "$patch_dat" ]; then
     	echo
-        echo "Merging ${partition}..."
+        echo -e "${YELLOW}Merging ${partition}...${RESET}"
         ./bin/MergeOTA/BlockImageUpdate "$img_file" "$transfer_list" "$new_dat" "$patch_dat" > /dev/null 2>&1
-        echo "${partition} merge complete!"
+        echo -e "${GREEN}${partition} merge complete!${RESET}"
     else
     	echo
-        echo "Skipping ${partition} (doesn't exist)"
+        echo -e "${RED}Skipping ${partition} (doesn't exist)${RESET}"
     fi
 done
 for partition in "${EXTRAPARTITIONS[@]}"; do
@@ -194,11 +183,12 @@ for partition in "${EXTRAPARTITIONS[@]}"; do
     
     if [ -f "$img_file" ] && [ -f "$transfer_list" ] && [ -f "$new_dat" ] && [ -f "$patch_dat" ]; then
     	echo
-        echo "Merging ${partition}..."
+        echo -e "${YELLOW}Merging ${partition}...${RESET}"
         ./bin/MergeOTA/BlockImageUpdate "$img_file" "$transfer_list" "$new_dat" "$patch_dat" > /dev/null 2>&1
-        echo "${partition} merge complete!"
+        echo -e "${GREEN}${partition} merge complete!${RESET}"
     else
-        echo "Skipping ${partition} (doesn't exist)"
+    	echo
+        echo -e "${RED}Skipping ${partition} (doesn't exist)${RESET}"
     fi
 done
 rm -rf cache
@@ -206,15 +196,15 @@ rm -rf Progress.txt
 
 # Move raw images to out
 echo
-echo "Moving raw images to out/images"
+echo -e "${YELLOW}Moving raw images to out/images${RESET}"
 mv _images/super/images out/
-echo "Done"
+echo -e "${GREEN}Done${RESET}"
 echo
 
 # Nuke work dirs
-echo "Cleaning up work dirs"
+echo -e "${YELLOW}Cleaning up work dirs${RESET}"
 rm -rf _AP _CSC _images _update_bin _odin_extracted 
-echo "Cleanup complete."
+echo -e "${GREEN}Cleanup complete.${RESET}"
 
 END_TIME=$(date +%s)
 ELAPSED=$((END_TIME - START_TIME))

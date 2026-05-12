@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source scripts/bash_colors.sh
+
 DOWNLOAD_FIRMWARE() {
     if [ "$#" -lt 4 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY> [VERSION]"
@@ -15,11 +17,10 @@ DOWNLOAD_FIRMWARE() {
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
-    if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        echo -e "======================================"
-        echo -e "       Samsung FW Downloader"
-        echo -e "======================================"
-        echo -e "MODEL: $MODEL | CSC: $CSC"
+        echo -e "${BLUE}======================================${RESET}"
+        echo -e "${BLUE}       Samsung FW Downloader${RESET}"
+        echo -e "${BLUE}======================================${RESET}"
+        echo -e "${PURPLE}MODEL:${RESET} $MODEL | ${PURPLE}CSC:${RESET} $CSC"
 
         # --- Step 1: Determine Version ---
         if [ -n "$VERSION" ]; then
@@ -75,16 +76,33 @@ DOWNLOAD_FIRMWARE() {
 
         # --- Cleanup ---
         rm -f "$enc_file"
+}
 
-    # This will be temporary
+DOWNLOAD_FIRMWARE_LUMI() {
+        if [ "$#" -lt 1 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <DOWNLOAD_DIRECTORY>"
+        return 1
+    fi
+
+    local DOWN_DIR="${1}"
+    rm -rf "$DOWN_DIR"
+    mkdir -p "$DOWN_DIR"
+
+    if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
+        echo "TARGET_DEVICE=SM-A346B" >> $GITHUB_ENV
+        export TARGET_DEVICE="SM-A346B"
+        echo -e "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
+        aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A346B/SM-A346B.zip?download=true" || return 1
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
         echo "TARGET_DEVICE=SM-A245F" >> $GITHUB_ENV
         export TARGET_DEVICE="SM-A245F"
-        aria2c -x 16 -d "./FIRMWARE/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" || return 1
-        # Cleanup any leftover .aria2 control files after everything finishes
-        wait
-        find "./FIRMWARE/${TARGET_DEVICE}" -name "*.aria2" -exec rm -f {} +
+        echo -e "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
+        aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" || return 1
     fi
+
+    # Cleanup any leftover .aria2 control files after everything finishes
+    wait
+    find "${DOWN_DIR}/${TARGET_DEVICE}" -name "*.aria2" -exec rm -f {} +
 }
 
 DOWNLOAD_OTA() {
@@ -97,11 +115,11 @@ DOWNLOAD_OTA() {
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
-    echo "Downloading OTA for $MODEL"
+    echo -e "${YELLOW}Downloading OTA for${RESET} ${TARGET_DEVICE}"
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A245F_BOMB.zip?download=true" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A245F_BOMB.zip?download=true" || return 1
     fi
     # Cleanup any leftover .aria2 control files after everything finishes
     wait
@@ -146,8 +164,8 @@ DOWNLOAD_VENDOR() {
 
     local DOWN_DIR="${1}"
 
-    echo "Downloading vendor for ${STOCK_DEVICE}"
-    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
+    echo -e "${YELLOW}Downloading vendor for${RESET} ${STOCK_DEVICE}"
+    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
     
     # Cleanup any leftover .aria2 control files after everything finishes
     wait
@@ -163,7 +181,7 @@ EXTRACT_FIRMWARE() {
     local FIRM_DIR="$1"
     local FIRM_FILE="$FIRM_DIR/BASE_FW.zip"
 
-    echo "Extracting downloaded firmware."
+    echo -e "${YELLOW}Extracting downloaded firmware.${RESET}"
 
     if [ ! -f "$FIRM_FILE" ]; then
         echo "Error: BASE_FW.zip not found in $FIRM_DIR"
@@ -199,7 +217,7 @@ PREPARE_PARTITIONS() {
     done
 
     echo ""
-    echo "Preparing partitions."
+    echo -e "${YELLOW}Preparing partitions.${RESET}"
 
     shopt -s nullglob dotglob
 
@@ -214,10 +232,9 @@ PREPARE_PARTITIONS() {
         done
 
         if [[ $keep_this -eq 0 ]]; then
-            # echo "- Deleting: $item"
             rm -rf -- "$item"
         else
-            echo "- Keeping: $item"
+            echo -e "${GREEN}- Keeping:${RESET} $item"
         fi
     done
 
@@ -234,7 +251,7 @@ EXTRACT_FIRMWARE_IMG() {
 
 	local FIRM_DIR="$1"
 
-	echo "Extracting images from $FIRM_DIR"
+	echo -e "${YELLOW}Extracting images from $FIRM_DIR${RESET}"
     for imgfile in "$FIRM_DIR"/*.img; do
         [ -e "$imgfile" ] || continue
 
@@ -253,15 +270,15 @@ EXTRACT_FIRMWARE_IMG() {
             case "$fstype" in
                 Linux)
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    echo "$imgfile Detected ext4. Size: $IMG_SIZE bytes."
-                    echo "Extracting $imgfile in $FIRM_DIR/$partition"
+                    echo -e "$imgfile Detected ${BLUE}ext4${RESET}. Size: $IMG_SIZE bytes."
+                    echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
                     sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR" > /dev/null 2>&1
                     ;;
                 EROFS)
                     echo ""
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    echo "$imgfile Detected $fstype. Size: $IMG_SIZE bytes."
-                    echo "Extracting $imgfile in $FIRM_DIR/$partition"
+                    echo -e "$imgfile Detected ${BLUE}$fstype${RESET}. Size: $IMG_SIZE bytes."
+                    echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
                     $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR" >/dev/null 2>&1
                     ;;
                 *)
@@ -274,4 +291,8 @@ EXTRACT_FIRMWARE_IMG() {
     wait
     # Remove all original .img
     rm -rf "$FIRM_DIR"/*.img
+
+    # Correct owner and permissions of the extracted configs
+    sudo chown -R $USER:$USER "$FIRM_DIR/config/"
+    sudo chmod -R 755 "$FIRM_DIR/config/"
 }

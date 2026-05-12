@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source scripts/bash_colors.sh
+
 REPLACE_SMALI_METHOD() {
     local FILE="$1"
     local METHOD_NAME="$2"
@@ -9,7 +11,7 @@ REPLACE_SMALI_METHOD() {
     echo -e "  Method: $METHOD_NAME"
 
     if ! grep -Fq "$METHOD_NAME" "$FILE"; then
-        echo -e "- Method not found → Skipped"
+        echo -e "${RED}- Method not found${RESET}"
         return 0
     fi
 
@@ -36,7 +38,7 @@ PATCH_FLAG_SECURE() {
         return 1
     fi
 
-	echo -e "Patching flag secure."
+	echo -e "${YELLOW}Patching flag secure.${RESET}"
 
 	local FILE_1="${1}/smali_classes2/com/android/server/wm/WindowState.smali"
     local METHOD_NAME_1=".method public final isSecureLocked()Z"
@@ -100,7 +102,7 @@ PATCH_SECURE_FOLDER() {
         return 1
     fi
 
-    echo -e "Patching secure folder."
+    echo -e "${YELLOW}Patching secure folder.${RESET}"
 
 	local FILE_1="${1}/smali/com/android/server/knox/dar/DarManagerService.smali"
 	local METHOD_NAME_1=".method public final checkDeviceIntegrity([Ljava/security/cert/Certificate;)Z"
@@ -139,7 +141,7 @@ PATCH_PRIVATE_SHARE() {
         return 1
     fi
 
-    echo -e "Patching private share."
+    echo -e "${YELLOW}Patching private share.${RESET}"
 	
     local FILE="${1}/smali/com/samsung/android/security/keystore/AttestParameterSpec.smali"
     local METHOD_NAME=".method public isVerifiableIntegrity()Z"
@@ -161,7 +163,7 @@ DISABLE_SIGNATURE_VERIFICATION() {
         return 1
     fi
 
-    echo -e "Disabling signature verification."
+    echo -e "${YELLOW}Disabling signature verification.${RESET}"
 
     local FILE="${1}/smali_classes4/android/util/apk/ApkSignatureVerifier.smali"
     local METHOD_NAME=".method public static blacklist getMinimumSignatureSchemeVersionForTargetSdk(I)I"
@@ -183,7 +185,7 @@ PATCH_KNOX_GUARD() {
         return 1
     fi
 
-    echo -e "Patching knox guard."
+    echo -e "${YELLOW}Patching knox guard.${RESET}"
     local FILE="${1}/smali_classes2/com/samsung/android/knoxguard/service/KnoxGuardSeService.smali"
     local METHOD_NAME_1=".method public constructor <init>(Landroid/content/Context;)V"
     local REPLACE_BODY_1='
@@ -219,9 +221,7 @@ PATCH_SSRM() {
     local SSRM_DIR="$1"
 	local FILE="$SSRM_DIR/smali/com/android/server/ssrm/Feature.smali"
 
-	echo "Patching ssrm.jar"
-	echo "- Updating stock SIOP_FILENAME > $STOCK_SIOP_FILENAME and STOCK_DVFS_FILENAME > $STOCK_DVFS_FILENAME in ssrm.jar"
-	echo "  $FILE"
+	echo -e "${YELLOW}Patching ssrm${RESET}"
 
     sed -i "s/\(const-string v[0-9]\+,\s*\"\)siop_[^\"]*\"/\1$STOCK_SIOP_FILENAME\"/g" "$FILE"
     sed -i "/dvfs_policy_default/! s/\(const-string v[0-9]\+,\s*\"\)dvfs_policy_[^\"]*\"/\1$STOCK_DVFS_FILENAME\"/g" "$FILE"

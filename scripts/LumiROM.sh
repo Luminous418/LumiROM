@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source scripts/bash_colors.sh
+
 IS_OFFICIAL() {
     CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
 
@@ -17,12 +19,12 @@ IS_OFFICIAL() {
         echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
     fi
 
-    echo "--- $ROM_TAG detected ---"
+    echo -e "${BLUE}--- $ROM_TAG detected ---${RESET}"
 }
 
 CHECK_FILE() {
     if [ ! -f "$1" ]; then
-        echo "[!] File not found: $1"
+        echo -e "${RED}[!] File not found:${RESET} $1"
         echo "- Skipping..."
         return 1
     fi
@@ -39,7 +41,7 @@ REMOVE_LINE() {
     local LINE="$1"
     local FILE="$2"
 
-    echo "- Deleting $LINE from $FILE"
+    echo -e "${YELLOW}Deleting${RESET} $LINE ${YELLOW}from${RESET} $FILE"
     grep -vxF "$LINE" "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
 }
 
@@ -55,11 +57,11 @@ DISABLE_FBE() {
 
     for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
     if [ -f $i ]; then
-      echo "Disabling full-based encryption (FBE) for /data..."
+      echo -e "${YELLOW}Disabling full-based encryption (FBE) for /data...${RESET}"
       echo "- Found $i."
       # If found file-encryption, comments it
       sudo sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-      echo "Disabled file-encryption on $i"
+      echo -e "${GREEN}Disabled file-encryption on${RESET} $i"
     fi
   done
 }
@@ -77,18 +79,18 @@ DISABLE_FDE() {
 
     for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
     if [ -f $i ]; then
-      echo "Disabling full-disk encryption (FDE) for /data..."
+      echo -e "${YELLOW}Disabling full-disk encryption (FDE) for /data...${RESET}"
       echo "- Found $i."
       # If found force-encryption, comments it
       sudo sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
-      echo "Disabled force-encryption on $i"
+      echo -e "${GREEN}Disabled force-encryption on${RESET} $i"
     fi
   done
 }
 
 DELETE_ICCC() {
     local EXTRACTED_FIRM_DIR="$1"
-    echo "Starting wipe..."
+    echo -e "${YELLOW}Starting wipe...${RESET}"
     # Delete iccc to prevent soft-bootloop
 
     local targets=(
@@ -102,18 +104,18 @@ DELETE_ICCC() {
     for file in "${targets[@]}"; do
         if [ -e "$file" ] || [ -L "$file" ]; then
             sudo rm -rf "$file"
-            echo "Deleted $file"
+            echo -e "${GREEN}Deleted${RESET} $file"
         else
-            echo "[Omitted] $file not found"
+            echo -e "${RED}[Omitted]${RESET} $file ${RED}not found${RESET}"
         fi
     done
 
-    echo "Wipe iccc completed"
+    echo -e "${GREEN}Wipe iccc completed${RESET}"
 }
 
 DEBLOAT_VENDOR() {
     local EXTRACTED_FIRM_DIR="$1"
-    echo "Starting Debloat..."
+    echo -e "${YELLOW}Starting Debloat...${RESET}"
 
     local targets=(
         "$EXTRACTED_FIRM_DIR/vendor/bin/create_factory_efs_file"
@@ -132,13 +134,13 @@ DEBLOAT_VENDOR() {
     for file in "${targets[@]}"; do
         if [ -e "$file" ] || [ -L "$file" ]; then
             sudo rm -rf "$file"
-            echo "Deleted $file"
+            echo -e "${GREEN}Deleted${RESET} $file"
         else
-            echo "[Omitted] $file not found"
+            echo -e "${RED}[Omitted]${RESET} $file ${RED}not found${RESET}"
         fi
     done
 
-    echo "Vendor debloat completed"
+    echo -e "${GREEN}Vendor debloat completed${RESET}"
 }
 
 PATCH_FSTAB_EROFS() {
@@ -149,7 +151,7 @@ PATCH_FSTAB_EROFS() {
         return 1
     fi
 
-    echo "Applying patches EROFS to fstab..."
+    echo -e "${YELLOW}Applying patches EROFS to fstab...${RESET}"
 
     local fstab_files="
         vendor/etc/fstab.mt6768
@@ -174,14 +176,11 @@ PATCH_FSTAB_EROFS() {
             
             # odm
             sudo sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
-            
-            echo "Done, now $STOCK_DEVICE is EROFS-enabled."
         else
-            echo "- Omitted: $fstab not found"
+            echo -e "${RED}[Omitted]${RESET} $fstab ${RED}not found${RESET}"
         fi
     done
-
-    echo "--- EROFS patching completed ---"
+    echo -e "${GREEN}Done, now${RESET} $STOCK_DEVICE ${GREEN}is EROFS-enabled.${RESET}"
 }
 
 INSTALL_FRAMEWORK() {
@@ -199,7 +198,7 @@ INSTALL_FRAMEWORK() {
     # fi
 
     # Installing stock overlay
-    echo "Installing Framework..."
+    echo -e "${YELLOW}Installing Framework...${RESET}"
     java -jar "$APKTOOL" install-framework "$framework_res_apk"
 }
 
@@ -217,7 +216,7 @@ DECOMPILE() {
     local BASENAME="$(basename "${FILE%.*}")"
     local OUT="$DECOMPILE_DIR/$BASENAME"
 
-    echo "Decompiling: $FILE"
+    echo -e "${YELLOW}Decompiling:${RESET} $FILE"
 	rm -rf "$OUT"
     java -jar "$APKTOOL" d -f "$FILE" -o "$OUT"
 }
@@ -242,7 +241,7 @@ RECOMPILE() {
     local built_file="$WORK_DIR/${name}_unsigned.$ext"
     local final_file="$WORK_DIR/$org_file_name"
 
-    echo "Recompiling: $DECOMPILED_DIR"
+    echo -e "${YELLOW}Recompiling:${RESET} $DECOMPILED_DIR"
     java -jar "$APKTOOL" b "$DECOMPILED_DIR" --copy-original -p "$FRAMEWORK_DIR" -o "$built_file"
 
     # Zipalign
@@ -268,11 +267,11 @@ HEX_PATCH() {
     [ ! -f "$FILE" ] && { echo "File not found: $FILE"; return 1; }
 
     xxd -p -c 0 "$FILE" | grep -q "$FROM" || {
-        echo "- Pattern not found: $FROM"
+        echo "- ${RED}Pattern not found${RESET}: $FROM"
         return 1
     }
 
-    echo "- Patching: $FILE"
+    echo -e "${YELLOW}Patching:${RESET} $FILE"
     echo "- From $FROM to $TO"
     [ -f "$FILE.bak" ] || cp "$FILE" "$FILE.bak"
 
@@ -285,7 +284,7 @@ HEX_PATCH() {
         return 0
     }
 
-    echo "- Patch failed, restoring backup"
+    echo -e "${RED}Patch failed, restoring backup${RESET}"
     mv "$FILE.bak" "$FILE"
     return 1
 }
@@ -301,7 +300,7 @@ PATCH_BT_LIB() {
 	local WORK_DIR="$2"
 	local BT_LIB_FILE="$WORK_DIR/libbluetooth_jni.so"
 
-    echo "Patching Bluetooth library."
+    echo -e "${YELLOW}Patching Bluetooth library...${RESET}"
     # Get libbluetooth_jni.so
     unzip "$EXTRACTED_FIRM_DIR/system/system/apex/com.android.bt.apex" "apex_payload.img" -d "$WORK_DIR"
 	debugfs -R "dump /lib64/libbluetooth_jni.so $WORK_DIR/libbluetooth_jni.so" "$WORK_DIR/apex_payload.img"  >/dev/null 2>&1
@@ -366,7 +365,7 @@ PATCH_BT_LIB() {
     done
 
     if [ "$PATCHED" -eq 0 ]; then
-        echo "- No known Bluetooth patch pattern matched."
+        echo -e "${RED}- No known Bluetooth patch pattern matched.${RESET}"
 		rm -rf "$BT_LIB_FILE"
         return 1
     fi
@@ -376,13 +375,14 @@ PATCH_BT_LIB() {
 
 
 FIX_VNDK() {
-    echo "- Checking $STOCK_DEVICE and $TARGET_DEVICE vndk version."
+    echo -e "${YELLOW}- Checking ${RESET}$STOCK_DEVICE ${YELLOW}and${RESET} $TARGET_DEVICE ${YELLOW}vndk version.${RESET}"
     if [ -f "$TARGET_ROM_SYSTEM_EXT_DIR/apex/com.android.vndk.v${STOCK_VNDK_VERSION}.apex" ]; then
-        echo "- VNDK matched."
+        echo -e "${GREEN}- VNDK matched.${RESET}"
     else
-        echo "- VNDK mismatch or missing."
+        echo -e "${RED}- VNDK mismatch or missing.${RESET}"
+        echo -e "${YELLOW}- Extracting VNDK from $STOCK_DEVICE${RESET}"
         rm -f "$TARGET_ROM_SYSTEM_EXT_DIR/apex/com.android.vndk"*.apex
-        cp -rfa "$VNDKS_COLLECTION/oneui_8.5/com.android.vndk.v${STOCK_VNDK_VERSION}.apex" "$TARGET_ROM_SYSTEM_EXT_DIR/apex/"
+        cp -rfa "$VNDKS_COLLECTION/vndk31-a16/com.android.vndk.v${STOCK_VNDK_VERSION}.apex" "$TARGET_ROM_SYSTEM_EXT_DIR/apex/"
         sed -i "/<vendor-ndk>/,/<\/vendor-ndk>/ s|<version>[0-9]\+</version>|<version>${STOCK_VNDK_VERSION}</version>|" "$TARGET_ROM_SYSTEM_EXT_DIR/etc/vintf/manifest.xml"
     fi
 }
@@ -402,12 +402,12 @@ FIX_SYSTEM_EXT() {
 
     # Make system_ext merged with system
     if [[ "$STOCK_HAS_SEPARATE_SYSTEM_EXT" == FALSE && -d "$EXTRACTED_FIRM_DIR/system_ext" ]]; then
-	    echo "Fixing system_ext according to $STOCK_DEVICE"
-        echo "- Copying system_ext content into system root"
+	    echo -e "${YELLOW}Fixing system_ext according to ${RESET}$STOCK_DEVICE"
+        echo -e "${YELLOW}Copying system_ext content into system root${RESET}"
 		rm -rf "$EXTRACTED_FIRM_DIR/system/system_ext"
         cp -a --preserve=all "$EXTRACTED_FIRM_DIR/system_ext" "$EXTRACTED_FIRM_DIR/system"
 
-        echo "- Cleaning and merging system_ext file contexts and configs"
+        echo -e "${YELLOW}Cleaning and merging system_ext file contexts and configs${RESET}"
         # File paths
         SYSTEM_EXT_CONFIG_FILE="$EXTRACTED_FIRM_DIR/config/system_ext_fs_config"
         SYSTEM_EXT_CONTEXTS_FILE="$EXTRACTED_FIRM_DIR/config/system_ext_file_contexts"
@@ -460,11 +460,11 @@ FIX_SELINUX() {
 
     # Self explanatory, fixes selinux that prevents booting
     if [ ! -f "$SELINUX_FILE" ]; then
-        echo "Error: SELinux file not found at $SELINUX_FILE"
+        echo -e "${RED}Error: SELinux file not found at${RESET} $SELINUX_FILE"
         return 1
     fi
 
-    echo "Fixing selinux for $STOCK_DEVICE."
+    echo -e "${YELLOW}Fixing selinux for${RESET} $STOCK_DEVICE."
 
     UNSUPPORTED_SELINUX=("audiomirroring" "fabriccrypto" "hal_dsms_default" "qb_id_prop" "hal_dsms_service" "proc_compaction_proactiveness" "sbauth" "ker_app" "kpp_app" "kpp_data" "attiqi_app" "kpoc_charger")
 
@@ -484,7 +484,7 @@ UPDATE_FLOATING_FEATURE() {
     local key="$1"
     local value="$2"
     if [[ -z "$value" ]]; then
-        echo "⛔️️ Skipping $key — no value found."
+        echo -e "${RED}[Omitted]${RESET} $key ${RED}— no value found.${RESET}"
         return
     fi
 
@@ -502,28 +502,23 @@ UPDATE_FLOATING_FEATURE() {
         indent=$(echo "$current_line" | sed -E "s/(<${key}>.*<\/${key}>).*//")
         local line="${indent}<${key}>${value}</${key}>"
         sed -i "s|${indent}<${key}>.*</${key}>|$line|" "$TARGET_FLOATING_FEATURE"
-        echo "✳️ Updated $key with ▶️ $value"
+        echo -e "${GREEN}Updated ${RESET}$key${GREEN} with => ${RESET}$value"
     else
         local line="    <$key>$value</$key>"
         sed -i "3i\\$line" "$TARGET_FLOATING_FEATURE"
-        echo "✅️ Added $key with value ▶️ $value"
+        echo -e "${GREEN}Added ${RESET}$key${GREEN} with value => ${RESET}$value"
     fi
 }
 
 
 APPLY_FLOATING_FEATURE() {
     echo ""
-	echo "============ Floating Feature ============"
+	echo -e "${BLUE}============ Floating Feature ============${RESET}"
     #========== COMMON ==========#
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_COMMON_CONFIG_SEP_CATEGORY" "sep_basic"
 
-    #============= AI ==========#
-    sed -i '/SEC_FLOATING_FEATURE_COMMON_DISABLE_NATIVE_AI/d' "$TARGET_FLOATING_FEATURE"
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_VISION_SUPPORT_AI_MY_FAVORITE_CONTENTS" "TRUE"
-
     #========== EDGE ==========#
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_COMMON_CONFIG_EDGE" "panel"
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_SYSTEMUI_SUPPORT_BRIEF_NOTIFICATION" "TRUE"
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_SYSTEMUI_CONFIG_EDGELIGHTING_FRAME_EFFECT" "frame_effect"
 
     #========== SCREEN RECORDER ==========#
@@ -539,9 +534,6 @@ APPLY_FLOATING_FEATURE() {
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_AUDIO_CONFIG_REMOTE_MIC" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_AUDIO_CONFIG_REMOTE_MIC" {print $3}' "$STOCK_FLOATING_FEATURE")"
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_AUDIO_CONFIG_SOUNDALIVE_VERSION" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_AUDIO_CONFIG_SOUNDALIVE_VERSION" {print $3}' "$STOCK_FLOATING_FEATURE")"
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_AUDIO_CONFIG_VOLUMEMONITOR_GAIN" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_AUDIO_CONFIG_VOLUMEMONITOR_GAIN" {print $3}' "$STOCK_FLOATING_FEATURE")"
-
-    #========== BATTERY ==========#
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_BATTERY_SUPPORT_BSOH_GALAXYDIAGNOSTICS" "TRUE"
 
     #========== SETTINGS ==========#
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_SETTINGS_SUPPORT_DEFAULT_DOUBLE_TAP_TO_WAKE" "TRUE"
@@ -582,15 +574,6 @@ APPLY_FLOATING_FEATURE() {
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_CAMERA_CONFIG_HIGH_RESOLUTION_MAX_CAPTURE" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_CAMERA_CONFIG_HIGH_RESOLUTION_MAX_CAPTURE" {print $3}' "$STOCK_FLOATING_FEATURE")"
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_CAMERA_CONFIG_NIGHT_FRONT_DISPLAY_FLASH_TRANSPARENT" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_CAMERA_CONFIG_NIGHT_FRONT_DISPLAY_FLASH_TRANSPARENT" {print $3}' "$STOCK_FLOATING_FEATURE")"
 
-    #========== GENAI ==========#
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_GENAI_SUPPORT_IMAGE_CLIPPER" "TRUE"
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_GENAI_SUPPORT_OBJECT_ERASER" "TRUE"
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_GENAI_SUPPORT_REFLECTION_ERASER" "TRUE"
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_GENAI_SUPPORT_SHADOW_ERASER" "TRUE"
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_GENAI_SUPPORT_SMART_LASSO" "TRUE"
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_GENAI_SUPPORT_SPOT_FIXER" "TRUE"
-    UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_GENAI_SUPPORT_STYLE_TRANSFER" "TRUE"
-
     #========== BIOAUTH ==========#
     UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_BIOAUTH_CONFIG_FINGERPRINT_FEATURES" "$(awk -F'[<>]' '$2 == "SEC_FLOATING_FEATURE_BIOAUTH_CONFIG_FINGERPRINT_FEATURES" {print $3}' "$STOCK_FLOATING_FEATURE")"
 
@@ -611,7 +594,7 @@ REMOVE_ESIM_FILES() {
 
     # Remove ESIM files as we dont need it
 	local EXTRACTED_FIRM_DIR="$1"
-    echo "- Removing ESIM files."
+    echo -e "${YELLOW}- Removing ESIM files.${RESET}"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/EsimClient"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/EsimKeyString"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/EuiccService"
@@ -631,7 +614,7 @@ REMOVE_FABRIC_CRYPTO() {
 
     # Yes, we dont need that, it spams logs
 	local EXTRACTED_FIRM_DIR="$1"
-    echo "- Removing fabric crypto."
+    echo -e "${YELLOW}- Removing fabric crypto.${RESET}"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/bin/fabric_crypto"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/fabric_crypto.rc"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/permissions/FabricCryptoLib.xml"
@@ -661,12 +644,12 @@ JDM_DEBLOAT() {
     shopt -s nocasematch
 
     if [[ "$MANUF_TYPE" == *jdm* ]]; then
-        echo "JDM detected → debloating unnecessary files"
+        echo -e "${GREEN}JDM detected → debloating unnecessary files${RESET}"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothAgent"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/app/BluetoothMidiService"
         rm -rf -- "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungCamera"
     else
-        echo "Device is not JDM → skipping JDM debloating"
+        echo -e "${RED}[Omitted] Device is not JDM → skipping JDM debloating${RESET}"
     fi
 
     shopt -u nocasematch
@@ -674,7 +657,7 @@ JDM_DEBLOAT() {
 
 APPLY_STOCK_CONFIG() {
     echo ""
-	echo "Applying $STOCK_DEVICE device config."
+	echo -e "${GREEN}Applying ${RESET}$STOCK_DEVICE ${GREEN}device config.${RESET}"
     if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
         return 1
@@ -683,12 +666,12 @@ APPLY_STOCK_CONFIG() {
     local EXTRACTED_FIRM_DIR="$1"
 
     if [ ! -f "$DEVICES_DIR/$STOCK_DEVICE/config" ]; then
-        echo "- Config file for $STOCK_DEVICE not found in $DEVICES_DIR"
+        echo -e "${RED}[Omitted] Config file for $STOCK_DEVICE not found in $DEVICES_DIR${RESET}"
         return 1
 	fi
 
     if [ -f "$DEVICES_DIR/$STOCK_DEVICE/config" ]; then
-        echo "- $STOCK_DEVICE config found."
+        echo -e "${GREEN}-${RESET} $STOCK_DEVICE ${GREEN}config found.${RESET}"
         export STOCK_VNDK_VERSION="$(grep -m1 '^STOCK_VNDK_VERSION=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"
         export STOCK_HAS_SEPARATE_SYSTEM_EXT="$(grep -m1 '^STOCK_HAS_SEPARATE_SYSTEM_EXT=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"
 		export STOCK_DVFS_FILENAME="$(grep -m1 '^STOCK_DVFS_FILENAME=' "$DEVICES_DIR/$STOCK_DEVICE/config" | cut -d= -f2 | tr -d '\r')"
@@ -721,7 +704,7 @@ APPLY_STOCK_CONFIG() {
 }
 
 
-DEBLOAT_APPS=("FactoryCameraFB" "HybridRadio" "CIDManager" "SBrowser" "Facebook_stub_TFN" "FBAppManager_TFN" "SamsungTTSVoice_es_US_l01 " "SamsungCalendar" "KTAuth_Stub" "GameTools_Dream" "Gmail2" "Maps" "Duo" "Velvet" "CarrierDefaultApp" "ccinfo" "Chrome" "ChromeCustomizations" "GameHome" "GameOptimizingService" "WlanTest" "AssistantShell" "HotwordEnrollmentOKGoogleEx4CORTEXM55" "HotwordEnrollmentXGoogleEx4CORTEXM55" "BardShell" "DuoStub" "GoogleCalendarSyncAdapter" "AndroidDeveloperVerifier" "AndroidGlassesCore" "SOAgent77" "YourPhone_Stub" "AndroidAutoStub" "SingleTakeService" "SamsungBilling" "AndroidSystemIntelligence" "GoogleRestore" "SamsungMessages" "SamsungPositioning" "YouTube"  "SearchSelector" "AirGlance" "AirReadingGlass" "SamsungTTS" "WlanTest" "ARCore" "ARDrawing" "ARZone" "BGMProvider" "BixbyWakeup" "BlockchainBasicKit" "Cameralyzer" "DictDiotekForSec" "EasymodeContactsWidget81" "Fast" "FBAppManager_NS" "FunModeSDK" "GearManagerStub" "KidsHome_Installer" "LinkSharing_v11" "LiveDrawing" "MAPSAgent" "MdecService" "MinusOnePage" "MoccaMobile" "Netflix_stub" "Notes40" "ParentalCare" "PhotoTable" "PlayAutoInstallConfig" "SamsungPassAutofill_v1" "SamsungTTSVoice_de_DE_f00" "SamsungTTSVoice_el_GR_f00" "SamsungTTSVoice_en_GB_f00" "SamsungTTSVoice_en_US_f00" "SamsungTTSVoice_en_US_l03" "SamsungTTSVoice_es_ES_f00" "SamsungTTSVoice_es_MX_f00" "SamsungTTSVoice_es_US_f00" "SamsungTTSVoice_fr_FR_f00" "SamsungTTSVoice_hi_IN_f00" "SamsungTTSVoice_it_IT_f00" "SamsungTTSVoice_pl_PL_f00" "SamsungTTSVoice_pt_BR_f00" "SamsungTTSVoice_ru_RU_f00" "SamsungTTSVoice_th_TH_f00" "SamsungTTSVoice_vi_VN_f00" "SamsungTTSVoice_en_IN_f00" "SmartReminder" "SmartSwitchStub" "UnifiedWFC" "UniversalMDMClient" "VideoEditorLite_Dream_N" "VisionIntelligence3.7" "VoiceAccess" "VTCameraSetting" "WebManual" "WifiGuider" "KTAuth" "KTCustomerService" "KTUsimManager" "LGUMiniCustomerCenter" "LGUplusTsmProxy" "SamsungTTSVoice_ko_KR_r00" "SketchBook" "SKTMemberShip_new" "SktUsimService" "TWorld" "AirCommand" "AppUpdateCenter" "AREmoji" "AREmojiEditor" "AuthFramework" "AutoDoodle" "AvatarEmojiSticker" "AvatarEmojiSticker_S" "Bixby" "BixbyInterpreter" "BixbyVisionFramework3.5" "DevGPUDriver-EX2200" "DigitalKey" "Discover" "DiscoverSEP" "EarphoneTypeC" "EasySetup" "FBInstaller_NS" "FBServices" "FotaAgent" "GalleryWidget" "GameDriver-EX2100" "GameDriver-EX2200" "GameDriver-SM8150" "HashTagService" "MultiControlVP6" "LedCoverService" "LinkToWindowsService" "LiveStickers" "MemorySaver_O_Refresh" "MultiControl" "OMCAgent5" "OneDrive_Samsung_v3" "OneStoreService" "SamsungCarKeyFw" "SamsungPass" "SamsungSmartSuggestions" "SettingsBixby" "SetupIndiaServicesTnC" "SKTFindLostPhone" "SKTHiddenMenu" "SKTMemberShip" "SKTOneStore" "SktUsimService" "SmartEye" "SmartPush" "SmartThingsKit" "SmartTouchCall" "SOAgent7" "SOAgent75" "SolarAudio-service" "SPPPushClient" "sticker" "StickerFaceARAvatar" "StoryService" "SumeNNService" "SVoiceIME" "SwiftkeyIme" "SwiftkeySetting" "SystemUpdate" "TADownloader" "TalkbackSE" "TaPackAuthFw" "TPhoneOnePackage" "TPhoneSetup" "TWorld" "UltraDataSaving_O" "Upday" "UsimRegistrationKOR" "YourPhone_P1_5" "AvatarPicker" "KT114Provider2" "KTHiddenMenu" "KTOneStore" "KTServiceAgent" "KTServiceMenu" "LGUGPSnWPS" "LGUHiddenMenu" "LGUOZStore" "SKTFindLostPhoneApp" "SmartPush_64" "SOAgent76" "TService" "vexfwk_service" "VexScanner" "LiveEffectService" "YourPhone_P1_5" "vexfwk_service" "AutoHotspotMDE")
+DEBLOAT_APPS=("FactoryCameraFB" "HybridRadio" "CIDManager" "SBrowser" "Facebook_stub_TFN" "FBAppManager_TFN" "SamsungTTSVoice_es_US_l01 " "SamsungCalendar" "KTAuth_Stub" "GameTools_Dream" "Gmail2" "Maps" "Duo" "Velvet" "CarrierDefaultApp" "ccinfo" "Chrome" "ChromeCustomizations" "GameHome" "GameOptimizingService" "WlanTest" "AssistantShell" "HotwordEnrollmentOKGoogleEx4CORTEXM55" "HotwordEnrollmentXGoogleEx4CORTEXM55" "BardShell" "DuoStub" "GoogleCalendarSyncAdapter" "AndroidDeveloperVerifier" "AndroidGlassesCore" "SOAgent77" "YourPhone_Stub" "AndroidAutoStub" "SingleTakeService" "SamsungBilling" "AndroidSystemIntelligence" "GoogleRestore" "SamsungMessages" "SamsungPositioning" "YouTube"  "SearchSelector" "AirGlance" "AirReadingGlass" "SamsungTTS" "WlanTest" "ARCore" "ARDrawing" "ARZone" "BGMProvider" "BixbyWakeup" "BlockchainBasicKit" "Cameralyzer" "DictDiotekForSec" "EasymodeContactsWidget81" "Fast" "FBAppManager_NS" "FunModeSDK" "GearManagerStub" "KidsHome_Installer" "LinkSharing_v11" "LiveDrawing" "MAPSAgent" "MdecService" "MinusOnePage" "MoccaMobile" "Netflix_stub" "Notes40" "ParentalCare" "PhotoTable" "PlayAutoInstallConfig" "SamsungPassAutofill_v1" "SamsungTTSVoice_de_DE_f00" "SamsungTTSVoice_el_GR_f00" "SamsungTTSVoice_en_GB_f00" "SamsungTTSVoice_en_US_f00" "SamsungTTSVoice_en_US_l03" "SamsungTTSVoice_es_ES_f00" "SamsungTTSVoice_es_MX_f00" "SamsungTTSVoice_es_US_f00" "SamsungTTSVoice_fr_FR_f00" "SamsungTTSVoice_hi_IN_f00" "SamsungTTSVoice_it_IT_f00" "SamsungTTSVoice_pl_PL_f00" "SamsungTTSVoice_pt_BR_f00" "SamsungTTSVoice_ru_RU_f00" "SamsungTTSVoice_th_TH_f00" "SamsungTTSVoice_vi_VN_f00" "SamsungTTSVoice_en_IN_f00" "SmartReminder" "SmartSwitchStub" "UnifiedWFC" "UniversalMDMClient" "VideoEditorLite_Dream_N" "VisionIntelligence3.7" "VoiceAccess" "VTCameraSetting" "WebManual" "WifiGuider" "KTAuth" "KTCustomerService" "KTUsimManager" "LGUMiniCustomerCenter" "LGUplusTsmProxy" "SamsungTTSVoice_ko_KR_r00" "SketchBook" "SKTMemberShip_new" "SktUsimService" "TWorld" "AirCommand" "AppUpdateCenter" "AREmoji" "AREmojiEditor" "AuthFramework" "AutoDoodle" "AvatarEmojiSticker" "AvatarEmojiSticker_S" "Bixby" "BixbyInterpreter" "BixbyVisionFramework3.5" "DevGPUDriver-EX2200" "DigitalKey" "Discover" "DiscoverSEP" "EarphoneTypeC" "EasySetup" "FBInstaller_NS" "FBServices" "FotaAgent" "GalleryWidget" "GameDriver-EX2100" "GameDriver-EX2200" "GameDriver-SM8150" "HashTagService" "MultiControlVP6" "LedCoverService" "LinkToWindowsService" "LiveStickers" "MemorySaver_O_Refresh" "MultiControl" "OMCAgent5" "OneDrive_Samsung_v3" "OneStoreService" "SamsungCarKeyFw" "SamsungPass" "SettingsBixby" "SetupIndiaServicesTnC" "SKTFindLostPhone" "SKTHiddenMenu" "SKTMemberShip" "SKTOneStore" "SktUsimService" "SmartEye" "SmartPush" "SmartThingsKit" "SmartTouchCall" "SOAgent7" "SOAgent75" "SolarAudio-service" "SPPPushClient" "sticker" "StickerFaceARAvatar" "StoryService" "SumeNNService" "SVoiceIME" "SwiftkeyIme" "SwiftkeySetting" "SystemUpdate" "TADownloader" "TalkbackSE" "TaPackAuthFw" "TPhoneOnePackage" "TPhoneSetup" "TWorld" "UltraDataSaving_O" "Upday" "UsimRegistrationKOR" "YourPhone_P1_5" "AvatarPicker" "KT114Provider2" "KTHiddenMenu" "KTOneStore" "KTServiceAgent" "KTServiceMenu" "LGUGPSnWPS" "LGUHiddenMenu" "LGUOZStore" "SKTFindLostPhoneApp" "SmartPush_64" "SOAgent76" "TService" "vexfwk_service" "VexScanner" "LiveEffectService" "YourPhone_P1_5" "vexfwk_service" "AutoHotspotMDE")
 
 KICK() {
     if [ "$#" -ne 1 ]; then
@@ -731,7 +714,7 @@ KICK() {
     
 	local EXTRACTED_FIRM_DIR="$1"
 
-    echo "- Debloating apps."
+    echo -e "${YELLOW}- Debloating apps.${RESET}"
     local APP_DIRS=(
         "$EXTRACTED_FIRM_DIR/system/system/app"
         "$EXTRACTED_FIRM_DIR/system/system/priv-app"
@@ -759,13 +742,14 @@ DEBLOAT() {
     fi
 
 	local EXTRACTED_FIRM_DIR="$1"
-    echo "Debloating."
+
     KICK "$EXTRACTED_FIRM_DIR"
     REMOVE_ESIM_FILES "$EXTRACTED_FIRM_DIR"
 	REMOVE_FABRIC_CRYPTO "$EXTRACTED_FIRM_DIR"
     JDM_DEBLOAT "$EXTRACTED_FIRM_DIR"
     DEODEX "$EXTRACTED_FIRM_DIR"
-	echo "- Deleting unnecessary files and folders."
+    
+	echo -e "${YELLOW}- Deleting unnecessary files and folders.${RESET}"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.bprof"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/etc/init/boot-image.prof"
     rm -rf "$EXTRACTED_FIRM_DIR/system/system/hidden"
@@ -779,14 +763,14 @@ DEBLOAT() {
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc-sec.so"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc_sec_jni.so"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib/libnfc_sec_jni.so"
-        echo "Removed NFC from stock image"
+        echo -e "${GREEN}Removed NFC from stock image${RESET}"
     fi
     
 }
 
 DEODEX() {
-    echo "- Deodexing ROM (removing oat folders)..."
-    echo "  > OAT folders to remove:"
+    echo -e "${YELLOW}- Deodexing ROM (removing oat folders)...${RESET}"
+    echo -e "${YELLOW}- OAT folders to remove:${RESET}"
     find "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
     sudo find "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app" -type d -name "oat" -exec rm -rf {} +
     find "$EXTRACTED_FIRM_DIR/system/system_ext/app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
@@ -796,7 +780,7 @@ DEODEX() {
     find "$EXTRACTED_FIRM_DIR/system/system/app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
     sudo find "$EXTRACTED_FIRM_DIR/system/system/app" -type d -name "oat" -exec rm -rf {} +
 
-    echo "  > Deodex complete"
+    echo -e "${GREEN}Deodex complete${RESET}"
 }
 
 BUILD_PROP() {
@@ -810,8 +794,6 @@ BUILD_PROP() {
     fi
 
     local PROP_FILES=(
-        "$EXTRACTED_FIRM_DIR/product/etc/build.prop"
-        "$EXTRACTED_FIRM_DIR/vendor/build.prop"
         "$EXTRACTED_FIRM_DIR/system/system/build.prop"
     )
     for PROP in "${PROP_FILES[@]}"; do
@@ -819,21 +801,21 @@ BUILD_PROP() {
 
         if [ -z "$VALUE" ]; then
             sudo sed -i "/^${KEY}=.*/d" "$PROP"
-            echo " Removed: $KEY"
+            echo -e "${RED}Removed ${RESET}$KEY"
         else
             if sudo grep -q "^${KEY}=" "$PROP"; then
                 sudo sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" "$PROP"
-                echo " Updated: $KEY=$VALUE"
+                echo -e "${GREEN}Updated ${RESET}$KEY${GREEN} with value => ${RESET}$VALUE${RESET}"
             else
                 echo "${KEY}=${VALUE}" | sudo tee -a "$PROP" > /dev/null
-                echo " Added: $KEY=$VALUE"
+                echo -e "${GREEN}Added ${RESET}$KEY${GREEN} with value => ${RESET}$VALUE${RESET}"
             fi
         fi
     done
 }
 
 
-APPLY_FEATURES() {
+APPLY_PROP_FEATURES() {
     echo ""
     if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
@@ -843,9 +825,7 @@ APPLY_FEATURES() {
 	local EXTRACTED_FIRM_DIR="$1"
 
     # Add build.prop features
-    echo "Applying useful features."
-	echo " Adding build prop tweak."
-	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.frp.pst"
+	echo -e "${BLUE}============ Build Prop Features ============${RESET}"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
@@ -985,7 +965,7 @@ APPEND_DISPLAY_ID() {
             # Try to not update it, if it was already there
             if [[ "$CURRENT" != *"$SUFFIX"* ]]; then
                 sed -i "s|^ro.build.display.id=.*|ro.build.display.id=${CURRENT} - ${SUFFIX}|" "$PROP"
-                echo "Updated ro.build.display.id in $PROP"
+                echo -e "${GREEN}Updated ${RESET}ro.build.display.id${GREEN} in ${RESET}$PROP"
             fi
         fi
     done
@@ -1013,10 +993,10 @@ GEN_FS_CONFIG() {
 
         local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
 
-        echo "--- Synchronizing $PARTITION ---"
+        echo -e "${YELLOW}--- Synchronizing $PARTITION ---${RESET}"
 
         if [[ "$PARTITION" == "vendor" ]]; then
-            echo "  [*] Fixing vendor_fs_config..."
+            echo -e "${YELLOW}  [*] Fixing vendor_fs_config...${RESET}"
             
             local TMP_CLEAN=$(mktemp)
             
@@ -1036,11 +1016,11 @@ GEN_FS_CONFIG() {
             sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" > /dev/null
             
             rm "$TMP_CLEAN"
-            echo "  [+] vendor_fs_config fixed."
+            echo -e "${GREEN}  [+] vendor_fs_config fixed.${RESET}"
         fi
         
         if [[ ! -f "$FS_CONFIG" ]]; then
-            echo "--- Creating new fs_config for $PARTITION ---"
+            echo -e "${YELLOW}  --- Creating new fs_config for $PARTITION ---${RESET}"
             echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
         fi
 
@@ -1050,10 +1030,10 @@ GEN_FS_CONFIG() {
             if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
                 local REL_PATH="${ENTRY#$PARTITION/}"
                 if [[ -d "$ROOT/$REL_PATH" ]]; then
-                    echo "  [+] Adding DIR: $ENTRY"
+                    echo -e "  ${GREEN}[+]${RESET} Adding DIR: $ENTRY"
                     echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
                 else
-                    echo "  [+] Adding FILE: $ENTRY"
+                    echo -e "  ${GREEN}[+]${RESET} Adding FILE: $ENTRY"
                     echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
                 fi
             fi
@@ -1072,7 +1052,7 @@ GEN_FILE_CONTEXTS() {
         local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
         [[ ! -f "$FILE_CONTEXTS" ]] && touch "$FILE_CONTEXTS"
 
-        echo "--- Syncing contexts for: $PARTITION ---"
+        echo -e "${YELLOW}--- Syncing contexts for: $PARTITION ---${RESET}"
         
         local TMP_EXISTING=$(mktemp)
         sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
@@ -1080,7 +1060,7 @@ GEN_FILE_CONTEXTS() {
         sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
             
             if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
-                echo "  [+] Context for: $PATH_ENTRY"
+                echo -e "  ${GREEN}[+]${RESET} Context for: $PATH_ENTRY"
                 
                 local CONTEXT="u:object_r:system_file:s0"
 
@@ -1097,7 +1077,9 @@ GEN_FILE_CONTEXTS() {
 
                 local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
                 
-                echo "$ESCAPED_PATH $CONTEXT" >> "$FILE_CONTEXTS"
+                if ! echo "$ESCAPED_PATH $CONTEXT" >> "$FILE_CONTEXTS" 2>/dev/null; then
+                    echo "$ESCAPED_PATH $CONTEXT" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
+                fi
                 
                 echo "$PATH_ENTRY" >> "$TMP_EXISTING"
             fi
@@ -1123,13 +1105,13 @@ BUILD_IMG() {
         
         # Update the super size on the list according to the device
         if [[ -n "$SUPER_SIZE" && -f "$OP_LIST" ]]; then
-            echo -e "\e[32mUpdating super size on op_list: $SUPER_SIZE bytes\e[0m"
+            echo -e "${GREEN}Updating super size on op_list: $SUPER_SIZE bytes${RESET}"
             sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
         else
-            echo "Warning: STOCK_SUPER_SIZE hasn't been found on $DEVICE_CONFIG"
+            echo -e "${RED}Warning: STOCK_SUPER_SIZE hasn't been found on $DEVICE_CONFIG${RESET}"
         fi
     else
-        echo "Error: config file not found"
+        echo -e "${RED}Error: config file not found${RESET}"
     fi
 
 
@@ -1157,11 +1139,11 @@ BUILD_IMG() {
             sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/
 
             if [[ "$FILE_SYSTEM" == "erofs" ]]; then
-                echo -e "\e[33mBuilding EROFS image:\e[0m $OUT_IMG"
+                echo -e "${YELLOW}Building EROFS image: $OUT_IMG${RESET}"
                 sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
                 sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
             else
-                echo "Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION"
+                echo -e "${RED}Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION${RESET}"
             fi
         ) &
     done
@@ -1175,7 +1157,7 @@ BUILD_IMG() {
         local OUT_IMG="$OUT_DIR/${PARTITION}.img"
         if [[ -f "$OUT_IMG" && -f "$OP_LIST" ]]; then
             local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
-            echo -e "\e[32mUpdating size of $PARTITION in op_list: $ACTUAL_SIZE bytes\e[0m"
+            echo -e "${GREEN}Updating size of $PARTITION in op_list: $ACTUAL_SIZE bytes${RESET}"
             sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
         fi
     done
@@ -1195,24 +1177,24 @@ IMG_TO_BROTLI() {
 
     # Check if img2sdat binary exists
     if [[ ! -f "$IMG2SDAT_BIN" ]]; then
-        echo "Error: img2sdat binary not found at $IMG2SDAT_BIN"
+        echo -e "${RED}Error: img2sdat binary not found at $IMG2SDAT_BIN${RESET}"
         return 1
     fi
 
     chmod +x "$IMG2SDAT_BIN"
 
     # This is for compressing to .new.dat
-    echo "=== Converting IMG to SDAT ==="
+    echo -e "${BLUE}=== Converting IMG to SDAT ===${RESET}"
 
     for f in "$IMG_DIR"/*.img; do
         [[ -f "$f" ]] || continue
         PARTITION="$(basename "$f" .img)"
 
         (
-            echo "Converting $PARTITION.img..."
+            echo -e "${GREEN}Converting $PARTITION.img...${RESET}"
             "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$f" > /dev/null 2>&1
             touch "$TMP_DIR/$PARTITION.patch.dat"
-            echo "Created patch.dat for $PARTITION"
+            echo -e "${GREEN}Created patch.dat for $PARTITION${RESET}"
         ) &
     done
 
@@ -1220,7 +1202,7 @@ IMG_TO_BROTLI() {
 
     # Compress it to .new.dat.br to make later a .zip file
     echo ""
-    echo "=== Compressing DAT files with Brotli (Parallel) ==="
+    echo -e "${BLUE}=== Compressing DAT files with Brotli (Parallel) ===${RESET}"
 
     local JOBS=4 # Set to match vCPUs
     for DAT in "$TMP_DIR"/*.new.dat; do
@@ -1229,9 +1211,9 @@ IMG_TO_BROTLI() {
         OUT_FILE="$TMP_DIR/$PARTITION.new.dat.br"
 
         (
-            echo "Compressing $PARTITION.new.dat..."
+            echo -e "${YELLOW}Compressing $PARTITION.new.dat...${RESET}"
             brotli -f -q 1 --output="$OUT_FILE" "$DAT"
-            echo "Finished $PARTITION.new.dat.br"
+            echo -e "${GREEN}Finished $PARTITION.new.dat.br${RESET}"
         ) &
 
         # Limit concurrent jobs
@@ -1242,5 +1224,5 @@ IMG_TO_BROTLI() {
 
     wait
     echo ""
-    echo "All partitions converted and compressed successfully."
+    echo -e "${GREEN}All partitions converted and compressed successfully.${RESET}"
 }
