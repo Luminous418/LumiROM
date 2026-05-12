@@ -1,5 +1,6 @@
 #!/bin/bash
 
+START_TIME=$(date +%s)
 # --- Variable Configuration ---
 # Edit these values according to what you need for your build
 STOCK_DEVICE="SM-A325F"
@@ -122,3 +123,17 @@ rm -rf ./OTA/ ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/
 echo -e "${GREEN}LumiROM $LUMIROM_VERSION for${RESET} $STOCK_DEVICE ${GREEN}is ready, you can find it on${RESET} ${CYAN}ROM${RESET} ${GREEN}folder${RESET}"
 
 echo "--- Process finished ---"
+
+END_TIME=$(date +%s)
+ELAPSED=$((END_TIME - START_TIME))
+HOURS=$((ELAPSED / 3600))
+MINS=$(((ELAPSED % 3600) / 60))
+SECS=$((ELAPSED % 60))
+echo
+if [ $HOURS -gt 0 ]; then
+    echo "Build completed in ${HOURS}hr ${MINS}min ${SECS}sec"
+elif [ $MINS -gt 0 ]; then
+    echo "Build completed in ${MINS}min ${SECS}sec"
+else
+    echo "Build completed in ${SECS}sec, damn that was quick"
+fi
