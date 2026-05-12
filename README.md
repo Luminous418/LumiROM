@@ -1,29 +1,108 @@
-![LumiROM Logo](LumiROM/logo/LumiROM.png)
+<p align="center">
+  <img src="LumiROM/logo/LumiROM.png" alt="LumiROM Logo">
+</p>
+
+<p align="center">
+  <a href="https://github.com/Luminous418/LumiROM/actions/workflows/OneUi8-5.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Luminous418/LumiROM/OneUi8-5.yml?branch=OneUI8.5&label=Specific%20Device&logo=github" alt="Specific Device Workflow">
+  </a>
+  <a href="https://github.com/Luminous418/LumiROM/actions/workflows/OneUi8-5-Matrix.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Luminous418/LumiROM/OneUi8-5-Matrix.yml?branch=OneUI8.5&label=All%20Devices&logo=github" alt="All Devices Workflow">
+  </a>
+  <a href="https://github.com/Luminous418/LumiROM/stargazers">
+    <img src="https://img.shields.io/github/stars/Luminous418/LumiROM?style=flat&logo=github&label=Stars" alt="Stars">
+  </a>
+  <a href="https://github.com/Luminous418/LumiROM/network/members">
+    <img src="https://img.shields.io/github/forks/Luminous418/LumiROM?style=flat&logo=github&label=Forks" alt="Forks">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/Luminous418/LumiROM?style=flat&label=License" alt="License">
+  </a>
+</p>
 
 This custom ROM is created to provide a totally new experience to Low end Mediatek devices.
 - It is focused on stability while upgrading the android version so we can test new One Ui releases and adding new features such as Galaxy AI✨
 
 ## What it does?
 
-It downloads the imgs from the server, and adds the features implemented in the repository such as Galaxy AI, heavily debloat and improve the perfomance, aswell as make QoL improvements so the device can be used again!
+It downloads the firmware from Samsung servers using [samloader](https://github.com/samloader/samloader), or custom firmware downloader, merges OTA patches, extracts the partition images and then applies all the features implemented in the repository — Galaxy AI, heavy debloat, Knox patches, performance tweaks and QoL improvements — so the device can be used again with a fresh and modern experience.
+
+The whole process can run either on **GitHub Actions** or **locally** on your machine (requires Ubuntu/Debian distro or WSL).
 
 ## Changelogs
 Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/README.md) folder to know more about releases and useful information.
 
+## Supported Devices
+
+| Device | Model |
+| :--- | :--- |
+| Samsung Galaxy A22 | SM-A225F |
+| Samsung Galaxy A22 5G | SM-A226B |
+| Samsung Galaxy A32 | SM-A325F |
+| Samsung Galaxy A32 | SM-A325M |
+| Samsung Galaxy F22 | SM-E225F |
+| Samsung Galaxy M32 | SM-M325F |
+
+> **Note:** FOD devices will use FOD bases (e.g. A32 → A34 base), and Side-FP devices will use Side-FP bases (e.g. A22 → A24 base).
+
 ## Features
-- System Optimization.
-- Heavy debloated system.
+
+### System Optimization
+- Heavy debloated system (150+ bloatware apps removed).
+- Deodexed ROM for cleaner and smaller system partitions.
 - Improved performance and smoother UI experience.
 - Optimized background processes.
 - Better battery efficiency.
-- Enhanced Functionality.
+- Enhanced CPU responsiveness and processing.
+- HighEnd launcher animations.
+- EROFS filesystem — compressed, read-only, saves storage space.
+- Disabled file-based encryption (FBE) and full-disk encryption (FDE).
+- VNDK and SELinux fixes applied per-device.
+- Init tweaks for extra performance.
+- Vulkan fix.
+- VoLTE fix.
+- Custom wallpapers included.
+
+### Galaxy AI ✨
+- **Now Brief** — smart notification summaries.
+- **AI Wallpaper** — time & weather reactive wallpapers.
+- **Photo Editor AI Full** — full AI photo editing suite.
+- **Object Eraser** — remove unwanted objects from photos.
+- **Shadow Eraser** — remove shadows from photos.
+- **Reflection Eraser** — remove reflections from photos.
+- **Image Clipper** — smart lasso and cutout tool.
+- **Spot Fixer** — fix imperfections in photos.
+- **Style Transfer** — apply artistic styles to images.
+- **AI Revital** — AI-powered image enhancement.
+- **Smart Lasso** — intelligent selection tool.
+- **Brief Notifications** — AI-summarized notifications.
+- **Media Context Analyzer** — intelligent media classification.
+- **Target Tracking** — object tracking in video.
+- **Offline Language Model** — on-device AI processing.
+
+### Enhanced Functionality
 - Screenshot anywhere (enabled globally).
 - More floating features enabled.
 - Edge features fully working.
-- Object, shadow and reflection remover support.
-- [KnoxPatch](https://github.com/salvogiangri/KnoxPatch) integrated
+- Screen recorder support.
+- Voice recorder with normal, interview and voice memo modes.
+- Double tap to wake.
+- Function key menu support.
+- Bluetooth recording support.
+- Clock live icon on launcher.
 
-## Supported apps with KnoxPatch
+### Knox Patches (built-in, no root needed)
+Knox functionality is patched directly via smali modifications — no modules or root required:
+- **Knox Guard** — disabled to prevent carrier locking.
+- **Flag Secure** — bypassed to allow screenshots everywhere.
+- **Secure Folder** — patched to work without Knox integrity checks.
+- **Private Share** — patched for integrity verification bypass.
+- **Signature Verification** — minimum scheme lowered for sideloading.
+- **SSRM** — patched to match stock device thermal policies.
+- **ICCC** — removed to prevent soft-bootloops.
+- **KnoxGuard app** — removed from system.
+
+### Supported apps with Knox Patches
 -  [Auto Blocker](https://www.samsung.com/uk/support/mobile-devices/protect-your-galaxy-device-with-the-new-auto-blocker-feature/)
 -  Samsung Cloud ([FMM](https://www.samsung.com/uk/support/mobile-devices/what-is-find-my-mobile-and-how-can-i-use-it-to-locate-lock-or-wipe-my-device/), [Enhanced data protection](https://www.samsung.com/ae/support/mobile-devices/what-is-the-enhanced-data-protection-function-and-when-can-i-use-it/))
 -  [Samsung Flow](https://www.samsung.com/uk/apps/samsung-flow/)
@@ -35,7 +114,10 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 
 This apps will work without installing any module or having root on the device.
 
-## How to Use:
+## How to Use
+
+### Method 1: GitHub Actions
+
 #### 1. Fork the Repository
 Give a ⭐ star to the repository.
 Fork the repository to your GitHub account.
@@ -48,21 +130,14 @@ Open your forked repository.
 
 #### 3. Set Your Device Model:
 Update your device model in the STOCK_DEVICE_MODEL option.
-- If your model is available in /LumiROM/Device folder of this repository, the tool will work for your device.
+- If your model is available in /LumiROM/Devices folder of this repository, the tool will work for your device.
 - If your model is not present, it will not work
-
-Quick reminder: FOD devices will use FOD bases, Side-FP will use Side-FP bases<br>
-like if you have an A32, will use A34 base, and if you have A22, will use A24 base.
 
 #### 4. Kernel BPF Version Option:
 Set this option to True if your kernel BPF version is 5.4 (lower than 5.10).
 - Otherwise, set it to False.
 
-#### 5. Set Target Device Information:
-Configure the following options:
-- STOCK_DEVICE: The device model from which you want to port the ROM.
-
-#### 6. OUTPUT_FILESYSTEM:
+#### 5. The Output Filesystem:
 My tool can only build images in erofs because:
   - It is recommended if your device partition size is small.
   - Saves storage space.
@@ -75,6 +150,41 @@ But all of the devices I support got EROFS kernel so there isn't a problem
 
 #### 7. Upload
 The ROM will be auto uploaded to GoFile servers, so when the workflow is done, check on the logs the link for it, in "Sending ROM to GoFile" part.
+
+### Method 2: Local Build
+
+You can also build LumiROM directly on your Linux machine using the local build script. This method includes a **firmware cache system** so you only need to download the firmware once.
+
+#### 1. Clone the repository:
+```bash
+git clone https://github.com/Luminous418/LumiROM.git
+cd LumiROM
+```
+
+#### 2. Configure your build:
+Edit the variables at the top of `build_local.sh`:
+```bash
+STOCK_DEVICE="SM-A325F"       # Your device model
+USE_MODS="Yes"                # Include mods (Vulkan fix, VoLTE fix, tweaks, wallpapers)
+USE_GALAXY_AI="Yes"           # Include Galaxy AI features
+USE_UI_8_TETHERING_APEX="False"  # Set to True if kernel BPF < 5.10
+```
+
+#### 3. Run the build:
+```bash
+bash build_local.sh
+```
+The script will install dependencies, download firmware (if not cached), apply all patches and build the ROM. The output ZIP will be in the `ROM/` folder.
+
+#### 4. Manage firmware cache:
+Use the cache manager to check, list or clear your cached firmware images:
+```bash
+bash scripts/cache_manager.sh status    # Show cache status
+bash scripts/cache_manager.sh check     # Verify required images
+bash scripts/cache_manager.sh size      # Show cache size
+bash scripts/cache_manager.sh list      # List all images with sizes
+bash scripts/cache_manager.sh clear     # Clear cached images
+```
 
 ## Note
 If you dont wanna mess with the repo or dont know how to do any of this things, I will continue releasing updates of my rom on my Telegram channel, that you can join clicking on the link on the repository bio.
@@ -89,3 +199,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **[platform_build](https://android.googlesource.com/platform/build)** - Licensed under Apache License 2.0
 - **[e2fsprogs](https://github.com/tytso/e2fsprogs)** - Licensed under GPL-2.0 / LGPL-2.1
 - **[img2sdat](https://github.com/xpirt/img2sdat)** - Licensed under the MIT License
+- **[samloader](https://github.com/samloader/samloader)** - Licensed under GPL-3.0
