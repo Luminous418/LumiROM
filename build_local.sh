@@ -40,7 +40,7 @@ clear
 
 echo "--- Setting up directories ---"
 mkdir -p "$WORK_DIR"
-bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP
+bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs
 
 echo "--- Downloading Firmware and OTA ---"
 source scripts/FW.sh
@@ -53,7 +53,7 @@ else
     echo -e "${YELLOW}No firmware cache found. Proceeding with download...${RESET}"
     DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
     DOWNLOAD_OTA "OTA"
-    MERGE_OTA "FIRMWARE" "OTA"
+    MERGE_OTA "FIRMWARE" "OTA" "IMGs"
 fi
 
 # Check if vendor image is already cached
@@ -61,12 +61,12 @@ if CHECK_VENDOR_IMAGE "$FIRM_DIR"; then
     echo -e "${GREEN}Vendor cache found. Skipping download...${RESET}"
 else
     echo -e "${YELLOW}No vendor cache found. Proceeding with download...${RESET}"
-    DOWNLOAD_VENDOR "FIRMWARE"
+    DOWNLOAD_VENDOR "IMGs"
 fi
 
 echo "--- Extracting and patching ---"
-PREPARE_PARTITIONS "FIRMWARE"
-EXTRACT_FIRMWARE_IMG "FIRMWARE"
+PREPARE_PARTITIONS "IMGs"
+EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE"
 
 source scripts/LumiROM.sh
 DISABLE_FBE "FIRMWARE"
@@ -124,7 +124,7 @@ source scripts/zip_creation.sh
 UPDATE_ZIP_SCRIPT "FIRMWARE"
 FLASHABLE_ZIP_CREATION
 
-sudo rm -rf OTA/ OUT/ TMP/ WORK/
+sudo rm -rf ./OTA/ ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/
 
 echo -e "${GREEN}LumiROM $LUMIROM_VERSION for${RESET} $STOCK_DEVICE ${GREEN}is ready, you can find it on${RESET} ${CYAN}ROM${RESET} ${GREEN}folder${RESET}"
 

@@ -197,13 +197,14 @@ DOWNLOAD_OTA() {
 }
 
 MERGE_OTA() {
-    if [ "$#" -lt 2 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <OTA_DIR>"
+    if [ "$#" -lt 3 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <OTA_DIR> <IMG_DIR>"
         return 1
     fi
 
     local FW_DIR="$1"
     local OTA_DIR="$2"
+    local IMG_DIR="$3"
 
     mv "${FW_DIR}/${TARGET_DEVICE}/${TARGET_DEVICE}.zip" ./bin/MergeOTA/
     mv "${OTA_DIR}/OTA_${TARGET_DEVICE}.zip" ./bin/MergeOTA/
@@ -222,7 +223,7 @@ MERGE_OTA() {
 
     # Moves the files to the firmware directory and cleans up
     rmdir "${FW_DIR}/${TARGET_DEVICE}"
-    find ./out/ -mindepth 1 -maxdepth 1 -exec mv {} "${FW_DIR}" \; || return 1
+    find ./out/ -mindepth 1 -maxdepth 1 -exec mv {} "${IMG_DIR}" \; || return 1
     rmdir ./out/    
 }
 
@@ -314,15 +315,16 @@ PREPARE_PARTITIONS() {
 
 EXTRACT_FIRMWARE_IMG() {
     echo ""
-	if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
+	if [ "$#" -ne 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <IMG_DIRECTORY> <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
-	local FIRM_DIR="$1"
+    local IMG_DIR="$1"
+	local FIRM_DIR="$2"
 
-	echo -e "${YELLOW}Extracting images from $FIRM_DIR${RESET}"
-    for imgfile in "$FIRM_DIR"/*.img; do
+	echo -e "${YELLOW}Extracting images from $IMG_DIR${RESET}"
+    for imgfile in "$IMG_DIR"/*.img; do
         [ -e "$imgfile" ] || continue
 
         if [[ "$(basename "$imgfile")" == "boot.img" ]]; then
@@ -359,8 +361,6 @@ EXTRACT_FIRMWARE_IMG() {
     done
 
     wait
-    # Remove all original .img
-    rm -rf "$FIRM_DIR"/*.img
 
     # Correct owner and permissions of the extracted configs
     sudo chown -R $USER:$USER "$FIRM_DIR/config/"
