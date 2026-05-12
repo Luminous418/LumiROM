@@ -19,7 +19,7 @@ OFFICIAL_HASH=""
 export OUTPUT_FILESYSTEM="erofs"
 export LUMIROM_VERSION="8.6.2"
 export OUT_DIR="$PWD/OUT"
-export WORK_DIR="/tmp/LumiWORK"
+export WORK_DIR="$PWD/TMP/LumiWORK"
 export FIRM_DIR="$PWD/FIRMWARE"
 export DEVICES_DIR="$PWD/LumiROM/Devices"
 export APKTOOL="$PWD/bin/apktool/apktool.jar"
@@ -40,7 +40,7 @@ clear
 
 echo "--- Setting up directories ---"
 mkdir -p "$WORK_DIR"
-bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM
+bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP
 
 echo "--- Downloading Firmware and OTA ---"
 source scripts/FW.sh
@@ -124,8 +124,8 @@ source scripts/zip_creation.sh
 UPDATE_ZIP_SCRIPT "FIRMWARE"
 FLASHABLE_ZIP_CREATION
 
-rm -rf OTA/ OUT/ TMP/ WORK/
+sudo rm -rf OTA/ OUT/ TMP/ WORK/
 
-echo "LumiROM $LUMIROM_VERSION for $STOCK_DEVICE is ready, you can find it on ROM folder"
+echo -e "${GREEN}LumiROM $LUMIROM_VERSION for${RESET} $STOCK_DEVICE ${GREEN}is ready, you can find it on${RESET} ${CYAN}ROM${RESET} ${GREEN}folder${RESET}"
 
 echo "--- Process finished ---"
