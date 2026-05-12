@@ -12,10 +12,11 @@ if [ "$#" -lt 1 ]; then
 fi
 
 for DIR in "$@"; do
-    # Clean old dir
-    rm -rf "$DIR"
-    # Recreate dir
-    mkdir -p "$DIR"
-    # Show result
-    echo -e "${GREEN}Directory prepared:${RESET} $DIR"
+    # Check if directory exists
+    if [ ! -d "$DIR" ]; then
+        mkdir -p "$DIR"
+        echo -e "${GREEN}Directory created:${RESET} $DIR"
+    else
+        echo -e "${YELLOW}Directory already exists:${RESET} $DIR"
+    fi
 done

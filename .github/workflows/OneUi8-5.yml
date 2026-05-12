@@ -44,7 +44,7 @@ jobs:
 
     - name: Setup directories
       run: |
-        bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM
+        bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs
     
     - name: Set build environment
       shell: bash
@@ -88,21 +88,21 @@ jobs:
     - name: Merge OTA and FW
       run: |
         source scripts/FW.sh
-        MERGE_OTA "FIRMWARE" "OTA"
+        MERGE_OTA "FIRMWARE" "OTA" "IMGs"
 
     - name: Download vendor for ${{ github.event.inputs.STOCK_DEVICE }}
       shell: bash
       run: |
         source scripts/FW.sh
-        DOWNLOAD_VENDOR "FIRMWARE"
+        DOWNLOAD_VENDOR "IMGs"
 
 
     - name: Extract firmware
       shell: bash
       run: |
         source scripts/FW.sh
-        PREPARE_PARTITIONS "FIRMWARE"
-        EXTRACT_FIRMWARE_IMG "FIRMWARE"
+        PREPARE_PARTITIONS "IMGs"
+        EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE"
 
     - name: Apply vendor patches
       shell: bash

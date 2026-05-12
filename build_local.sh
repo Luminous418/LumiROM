@@ -1,26 +1,20 @@
 #!/bin/bash
 
+START_TIME=$(date +%s)
 # --- Variable Configuration ---
 # Edit these values according to what you need for your build
 STOCK_DEVICE="SM-A325F"
 USE_MODS="Yes"
 USE_GALAXY_AI="Yes"
 USE_UI_8_TETHERING_APEX="False"
-TARGET_DEVICE="SM-A346B"
-TARGET_DEVICE_CSC="EUX"
-TARGET_DEVICE_IMEI="351648442869815"
-TARGET_FW_VERSION="A346BXXSFEZC7/A346BOXMFEZC7/A346BXXSFEZC7/A346BXXSFEZC7"
-
-# Secrets
-LUMIROM_BUILD=""
-OFFICIAL_HASH=""
 
 # --- System Environment Variables ---
 export OUTPUT_FILESYSTEM="erofs"
 export LUMIROM_VERSION="8.6.2"
 export OUT_DIR="$PWD/OUT"
-export WORK_DIR="/tmp/LumiWORK"
+export WORK_DIR="$PWD/TMP/LumiWORK"
 export FIRM_DIR="$PWD/FIRMWARE"
+export IMGS_DIR="$PWD/IMGs"
 export DEVICES_DIR="$PWD/LumiROM/Devices"
 export APKTOOL="$PWD/bin/apktool/apktool.jar"
 export VNDKS_COLLECTION="$PWD/LumiROM/vndks"
@@ -36,27 +30,37 @@ chmod +x bin/MergeOTA/MergeAll.sh
 
 echo "--- Installing required packages ---"
 bash scripts/install_packages.sh
+clear
 
 echo "--- Setting up directories ---"
 mkdir -p "$WORK_DIR"
-bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM
-
-echo "--- Verifying enviroment ---"
-source scripts/LumiROM.sh
-export LUMIROM_BUILD OFFICIAL_HASH
-IS_OFFICIAL
+bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs
 
 echo "--- Downloading Firmware and OTA ---"
 source scripts/FW.sh
 source "$DEVICES_DIR/$STOCK_DEVICE/config"
-DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
-DOWNLOAD_OTA "OTA"
-MERGE_OTA "FIRMWARE" "OTA"
-DOWNLOAD_VENDOR "FIRMWARE"
+
+# Check if firmware images are already cached
+if CHECK_FIRMWARE_IMAGES "$IMGS_DIR" "$BUILD_PARTITIONS"; then
+    echo -e "${GREEN}Firmware cache found. Skipping download...${RESET}"
+else
+    echo -e "${YELLOW}No firmware cache found. Proceeding with download...${RESET}"
+    DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
+    DOWNLOAD_OTA "OTA"
+    MERGE_OTA "FIRMWARE" "OTA" "IMGs"
+fi
+
+# Check if vendor image is already cached
+if CHECK_VENDOR_IMAGE "$IMGS_DIR"; then
+    echo -e "${GREEN}Vendor cache found. Skipping download...${RESET}"
+else
+    echo -e "${YELLOW}No vendor cache found. Proceeding with download...${RESET}"
+    DOWNLOAD_VENDOR "IMGs"
+fi
 
 echo "--- Extracting and patching ---"
-PREPARE_PARTITIONS "FIRMWARE"
-EXTRACT_FIRMWARE_IMG "FIRMWARE"
+PREPARE_PARTITIONS "IMGs"
+EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE"
 
 source scripts/LumiROM.sh
 DISABLE_FBE "FIRMWARE"
@@ -114,6 +118,22 @@ source scripts/zip_creation.sh
 UPDATE_ZIP_SCRIPT "FIRMWARE"
 FLASHABLE_ZIP_CREATION
 
-echo "LumiROM $LUMIROM_VERSION for $STOCK_DEVICE is ready, you can find it on ROM folder"
+rm -rf ./OTA/ ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/
+
+echo -e "${GREEN}LumiROM $LUMIROM_VERSION for${RESET} $STOCK_DEVICE ${GREEN}is ready, you can find it on${RESET} ${CYAN}ROM${RESET} ${GREEN}folder${RESET}"
 
 echo "--- Process finished ---"
+
+END_TIME=$(date +%s)
+ELAPSED=$((END_TIME - START_TIME))
+HOURS=$((ELAPSED / 3600))
+MINS=$(((ELAPSED % 3600) / 60))
+SECS=$((ELAPSED % 60))
+echo
+if [ $HOURS -gt 0 ]; then
+    echo "Build completed in ${HOURS}hr ${MINS}min ${SECS}sec"
+elif [ $MINS -gt 0 ]; then
+    echo "Build completed in ${MINS}min ${SECS}sec"
+else
+    echo "Build completed in ${SECS}sec, damn that was quick"
+fi

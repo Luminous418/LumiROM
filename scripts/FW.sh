@@ -2,6 +2,76 @@
 
 source scripts/bash_colors.sh
 
+CHECK_FIRMWARE_IMAGES() {
+    if [ "$#" -lt 2 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <PARTITION_LIST>"
+        return 1
+    fi
+
+    local FIRM_DIR="$1"
+    local PARTITION_LIST="$2"
+
+    if [ ! -d "$FIRM_DIR" ]; then
+        return 1
+    fi
+
+    IFS=',' read -r -a PARTITIONS <<< "$PARTITION_LIST"
+
+    for i in "${!PARTITIONS[@]}"; do
+        PARTITIONS[$i]=$(echo "${PARTITIONS[$i]}" | xargs)
+    done
+
+    local all_exist=1
+    for partition in "${PARTITIONS[@]}"; do
+        if [ ! -f "$FIRM_DIR/${partition}.img" ]; then
+            all_exist=0
+            break
+        fi
+    done
+
+    if [ $all_exist -eq 1 ]; then
+        echo -e "${GREEN}✅ All firmware images found in cache!${RESET}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  Some firmware images are missing.${RESET}"
+        return 1
+    fi
+}
+
+CLEAR_FIRMWARE_CACHE() {
+    if [ "$#" -ne 1 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR>"
+        return 1
+    fi
+
+    local FIRM_DIR="$1"
+    echo -e "${YELLOW}Clearing firmware cache...${RESET}"
+    rm -rf "$FIRM_DIR"
+    mkdir -p "$FIRM_DIR"
+    echo -e "${GREEN}Cache cleared.${RESET}"
+}
+
+CHECK_VENDOR_IMAGE() {
+    if [ "$#" -lt 1 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR>"
+        return 1
+    fi
+
+    local FIRM_DIR="$1"
+
+    if [ ! -d "$FIRM_DIR" ]; then
+        return 1
+    fi
+
+    if [ -f "$FIRM_DIR/vendor.img" ]; then
+        echo -e "${GREEN}✅ Vendor image found in cache!${RESET}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  Vendor image not found in cache.${RESET}"
+        return 1
+    fi
+}
+
 DOWNLOAD_FIRMWARE() {
     if [ "$#" -lt 4 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY> [VERSION]"
@@ -127,13 +197,14 @@ DOWNLOAD_OTA() {
 }
 
 MERGE_OTA() {
-    if [ "$#" -lt 2 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <OTA_DIR>"
+    if [ "$#" -lt 3 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <OTA_DIR> <IMG_DIR>"
         return 1
     fi
 
     local FW_DIR="$1"
     local OTA_DIR="$2"
+    local IMG_DIR="$3"
 
     mv "${FW_DIR}/${TARGET_DEVICE}/${TARGET_DEVICE}.zip" ./bin/MergeOTA/
     mv "${OTA_DIR}/OTA_${TARGET_DEVICE}.zip" ./bin/MergeOTA/
@@ -152,7 +223,7 @@ MERGE_OTA() {
 
     # Moves the files to the firmware directory and cleans up
     rmdir "${FW_DIR}/${TARGET_DEVICE}"
-    find ./out/ -mindepth 1 -maxdepth 1 -exec mv {} "${FW_DIR}" \; || return 1
+    find ./out/ -mindepth 1 -maxdepth 1 -exec mv {} "${IMG_DIR}" \; || return 1
     rmdir ./out/    
 }
 
@@ -244,15 +315,16 @@ PREPARE_PARTITIONS() {
 
 EXTRACT_FIRMWARE_IMG() {
     echo ""
-	if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
+	if [ "$#" -ne 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <IMG_DIRECTORY> <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
-	local FIRM_DIR="$1"
+    local IMG_DIR="$1"
+	local FIRM_DIR="$2"
 
-	echo -e "${YELLOW}Extracting images from $FIRM_DIR${RESET}"
-    for imgfile in "$FIRM_DIR"/*.img; do
+	echo -e "${YELLOW}Extracting images from $IMG_DIR${RESET}"
+    for imgfile in "$IMG_DIR"/*.img; do
         [ -e "$imgfile" ] || continue
 
         if [[ "$(basename "$imgfile")" == "boot.img" ]]; then
@@ -272,6 +344,7 @@ EXTRACT_FIRMWARE_IMG() {
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
                     echo -e "$imgfile Detected ${BLUE}ext4${RESET}. Size: $IMG_SIZE bytes."
                     echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
+                    echo -e "${YELLOW}You will need sudo for extract ext4 images.${RESET}"
                     sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR" > /dev/null 2>&1
                     ;;
                 EROFS)
@@ -289,8 +362,6 @@ EXTRACT_FIRMWARE_IMG() {
     done
 
     wait
-    # Remove all original .img
-    rm -rf "$FIRM_DIR"/*.img
 
     # Correct owner and permissions of the extracted configs
     sudo chown -R $USER:$USER "$FIRM_DIR/config/"

@@ -101,10 +101,10 @@ FLASHABLE_ZIP_CREATION() {
             echo -e "${RED}There is no boot.img for${RESET} $DEVICE"
         fi
 
-        echo -e "${GREEN}Copying compressed DAT files to template...${RESET}"
-        cp TMP/*.new.dat.br "$TEMPLATE_DIR"/
-        cp TMP/*.patch.dat "$TEMPLATE_DIR"/
-        cp TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
+        echo -e "${GREEN}Moving compressed DAT files to template...${RESET}"
+        mv TMP/*.new.dat.br "$TEMPLATE_DIR"/
+        mv TMP/*.patch.dat "$TEMPLATE_DIR"/
+        mv TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
 
         echo -e "${GREEN}Creating ZIP package...${RESET}"
         ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
@@ -123,4 +123,6 @@ FLASHABLE_ZIP_CREATION() {
 
         echo -e "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
         echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
+
+        cd ..
 }
