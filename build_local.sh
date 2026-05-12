@@ -36,6 +36,7 @@ chmod +x bin/MergeOTA/MergeAll.sh
 
 echo "--- Installing required packages ---"
 bash scripts/install_packages.sh
+clear
 
 echo "--- Setting up directories ---"
 mkdir -p "$WORK_DIR"
