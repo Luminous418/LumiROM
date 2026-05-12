@@ -344,6 +344,7 @@ EXTRACT_FIRMWARE_IMG() {
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
                     echo -e "$imgfile Detected ${BLUE}ext4${RESET}. Size: $IMG_SIZE bytes."
                     echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
+                    echo -e "${YELLOW}You will need sudo for extract ext4 images.${RESET}"
                     sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR" > /dev/null 2>&1
                     ;;
                 EROFS)
