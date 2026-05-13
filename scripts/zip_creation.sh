@@ -100,19 +100,19 @@ FLASHABLE_ZIP_CREATION() {
         ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
         [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
 
-        # ZIP the rom with mixed compression levels (Multithreaded 7z)
         cd "$TEMPLATE_DIR"
-        
+
+        # ZIP the rom with mixed compression levels (Multithreaded 7z)
         echo -e "${YELLOW}Adding large/compressed files (Store)...${RESET}"
         7z a -mx=0 -mmt=4 "$ZIP_FILE" ./*.new.dat.br ./*.patch.dat 2>/dev/null || true
         
         echo -e "${YELLOW}Adding scripts and compressible data (Compress)...${RESET}"
         7z a -mx=6 -mmt=4 "$ZIP_FILE" ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list 2>/dev/null || true
 
-        mv "$ZIP_FILE" "../ROM/"
+        mkdir -p "../ROM/${BUILD_DATE}-${TIMESTAMP}/"
+        mv "$ZIP_FILE" "../ROM/${BUILD_DATE}-${TIMESTAMP}/"
 
         echo -e "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
-        echo "ZIP_NAME=$ZIP_FILE" >> $GITHUB_ENV
 
         cd ..
 }
