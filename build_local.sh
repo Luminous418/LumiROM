@@ -44,8 +44,8 @@ mkdir -p "$WORK_DIR"
 bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Downloading Firmware and OTA"
-source scripts/FW.sh 2>&1 | tee -a "$LOG_FILE"
-source "$DEVICES_DIR/$STOCK_DEVICE/config" 2>&1 | tee -a "$LOG_FILE"
+source scripts/FW.sh
+source "$DEVICES_DIR/$STOCK_DEVICE/config"
 
 # Check if firmware images are already cached
 log_message "Checking firmware cache..."
@@ -72,7 +72,8 @@ log_section "Extracting and patching"
 PREPARE_PARTITIONS "IMGs" 2>&1 | tee -a "$LOG_FILE"
 EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 
-source scripts/LumiROM.sh 2>&1 | tee -a "$LOG_FILE"
+source scripts/LumiROM.sh
+log_message "Loading LumiROM functions..."
 DISABLE_FBE "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 DISABLE_FDE "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 DELETE_ICCC "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
@@ -84,13 +85,13 @@ APPLY_PROP_FEATURES "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 
 if [ "$USE_MODS" = "Yes" ]; then
     log_section "Adding Mods"
-    source scripts/Mods.sh 2>&1 | tee -a "$LOG_FILE"
+    source scripts/Mods.sh
     ADD_MODS "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 if [ "$USE_GALAXY_AI" = "Yes" ]; then
     log_section "Adding Galaxy AI"
-    source scripts/Galaxy_AI.sh 2>&1 | tee -a "$LOG_FILE"
+    source scripts/Galaxy_AI.sh
     GALAXY_AI "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 fi
 
@@ -104,7 +105,7 @@ DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR"
 wait
 
 log_section "Applying Knox and Framework patches"
-source scripts/Knox_script.sh 2>&1 | tee -a "$LOG_FILE"
+source scripts/Knox_script.sh
 PATCH_SSRM "$WORK_DIR/ssrm" 2>&1 | tee -a "$LOG_FILE"
 PATCH_KNOX_GUARD "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
 PATCH_FLAG_SECURE "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
@@ -124,7 +125,7 @@ BUILD_IMG "FIRMWARE" "$OUTPUT_FILESYSTEM" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
 IMG_TO_BROTLI "$OUT_DIR" "TMP" 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Creating flashable ZIP"
-source scripts/zip_creation.sh 2>&1 | tee -a "$LOG_FILE"
+source scripts/zip_creation.sh
 UPDATE_ZIP_SCRIPT "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
 
