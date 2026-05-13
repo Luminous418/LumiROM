@@ -25,7 +25,7 @@ This custom ROM is created to provide a totally new experience to Low end Mediat
 
 ## What it does?
 
-It downloads the firmware from Samsung servers using [samloader](https://github.com/samloader/samloader), or custom firmware downloader, merges OTA patches, extracts the partition images and then applies all the features implemented in the repository — Galaxy AI, heavy debloat, Knox patches, performance tweaks and QoL improvements — so the device can be used again with a fresh and modern experience.
+It downloads the firmware from Samsung servers using [samloader](https://github.com/samloader/samloader), or custom firmware downloader, merges OTA patches, extracts the partition images and then applies all the features implemented in the repository - Galaxy AI, heavy debloat, Knox patches, performance tweaks and QoL improvements - so the device can be used again with a fresh and modern experience.
 
 The whole process can run either on **GitHub Actions** or **locally** on your machine (requires Ubuntu/Debian distro or WSL).
 
@@ -55,7 +55,7 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 - Better battery efficiency.
 - Enhanced CPU responsiveness and processing.
 - HighEnd launcher animations.
-- EROFS filesystem — compressed, read-only, saves storage space.
+- EROFS filesystem - compressed, read-only, saves storage space.
 - Disabled file-based encryption (FBE) and full-disk encryption (FDE).
 - VNDK and SELinux fixes applied per-device.
 - Init tweaks for extra performance.
@@ -92,7 +92,7 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 - Clock live icon on launcher.
 
 ### Knox Patches (built-in, no root needed)
-Knox functionality is patched directly via smali modifications — no modules or root required:
+Knox functionality is patched directly via smali modifications - no modules or root required:
 - **Knox Guard** - disabled to prevent carrier locking.
 - **Flag Secure** - bypassed to allow screenshots everywhere.
 - **Secure Folder** - patched to work without Knox integrity checks.
