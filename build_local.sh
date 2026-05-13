@@ -1,6 +1,7 @@
 #!/bin/bash
 
 START_TIME=$(date +%s)
+
 # --- Variable Configuration ---
 # Edit these values according to what you need for your build
 STOCK_DEVICE="SM-A325F"
@@ -20,121 +21,118 @@ export APKTOOL="$PWD/bin/apktool/apktool.jar"
 export VNDKS_COLLECTION="$PWD/LumiROM/vndks"
 export BUILD_PARTITIONS="product,vendor,odm,system_ext,system"
 
+# --- Load Logging System ---
+source scripts/logging.sh
+initialize_logs "$STOCK_DEVICE" "$LUMIROM_VERSION" "$OUTPUT_FILESYSTEM" "$USE_MODS" "$USE_GALAXY_AI"
+
 # --- Start of Process ---
 
 # Give execution permissions
+log_section "Setting up permissions"
 chmod +x scripts/*.sh
 chmod +x bin/erofs-utils/extract.erofs
 chmod +x bin/erofs-utils/mkfs.erofs
 chmod +x bin/MergeOTA/MergeAll.sh
+log_message "Permissions set successfully"
 
-echo "--- Installing required packages ---"
-bash scripts/install_packages.sh
+log_section "Installing required packages"
+bash scripts/install_packages.sh 2>&1 | tee -a "$LOG_FILE"
 clear
 
-echo "--- Setting up directories ---"
+log_section "Setting up directories"
 mkdir -p "$WORK_DIR"
-bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs
+bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
 
-echo "--- Downloading Firmware and OTA ---"
-source scripts/FW.sh
-source "$DEVICES_DIR/$STOCK_DEVICE/config"
+log_section "Downloading Firmware and OTA"
+source scripts/FW.sh 2>&1 | tee -a "$LOG_FILE"
+source "$DEVICES_DIR/$STOCK_DEVICE/config" 2>&1 | tee -a "$LOG_FILE"
 
 # Check if firmware images are already cached
+log_message "Checking firmware cache..."
 if CHECK_FIRMWARE_IMAGES "$IMGS_DIR" "$BUILD_PARTITIONS"; then
-    echo -e "${GREEN}Firmware cache found. Skipping download...${RESET}"
+    log_message "✓ Firmware cache found. Skipping download..."
 else
-    echo -e "${YELLOW}No firmware cache found. Proceeding with download...${RESET}"
-    DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
-    DOWNLOAD_OTA "OTA"
-    MERGE_OTA "FIRMWARE" "OTA" "IMGs"
+    log_message "✗ No firmware cache found. Proceeding with download..."
+    DOWNLOAD_FIRMWARE_LUMI "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+    DOWNLOAD_OTA "OTA" 2>&1 | tee -a "$LOG_FILE"
+    MERGE_OTA "FIRMWARE" "OTA" "IMGs" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 # Check if vendor image is already cached
+log_message "Checking vendor cache..."
 if CHECK_VENDOR_IMAGE "$IMGS_DIR"; then
-    echo -e "${GREEN}Vendor cache found. Skipping download...${RESET}"
+    log_message "✓ Vendor cache found. Skipping download..."
     sleep 1
 else
-    echo -e "${YELLOW}No vendor cache found. Proceeding with download...${RESET}"
-    DOWNLOAD_VENDOR "IMGs"
+    log_message "✗ No vendor cache found. Proceeding with download..."
+    DOWNLOAD_VENDOR "IMGs" 2>&1 | tee -a "$LOG_FILE"
 fi
 
-echo "--- Extracting and patching ---"
-PREPARE_PARTITIONS "IMGs"
-EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE"
+log_section "Extracting and patching"
+PREPARE_PARTITIONS "IMGs" 2>&1 | tee -a "$LOG_FILE"
+EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 
-source scripts/LumiROM.sh
-DISABLE_FBE "FIRMWARE"
-DISABLE_FDE "FIRMWARE"
-DELETE_ICCC "FIRMWARE"
-DEBLOAT_VENDOR "FIRMWARE"
-PATCH_FSTAB_EROFS "FIRMWARE"
-APPLY_STOCK_CONFIG "FIRMWARE"
-DEBLOAT "FIRMWARE"
-APPLY_PROP_FEATURES "FIRMWARE"
+source scripts/LumiROM.sh 2>&1 | tee -a "$LOG_FILE"
+DISABLE_FBE "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+DISABLE_FDE "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+DELETE_ICCC "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+DEBLOAT_VENDOR "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+PATCH_FSTAB_EROFS "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+APPLY_STOCK_CONFIG "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+DEBLOAT "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+APPLY_PROP_FEATURES "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 
 if [ "$USE_MODS" = "Yes" ]; then
-    echo "--- Adding Mods ---"
-    source scripts/Mods.sh
-    ADD_MODS "FIRMWARE"
+    log_section "Adding Mods"
+    source scripts/Mods.sh 2>&1 | tee -a "$LOG_FILE"
+    ADD_MODS "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 if [ "$USE_GALAXY_AI" = "Yes" ]; then
-    echo "--- Adding Galaxy AI ---"
-    source scripts/Galaxy_AI.sh
-    GALAXY_AI "FIRMWARE"
+    log_section "Adding Galaxy AI"
+    source scripts/Galaxy_AI.sh 2>&1 | tee -a "$LOG_FILE"
+    GALAXY_AI "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 fi
 
-echo "--- Appending Display ID ---"
-APPENDING_DISPLAY_ID "FIRMWARE"
-INSTALL_FRAMEWORK "FIRMWARE/system/system/framework/framework-res.apk"
+log_section "Appending Display ID"
+APPENDING_DISPLAY_ID "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+INSTALL_FRAMEWORK "FIRMWARE/system/system/framework/framework-res.apk" 2>&1 | tee -a "$LOG_FILE"
 
-echo "--- Patching Knox and Framework ---"
-DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
-DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+log_section "Patching Knox and Framework"
+DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" 2>&1 | tee -a "$LOG_FILE" &
+DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" 2>&1 | tee -a "$LOG_FILE" &
 wait
 
-echo "--- Applying Knox and Framework patches ---"
-source scripts/Knox_script.sh
-PATCH_SSRM "$WORK_DIR/ssrm"
-PATCH_KNOX_GUARD "$WORK_DIR/services"
-PATCH_FLAG_SECURE "$WORK_DIR/services"
-PATCH_SECURE_FOLDER "$WORK_DIR/services"
-PATCH_PRIVATE_SHARE "$WORK_DIR/services"
-DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
+log_section "Applying Knox and Framework patches"
+source scripts/Knox_script.sh 2>&1 | tee -a "$LOG_FILE"
+PATCH_SSRM "$WORK_DIR/ssrm" 2>&1 | tee -a "$LOG_FILE"
+PATCH_KNOX_GUARD "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
+PATCH_FLAG_SECURE "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
+PATCH_SECURE_FOLDER "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
+PATCH_PRIVATE_SHARE "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
+DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
 
-echo "--- Recompiling Knox and Framework ---"
-RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" "FIRMWARE/system/system/framework" "$WORK_DIR" &
-RECOMPILE "$APKTOOL" "$WORK_DIR/services" "FIRMWARE/system/system/framework" "$WORK_DIR" &
+log_section "Recompiling Knox and Framework"
+RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" "FIRMWARE/system/system/framework" "$WORK_DIR" 2>&1 | tee -a "$LOG_FILE" &
+RECOMPILE "$APKTOOL" "$WORK_DIR/services" "FIRMWARE/system/system/framework" "$WORK_DIR" 2>&1 | tee -a "$LOG_FILE" &
 wait
-cp -fv "$WORK_DIR"/*.jar "FIRMWARE/system/system/framework/"
+cp -fv "$WORK_DIR"/*.jar "FIRMWARE/system/system/framework/" 2>&1 | tee -a "$LOG_FILE"
 
-echo "--- Building ROM ---"
-source scripts/LumiROM.sh
-BUILD_IMG "FIRMWARE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
-IMG_TO_BROTLI "$OUT_DIR" "TMP"
+log_section "Building ROM"
+source scripts/LumiROM.sh 2>&1 | tee -a "$LOG_FILE"
+BUILD_IMG "FIRMWARE" "$OUTPUT_FILESYSTEM" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
+IMG_TO_BROTLI "$OUT_DIR" "TMP" 2>&1 | tee -a "$LOG_FILE"
 
-echo "--- Creating flashable ZIP ---"
-source scripts/zip_creation.sh
-UPDATE_ZIP_SCRIPT "FIRMWARE"
-FLASHABLE_ZIP_CREATION
+log_section "Creating flashable ZIP"
+source scripts/zip_creation.sh 2>&1 | tee -a "$LOG_FILE"
+UPDATE_ZIP_SCRIPT "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
 
-rm -rf ./OTA/ ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/
+log_message "Cleaning up temporary directories..."
+rm -rf ./OTA/ ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/ 2>&1 | tee -a "$LOG_FILE"
 
-echo -e "${GREEN}LumiROM $LUMIROM_VERSION for${RESET} $STOCK_DEVICE ${GREEN}is ready, you can find it on${RESET} ${CYAN}ROM${RESET} ${GREEN}folder${RESET}"
+log_message "✓ LumiROM $LUMIROM_VERSION for $STOCK_DEVICE is ready!"
+log_message "✓ You can find it in the ROM folder"
 
-echo "--- Process finished ---"
-
-END_TIME=$(date +%s)
-ELAPSED=$((END_TIME - START_TIME))
-HOURS=$((ELAPSED / 3600))
-MINS=$(((ELAPSED % 3600) / 60))
-SECS=$((ELAPSED % 60))
-echo
-if [ $HOURS -gt 0 ]; then
-    echo "Build completed in ${HOURS}hr ${MINS}min ${SECS}sec"
-elif [ $MINS -gt 0 ]; then
-    echo "Build completed in ${MINS}min ${SECS}sec"
-else
-    echo "Build completed in ${SECS}sec, damn that was quick"
-fi
+# Generate build summary and finalize logs
+finalize_logs "$STOCK_DEVICE" "$LUMIROM_VERSION" "$OUTPUT_FILESYSTEM" "$USE_MODS" "$USE_GALAXY_AI" "$START_TIME"
