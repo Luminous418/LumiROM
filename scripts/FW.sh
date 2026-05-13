@@ -246,7 +246,6 @@ DOWNLOAD_VENDOR() {
     wait
     find "$DOWN_DIR" -name "*.aria2" -exec rm -f {} +
 }
-}
 
 EXTRACT_FIRMWARE() {
     if [ "$#" -ne 1 ]; then
