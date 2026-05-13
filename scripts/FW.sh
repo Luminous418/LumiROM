@@ -203,8 +203,10 @@ DOWNLOAD_OTA() {
     [ -n "$LOG_FILE" ] && log_message "TARGET_DEVICE at OTA download: $TARGET_DEVICE"
     
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
+        export TARGET_DEVICE="SM-A346B"
         aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" 2>&1 | tee -a "$LOG_FILE" || return 1
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
+        export TARGET_DEVICE="SM-A245F"
         aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A245F_BOMB.zip?download=true" 2>&1 | tee -a "$LOG_FILE" || return 1
     fi
     # Cleanup any leftover .aria2 control files after everything finishes
