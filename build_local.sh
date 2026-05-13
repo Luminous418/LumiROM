@@ -54,7 +54,11 @@ if CHECK_FIRMWARE_IMAGES "$IMGS_DIR" "$BUILD_PARTITIONS"; then
 else
     log_message "✗ No firmware cache found. Proceeding with download..."
     DOWNLOAD_FIRMWARE_LUMI "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+    log_message "After download - TARGET_DEVICE is: $TARGET_DEVICE"
+    
     DOWNLOAD_OTA "OTA" 2>&1 | tee -a "$LOG_FILE"
+    log_message "After OTA download - About to merge OTA..."
+    
     MERGE_OTA "FIRMWARE" "OTA" "IMGs" 2>&1 | tee -a "$LOG_FILE"
 fi
 

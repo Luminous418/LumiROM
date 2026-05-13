@@ -2,6 +2,11 @@
 
 source scripts/bash_colors.sh
 
+# Load logging functions if available
+if [ -f "scripts/logging.sh" ]; then
+    source scripts/logging.sh
+fi
+
 CHECK_FIRMWARE_IMAGES() {
     if [ "$#" -lt 2 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <PARTITION_LIST>"
@@ -149,12 +154,15 @@ DOWNLOAD_FIRMWARE() {
 }
 
 DOWNLOAD_FIRMWARE_LUMI() {
-        if [ "$#" -lt 1 ]; then
+    if [ "$#" -lt 1 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <DOWNLOAD_DIRECTORY>"
         return 1
     fi
 
     local DOWN_DIR="${1}"
+    
+    [ -n "$LOG_FILE" ] && log_message "Starting firmware download for $STOCK_DEVICE..."
+    
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
@@ -162,17 +170,20 @@ DOWNLOAD_FIRMWARE_LUMI() {
         echo "TARGET_DEVICE=SM-A346B" >> $GITHUB_ENV
         export TARGET_DEVICE="SM-A346B"
         echo -e "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
-        aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A346B/SM-A346B.zip?download=true" || return 1
+        [ -n "$LOG_FILE" ] && log_message "Target device: $TARGET_DEVICE - Downloading..."
+        aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A346B/SM-A346B.zip?download=true" 2>&1 | tee -a "$LOG_FILE" || return 1
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
         echo "TARGET_DEVICE=SM-A245F" >> $GITHUB_ENV
         export TARGET_DEVICE="SM-A245F"
         echo -e "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
-        aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" || return 1
+        [ -n "$LOG_FILE" ] && log_message "Target device: $TARGET_DEVICE - Downloading..."
+        aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" 2>&1 | tee -a "$LOG_FILE" || return 1
     fi
 
     # Cleanup any leftover .aria2 control files after everything finishes
     wait
     find "${DOWN_DIR}/${TARGET_DEVICE}" -name "*.aria2" -exec rm -f {} +
+    [ -n "$LOG_FILE" ] && log_message "✓ Firmware download completed. TARGET_DEVICE=$TARGET_DEVICE"
 }
 
 DOWNLOAD_OTA() {
@@ -182,18 +193,24 @@ DOWNLOAD_OTA() {
     fi
 
     local DOWN_DIR="${1}"
+    
+    [ -n "$LOG_FILE" ] && log_message "Starting OTA download for $TARGET_DEVICE..."
+    
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
     echo -e "${YELLOW}Downloading OTA for${RESET} ${TARGET_DEVICE}"
+    [ -n "$LOG_FILE" ] && log_message "TARGET_DEVICE at OTA download: $TARGET_DEVICE"
+    
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" 2>&1 | tee -a "$LOG_FILE" || return 1
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A245F_BOMB.zip?download=true" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A245F_BOMB.zip?download=true" 2>&1 | tee -a "$LOG_FILE" || return 1
     fi
     # Cleanup any leftover .aria2 control files after everything finishes
     wait
     find "$DOWN_DIR" -name "*.aria2" -exec rm -f {} +
+    [ -n "$LOG_FILE" ] && log_message "✓ OTA download completed"
 }
 
 MERGE_OTA() {
@@ -206,10 +223,15 @@ MERGE_OTA() {
     local OTA_DIR="$2"
     local IMG_DIR="$3"
 
-    mv "${FW_DIR}/${TARGET_DEVICE}/${TARGET_DEVICE}.zip" ./bin/MergeOTA/
-    mv "${OTA_DIR}/OTA_${TARGET_DEVICE}.zip" ./bin/MergeOTA/
+    [ -n "$LOG_FILE" ] && log_message "Starting OTA merge process..."
+    [ -n "$LOG_FILE" ] && log_message "TARGET_DEVICE value: $TARGET_DEVICE"
+    [ -n "$LOG_FILE" ] && log_message "FW_DIR: $FW_DIR, OTA_DIR: $OTA_DIR, IMG_DIR: $IMG_DIR"
+
+    mv "${FW_DIR}/${TARGET_DEVICE}/${TARGET_DEVICE}.zip" ./bin/MergeOTA/ 2>&1 | tee -a "$LOG_FILE"
+    mv "${OTA_DIR}/OTA_${TARGET_DEVICE}.zip" ./bin/MergeOTA/ 2>&1 | tee -a "$LOG_FILE"
     
-    ./bin/MergeOTA/MergeAll.sh "./bin/MergeOTA/${TARGET_DEVICE}.zip" "./bin/MergeOTA/OTA_${TARGET_DEVICE}.zip"
+    [ -n "$LOG_FILE" ] && log_message "Running MergeAll.sh..."
+    ./bin/MergeOTA/MergeAll.sh "./bin/MergeOTA/${TARGET_DEVICE}.zip" "./bin/MergeOTA/OTA_${TARGET_DEVICE}.zip" 2>&1 | tee -a "$LOG_FILE"
 
     # Removes the downloaded firmware and update files
     rm -rf "./bin/MergeOTA/${TARGET_DEVICE}.zip"
@@ -224,7 +246,9 @@ MERGE_OTA() {
     # Moves the files to the firmware directory and cleans up
     rmdir "${FW_DIR}/${TARGET_DEVICE}"
     find ./out/ -mindepth 1 -maxdepth 1 -exec mv {} "${IMG_DIR}" \; || return 1
-    rmdir ./out/    
+    rmdir ./out/
+    
+    [ -n "$LOG_FILE" ] && log_message "✓ OTA merge completed successfully"
 }
 
 DOWNLOAD_VENDOR() {
@@ -236,11 +260,13 @@ DOWNLOAD_VENDOR() {
     local DOWN_DIR="${1}"
 
     echo -e "${YELLOW}Downloading vendor for${RESET} ${STOCK_DEVICE}"
-    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
+    [ -n "$LOG_FILE" ] && log_message "Starting vendor download for $STOCK_DEVICE..."
+    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" 2>&1 | tee -a "$LOG_FILE" &
     
     # Cleanup any leftover .aria2 control files after everything finishes
     wait
     find "$DOWN_DIR" -name "*.aria2" -exec rm -f {} +
+    [ -n "$LOG_FILE" ] && log_message "✓ Vendor download completed"
 }
 
 EXTRACT_FIRMWARE() {
