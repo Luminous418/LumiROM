@@ -64,21 +64,21 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 - Custom wallpapers included.
 
 ### Galaxy AI ✨
-- **Now Brief** — smart notification summaries.
-- **AI Wallpaper** — time & weather reactive wallpapers.
-- **Photo Editor AI Full** — full AI photo editing suite.
-- **Object Eraser** — remove unwanted objects from photos.
-- **Shadow Eraser** — remove shadows from photos.
-- **Reflection Eraser** — remove reflections from photos.
-- **Image Clipper** — smart lasso and cutout tool.
-- **Spot Fixer** — fix imperfections in photos.
-- **Style Transfer** — apply artistic styles to images.
-- **AI Revital** — AI-powered image enhancement.
-- **Smart Lasso** — intelligent selection tool.
-- **Brief Notifications** — AI-summarized notifications.
-- **Media Context Analyzer** — intelligent media classification.
-- **Target Tracking** — object tracking in video.
-- **Offline Language Model** — on-device AI processing.
+- **Now Brief** - smart notification summaries.
+- **AI Wallpaper** - time & weather reactive wallpapers.
+- **Photo Editor AI Full** - full AI photo editing suite.
+- **Object Eraser** - remove unwanted objects from photos.
+- **Shadow Eraser** - remove shadows from photos.
+- **Reflection Eraser** - remove reflections from photos.
+- **Image Clipper** - smart lasso and cutout tool.
+- **Spot Fixer** - fix imperfections in photos.
+- **Style Transfer** - apply artistic styles to images.
+- **AI Revital** - AI-powered image enhancement.
+- **Smart Lasso** - intelligent selection tool.
+- **Brief Notifications** - AI-summarized notifications.
+- **Media Context Analyzer** - intelligent media classification.
+- **Target Tracking** - object tracking in video.
+- **Offline Language Model** - on-device AI processing.
 
 ### Enhanced Functionality
 - Screenshot anywhere (enabled globally).
@@ -93,14 +93,14 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 
 ### Knox Patches (built-in, no root needed)
 Knox functionality is patched directly via smali modifications — no modules or root required:
-- **Knox Guard** — disabled to prevent carrier locking.
-- **Flag Secure** — bypassed to allow screenshots everywhere.
-- **Secure Folder** — patched to work without Knox integrity checks.
-- **Private Share** — patched for integrity verification bypass.
-- **Signature Verification** — minimum scheme lowered for sideloading.
-- **SSRM** — patched to match stock device thermal policies.
-- **ICCC** — removed to prevent soft-bootloops.
-- **KnoxGuard app** — removed from system.
+- **Knox Guard** - disabled to prevent carrier locking.
+- **Flag Secure** - bypassed to allow screenshots everywhere.
+- **Secure Folder** - patched to work without Knox integrity checks.
+- **Private Share** - patched for integrity verification bypass.
+- **Signature Verification** - minimum scheme lowered for sideloading.
+- **SSRM** - patched to match stock device thermal policies.
+- **ICCC** - removed to prevent soft-bootloops.
+- **KnoxGuard app** - removed from system.
 
 ### Supported apps with Knox Patches
 -  [Auto Blocker](https://www.samsung.com/uk/support/mobile-devices/protect-your-galaxy-device-with-the-new-auto-blocker-feature/)
@@ -149,7 +149,9 @@ Only downside is:
 But all of the devices I support got EROFS kernel so there isn't a problem
 
 #### 7. Upload
-The ROM will be auto uploaded to GoFile servers, so when the workflow is done, check on the logs the link for it, in "Sending ROM to GoFile" part.
+The ROM will be auto uploaded to Hugging Face servers, but you need to create an account and generate a token to be able to upload the file. You can do it by going to your Hugging Face account, then to settings and then to Access Tokens. Create a new token with write permissions and copy it. After that you need to create a bucket to get files uploaded.<br>
+
+Then, go back to the repository and go to repository settings and add the token as a secret with the name HF_TOKEN.
 
 ### Method 2: Local Build
 
