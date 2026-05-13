@@ -53,6 +53,7 @@ fi
 # Check if vendor image is already cached
 if CHECK_VENDOR_IMAGE "$IMGS_DIR"; then
     echo -e "${GREEN}Vendor cache found. Skipping download...${RESET}"
+    sleep 1
 else
     echo -e "${YELLOW}No vendor cache found. Proceeding with download...${RESET}"
     DOWNLOAD_VENDOR "IMGs"
