@@ -695,7 +695,7 @@ APPLY_STOCK_CONFIG() {
 
     # Fix unsupported BPF error for kernels lower than 5.10.
     if [ "$USE_UI_8_TETHERING_APEX" = "True" ]; then
-        cp -rfa "$(pwd)/LumiROM/Mods/device_specific/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
+        cp -rfa "$(pwd)/LumiROM/Mods/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
     fi
 
 	# Replace Stock Files.
