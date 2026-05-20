@@ -183,11 +183,10 @@ bash scripts/cache_manager.sh clear     # Clear cached images
 ```
 
 > [!IMPORTANT]
-> - If you're building locally, script will log all actions that is happening, if something fails, report the error to me via GitHub issues or on my Telegram channel.
+> If you're building locally, script will log all actions that is happening, if something fails, report the error to me via GitHub issues or on my Telegram channel by uploading the LOGS folder.
 
 > [!NOTE]
 > If you dont wanna mess with the repo or dont know how to do any of this things, I will continue releasing updates of my rom on my Telegram channel, that you can join clicking on the link on the repository bio.
-
 > Also I accept suggestions aswell as im still learning from it, so if you see a bug, or wanna make the code a bit more easy to understand, you can always create a pull request!
 
 ## Licensing
