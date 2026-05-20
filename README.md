@@ -49,7 +49,7 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 
 ### System Optimization
 - Heavy debloated system (150+ bloatware apps removed).
-- Deodexed ROM for cleaner and smaller system partitions.
+- Deodexed ROM for cleaner and smaller partitions.
 - Improved performance and smoother UI experience.
 - Optimized background processes.
 - Better battery efficiency.
@@ -59,37 +59,26 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 - Disabled file-based encryption (FBE) and full-disk encryption (FDE).
 - VNDK and SELinux fixes applied per-device.
 - Init tweaks for extra performance.
-- Vulkan fix.
 - VoLTE fix.
 - Custom wallpapers included.
 
 ### Galaxy AI ✨
-- **Now Brief** - smart notification summaries.
-- **AI Wallpaper** - time & weather reactive wallpapers.
-- **Photo Editor AI Full** - full AI photo editing suite.
-- **Object Eraser** - remove unwanted objects from photos.
-- **Shadow Eraser** - remove shadows from photos.
-- **Reflection Eraser** - remove reflections from photos.
-- **Image Clipper** - smart lasso and cutout tool.
-- **Spot Fixer** - fix imperfections in photos.
-- **Style Transfer** - apply artistic styles to images.
-- **AI Revital** - AI-powered image enhancement.
-- **Smart Lasso** - intelligent selection tool.
-- **Brief Notifications** - AI-summarized notifications.
-- **Media Context Analyzer** - intelligent media classification.
-- **Target Tracking** - object tracking in video.
-- **Offline Language Model** - on-device AI processing.
+- **Call assist** - change caller voice, make real time translated calls.
+- **Writing assist** - tools for composing, translating the text, summarize long texts and more.
+- **Note assist** - automatic text organization and summarization.
+- **Transcript assist** - AI-powered voice transcriptions.
+- **Browsing assist** - summarized web browsing.
+- **Photo assist** - AI photo editing and object removal.
+- **Weather wallpaper** - wallpapers that change based on time and weather conditions.
+- **Now brief** - smart notification summaries.
+- **Now nudge** - intelligent reminders and prompts.
+- **Health assist** - AI-powered health assistance.
 
 ### Enhanced Functionality
 - Screenshot anywhere (enabled globally).
 - More floating features enabled.
-- Edge features fully working.
 - Screen recorder support.
-- Voice recorder with normal, interview and voice memo modes.
-- Double tap to wake.
-- Function key menu support.
 - Bluetooth recording support.
-- Clock live icon on launcher.
 
 ### Knox Patches (built-in, no root needed)
 Knox functionality is patched directly via smali modifications - no modules or root required:
@@ -98,7 +87,7 @@ Knox functionality is patched directly via smali modifications - no modules or r
 - **Secure Folder** - patched to work without Knox integrity checks.
 - **Private Share** - patched for integrity verification bypass.
 - **Signature Verification** - minimum scheme lowered for sideloading.
-- **SSRM** - patched to match stock device thermal policies.
+- **SSRM** - patched to match stock device policies.
 - **ICCC** - removed to prevent soft-bootloops.
 - **KnoxGuard app** - removed from system.
 
@@ -131,27 +120,32 @@ Open your forked repository.
 #### 3. Set Your Device Model:
 Update your device model in the STOCK_DEVICE_MODEL option.
 - If your model is available in /LumiROM/Devices folder of this repository, the tool will work for your device.
-- If your model is not present, it will not work
+- If your model is not present, it will not work.
+
+> I recommend for forks, to use the Specific Device workflow instead of the All Devices workflow if you building it via GitHub Actions.
 
 #### 4. Kernel BPF Version Option:
 Set this option to True if your kernel BPF version is 5.4 (lower than 5.10).
 - Otherwise, set it to False.
 
-#### 5. The Output Filesystem:
+#### 5. Output Filesystem:
 My tool can only build images in erofs because:
   - It is recommended if your device partition size is small.
   - Saves storage space.
   - Can add more things as it gets compressed
 
-Only downside is:
-  - Your kernel must support EROFS.
+> Only downside is: Your kernel must support EROFS.
 
 But all of the devices I support got EROFS kernel so there isn't a problem
 
-#### 7. Upload
-The ROM will be auto uploaded to Hugging Face servers, but you need to create an account and generate a token to be able to upload the file. You can do it by going to your Hugging Face account, then to settings and then to Access Tokens. Create a new token with write permissions and copy it. After that you need to create a bucket to get files uploaded.<br>
+#### 6. Upload (only on GH Actions)
+The ROM will be auto uploaded to Hugging Face servers, but you need to create an account and generate a token to be able to upload the file. 
 
-Then, go back to the repository and go to repository settings and add the token as a secret with the name HF_TOKEN.
+> [!TIP]
+> - Create a Hugging Face account.
+> - Go to settings and then to Access Tokens. Create a new token with write permissions and copy it.
+> - Create a bucket.
+> - Go back to the repository and go to repository settings and add the token as a secret with the name HF_TOKEN.
 
 ### Method 2: Local Build
 
@@ -188,10 +182,13 @@ bash scripts/cache_manager.sh list      # List all images with sizes
 bash scripts/cache_manager.sh clear     # Clear cached images
 ```
 
-## Note
-If you dont wanna mess with the repo or dont know how to do any of this things, I will continue releasing updates of my rom on my Telegram channel, that you can join clicking on the link on the repository bio.
+> [!IMPORTANT]
+> - If you're building locally, script will log all actions that is happening, if something fails, report the error to me via GitHub issues or on my Telegram channel.
 
-Also I accept suggestions aswell as im still learning from it, so if you see a bug, or wanna make the code a bit more easy to understand, you can always create a pull request!
+> [!NOTE]
+> If you dont wanna mess with the repo or dont know how to do any of this things, I will continue releasing updates of my rom on my Telegram channel, that you can join clicking on the link on the repository bio.
+
+> Also I accept suggestions aswell as im still learning from it, so if you see a bug, or wanna make the code a bit more easy to understand, you can always create a pull request!
 
 ## Licensing
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
