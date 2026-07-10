@@ -18,9 +18,9 @@ apt_fast_setup.log
 logs/
 
 # Firmware and Flashable ZIPs
-*.img
-*.img.raw
-*.zip
+OUT/*.img
+OUT/*.img.raw
+OUT/*.zip
 
 # Ignore generated/transient files in the template directory
 template/build_info.txt
