@@ -25,7 +25,7 @@ This custom ROM is created to provide a totally new experience to Low end Mediat
 
 ## What it does?
 
-It downloads the firmware from Samsung servers using [samloader](https://github.com/samloader/samloader), or custom firmware downloader, merges OTA patches, extracts the partition images and then applies all the features implemented in the repository - Galaxy AI, heavy debloat, Knox patches, performance tweaks and QoL improvements - so the device can be used again with a fresh and modern experience.
+It downloads the firmware from Samsung servers using [samloader](https://github.com/ananjaser1211/samloader), or custom firmware downloader, merges OTA patches, extracts the partition images and then applies all the features implemented in the repository - Galaxy AI, heavy debloat, Knox patches, performance tweaks and QoL improvements - so the device can be used again with a fresh and modern experience.
 
 The whole process can run either on **GitHub Actions** or **locally** on your machine (requires Ubuntu/Debian distro or WSL).
 
