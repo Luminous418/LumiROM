@@ -31,21 +31,15 @@ jobs:
 
     - name: Install required packages
       run: |
-        sudo apt update -q
-        sudo apt install -y -q \
-          p7zip-full android-sdk-libsparse-utils \
-          python3 python3-pip zipalign default-jre openjdk-17-jdk brotli e2fsprogs zstd aria2 \
-          unzip tar lz4 tree git-core gnupg flex bison build-essential zip curl zlib1g-dev libncurses5-dev libssl-dev libelf-dev libxml2-utils xsltproc unzip fontconfig python3 python3-protobuf
-        pip3 install -q liblp tgcrypto pyrogram huggingface_hub hf_xet
-        pip3 install git+https://github.com/ananjaser1211/samloader.git
-        chmod +x scripts/*.sh
-        chmod +x bin/erofs-utils/extract.erofs
-        chmod +x bin/erofs-utils/mkfs.erofs
-        chmod +x bin/MergeOTA/MergeAll.sh
+        bash scripts/install_packages.sh
 
     - name: Setup directories
       run: |
         bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs
+        chmod +x scripts/*.sh
+        chmod +x bin/erofs-utils/extract.erofs
+        chmod +x bin/erofs-utils/mkfs.erofs
+        chmod +x bin/MergeOTA/MergeAll.sh
     
     - name: Set build environment
       shell: bash
