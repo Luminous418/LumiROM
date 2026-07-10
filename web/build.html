@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build Methods - LumiROM documentation</title>
+  <meta name="description" content="How to build LumiROM: GitHub Actions cloud build or local Linux compilation guide." />
+  <meta name="keywords" content="LumiROM, build, compile, github actions, local build, build_local.sh" />
+  <meta name="author" content="Luminous418" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="LumiROM - Build Methods" />
+  <meta property="og:description" content="How to build LumiROM using GitHub Actions or locally on your Linux machine." />
+  <meta property="og:image" content="_static/logo.png" />
+  <link rel="stylesheet" href="_static/lumirom.css" />
+  <link rel="shortcut icon" href="_static/logo.png" />
+</head>
+<body>
+<div id="fmain">
+
+  <!-- ── Top nav bar ─────────────────────────────────────────────── -->
+  <div class="related" role="navigation" aria-label="Navigation">
+    <h3>Navigation</h3>
+    <ul>
+      <li>
+        <img src="_static/logo.png" alt=""
+             style="width:36px;height:36px;border-radius:50%;vertical-align:middle;margin-right:6px;" />
+      </li>
+      <li><a href="https://github.com/Luminous418/LumiROM">LumiROM</a> </li>
+      <li class="nav-item nav-item-this"><a href="">Build Methods</a></li>
+      <li class="right">
+        <div class="inline-search" role="search">
+          <form class="inline-search" action="search.html" method="get">
+            <input placeholder="Quick search" type="text" name="q" />
+            <input type="submit" value="Go" />
+          </form>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="document">
+
+    <!-- Sidebar -->
+    <div class="sphinxsidebar" role="navigation" aria-label="Main">
+      <div class="sphinxsidebarwrapper">
+        <div>
+          <h3><a href="index.html">Documents</a></h3>
+          <ul class="current">
+            <li class="toctree-l1"><a class="reference internal" href="index.html">Introduction</a></li>
+            <li class="toctree-l1"><a class="reference internal" href="devices.html">Supported Devices</a></li>
+            <li class="toctree-l1"><a class="reference internal" href="features.html">Features</a></li>
+            <li class="toctree-l1 current"><a class="current reference internal" href="build.html">Build Methods</a></li>
+            <li class="toctree-l1"><a class="reference internal" href="changelogs.html">Changelogs</a></li>
+            <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4><a href="#">Sections</a></h4>
+          <ul>
+            <li><a class="reference internal" href="#build">Build Methods</a>
+              <ul>
+                <li><a class="reference internal" href="#github-actions">GitHub Actions (Cloud)</a></li>
+                <li><a class="reference internal" href="#local-build">Local Build</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="documentwrapper">
+      <div class="bodywrapper">
+        <div class="body" role="main">
+
+          <section id="build">
+            <h1>Build Methods<a class="headerlink" href="#build" title="Link to this heading">¶</a></h1>
+            <p>Select your compilation method: automate through GitHub in the cloud, or compile locally
+            on your Linux machine. Both methods produce identical flashable ZIP outputs.</p>
+
+            <div class="guide-tabs">
+              <button class="guide-tab-btn active" data-guide="actions">🤖 GitHub Actions (Cloud)</button>
+              <button class="guide-tab-btn" data-guide="local">💻 Local Build</button>
+            </div>
+
+            <!-- ── GitHub Actions panel ─────────────────────────────── -->
+            <div class="guide-panel active" id="guide-actions">
+              <section id="github-actions">
+                <h2>GitHub Actions (Cloud)<a class="headerlink" href="#github-actions" title="Link to this heading">¶</a></h2>
+                <p>Build LumiROM entirely in the cloud using GitHub's free runners - no local Linux
+                environment required. The workflow handles everything automatically.</p>
+
+                <div class="steps-list">
+
+                  <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                      <h3 class="step-title">Fork the Repository</h3>
+                      <div class="step-content">
+                        <p>Give a ⭐ star to the official LumiROM repository on GitHub.</p>
+                        <p><strong>Fork</strong> the repository to your own GitHub account to execute
+                        custom build workflows.</p>
+                        <p><a href="https://github.com/Luminous418/LumiROM" class="reference external">github.com/Luminous418/LumiROM</a></p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                      <h3 class="step-title">Run the Workflow</h3>
+                      <div class="step-content">
+                        <p>Open your forked repository and click on the <strong>Actions</strong> tab.</p>
+                        <p>Select <strong>LumiROM Tools</strong> from the left sidebar and click
+                        <strong>Run workflow</strong>.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-body">
+                      <h3 class="step-title">Configure Device Parameters</h3>
+                      <div class="step-content">
+                        <p>Fill in your model inside the <code>STOCK_DEVICE_MODEL</code> option
+                        (it must exist in the <code>/LumiROM/Devices</code> folder of your repository).</p>
+                        <p>Set Kernel BPF Version: Check <strong>True</strong> if your kernel BPF version
+                        is 5.4 or lower.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-body">
+                      <h3 class="step-title">Hugging Face Upload (Optional)</h3>
+                      <div class="step-content">
+                        <p>The workflow can automatically upload the final ROM file to Hugging Face servers.
+                        To enable this:</p>
+                        <div class="alert-box alert-tip">
+                          <strong>💡 Token Setup:</strong><br />
+                          1. Create a Hugging Face account.<br />
+                          2. Go to Settings → Access Tokens → Generate a write token.<br />
+                          3. In your GitHub repository: Settings → Secrets and variables → Actions.<br />
+                          4. Add the token as <code>HF_TOKEN</code>.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </section>
+            </div>
+
+            <!-- ── Local Build panel ────────────────────────────────── -->
+            <div class="guide-panel" id="guide-local">
+              <section id="local-build">
+                <h2>Local Build<a class="headerlink" href="#local-build" title="Link to this heading">¶</a></h2>
+                <p>Compile LumiROM locally on your Linux machine (Ubuntu/Debian) or Windows via WSL.
+                The script is fully automated and caches firmware to avoid re-downloading.</p>
+
+                <div class="steps-list">
+
+                  <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                      <h3 class="step-title">Clone the Repository</h3>
+                      <div class="step-content">
+                        <p>Open a Linux terminal and clone the source code:</p>
+                        <div class="terminal-block">
+                          <div class="terminal-header">
+                            <span class="term-dot dot-red"></span>
+                            <span class="term-dot dot-yellow"></span>
+                            <span class="term-dot dot-green"></span>
+                            <span class="terminal-title">bash</span>
+                            <button class="copy-term-btn">Copy</button>
+                          </div>
+                          <div class="terminal-body">
+                            <code>git clone https://github.com/Luminous418/LumiROM.git
+cd LumiROM</code>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                      <h3 class="step-title">Configure Build Variables</h3>
+                      <div class="step-content">
+                        <p>Edit the top variables in the <code>build_local.sh</code> script:</p>
+                        <div class="terminal-block">
+                          <div class="terminal-header">
+                            <span class="term-dot dot-red"></span>
+                            <span class="term-dot dot-yellow"></span>
+                            <span class="term-dot dot-green"></span>
+                            <span class="terminal-title">build_local.sh</span>
+                            <button class="copy-term-btn">Copy</button>
+                          </div>
+                          <div class="terminal-body">
+                            <code>STOCK_DEVICE="SM-A325F"         # Your model
+USE_MODS="Yes"                  # Include mods
+USE_GALAXY_AI="Yes"             # Include AI features
+USE_UI_8_TETHERING_APEX="False" # Set True if kernel BPF &lt; 5.10</code>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-body">
+                      <h3 class="step-title">Execute the Script</h3>
+                      <div class="step-content">
+                        <p>Run the script to download dependencies, apply modifications, and package
+                        the flashable ZIP into the <code>ROM/</code> directory:</p>
+                        <div class="terminal-block">
+                          <div class="terminal-header">
+                            <span class="term-dot dot-red"></span>
+                            <span class="term-dot dot-yellow"></span>
+                            <span class="term-dot dot-green"></span>
+                            <span class="terminal-title">bash</span>
+                            <button class="copy-term-btn">Copy</button>
+                          </div>
+                          <div class="terminal-body">
+                            <code>bash build_local.sh</code>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-body">
+                      <h3 class="step-title">Manage Firmware Cache</h3>
+                      <div class="step-content">
+                        <p>The build tool features a smart cache manager to avoid downloading clean
+                        firmwares multiple times. Test it interactively:</p>
+
+                        <div class="cache-btns">
+                          <button class="btn-cache active" data-cmd="status">cache_manager.sh status</button>
+                          <button class="btn-cache" data-cmd="check">cache_manager.sh check</button>
+                          <button class="btn-cache" data-cmd="size">cache_manager.sh size</button>
+                          <button class="btn-cache" data-cmd="list">cache_manager.sh list</button>
+                          <button class="btn-cache" data-cmd="clear">cache_manager.sh clear</button>
+                        </div>
+
+                        <div class="terminal-block">
+                          <div class="terminal-header">
+                            <span class="term-dot dot-red"></span>
+                            <span class="term-dot dot-yellow"></span>
+                            <span class="term-dot dot-green"></span>
+                            <span class="terminal-title">Interactive Console</span>
+                            <button class="copy-term-btn" id="cache-copy-btn">Copy Command</button>
+                          </div>
+                          <div class="terminal-body" id="cache-output">
+                            <span class="terminal-prompt">$</span><span class="terminal-cmd"> bash scripts/cache_manager.sh status</span>
+<span class="terminal-output">[CACHE STATUS]
+Checking firmware cache directory...
+Cache status: ENABLED
+Total firmware versions cached: 3
+Latest build cached: SM-A346B (One UI 8.5)
+Integrity check: PASS</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </section>
+            </div>
+
+          </section>
+
+          <div class="clearer"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="clearer"></div>
+  </div>
+
+  <!-- ── Bottom nav bar ───────────────────────────────────────────── -->
+  <div class="related" role="navigation" aria-label="Navigation">
+    <h3>Navigation</h3>
+    <ul>
+      <li><img src="_static/logo.png" alt="" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;margin-right:6px;" /></li>
+      <li><a href="https://github.com/Luminous418/LumiROM">LumiROM</a> </li>
+      <li class="nav-item nav-item-this"><a href="">Build Methods</a></li>
+      <li class="right">
+        &#171; <a href="features.html">Features</a> &nbsp;|&nbsp;
+        <a href="changelogs.html">Changelogs</a> 
+      </li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    &copy; 2026 LumiROM - MIT Licensed. &nbsp;|&nbsp;
+    <a href="https://github.com/Luminous418/LumiROM/issues">Found a bug?</a> &nbsp;|&nbsp;
+    Built by <a href="https://github.com/Luminous418">Luminous418</a>
+  </div>
+
+</div>
+<script src="_static/lumirom.js"></script>
+</body>
+</html>
