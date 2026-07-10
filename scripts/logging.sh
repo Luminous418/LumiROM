@@ -41,10 +41,30 @@ log_section() {
 # initialize_logs: Create header for the log file
 initialize_logs() {
     local stock_device="$1"
-    local lumirom_version="$2"
-    local output_filesystem="$3"
-    local use_mods="$4"
-    local use_galaxy_ai="$5"
+    local target_device="$2"
+    local target_csc="$3"
+    local target_imei="$4"
+    local lumirom_version="$5"
+    local output_filesystem="$6"
+    local use_mods="$7"
+    local use_galaxy_ai="$8"
+    
+    {
+        echo "======================================"
+        echo "LumiROM Build Log"
+        echo "======================================"
+        echo "Start Time: $(date)"
+        echo "Stock Device: $stock_device"
+        echo "Target Device: $target_device"
+        echo "Target CSC: $target_csc"
+        echo "Target IMEI: $target_imei"
+        echo "Version: $lumirom_version"
+        echo "Output Filesystem: $output_filesystem"
+        echo "Use Mods: $use_mods"
+        echo "Use Galaxy AI: $use_galaxy_ai"
+        echo "======================================"
+        echo
+    } > "$LOG_FILE"
     
     {
         echo "======================================"
@@ -52,6 +72,7 @@ initialize_logs() {
         echo "======================================"
         echo "Start Time: $(date)"
         echo "Device: $stock_device"
+        echo "Target Device: $target_device"
         echo "Version: $lumirom_version"
         echo "Output Filesystem: $output_filesystem"
         echo "Use Mods: $use_mods"
@@ -93,6 +114,7 @@ finalize_logs() {
         echo "LumiROM Build Summary"
         echo "======================================"
         echo "Device: $stock_device"
+        echo "Target Device: $target_device"
         echo "Version: $lumirom_version"
         echo "Output Filesystem: $output_filesystem"
         echo "Use Mods: $use_mods"

@@ -9,6 +9,7 @@ IMGs/
 LOGS/
 CACHE/
 .local/
+bin/py_scripts/__pycache__/*
 
 # Logs
 *.log
@@ -25,7 +26,8 @@ OUT/*.zip
 # Ignore generated/transient files in the template directory
 template/build_info.txt
 template/boot.img
-template/*.zip
+template/dynamic_partitions_op_list
+template/
 
 # OS Specific
 .DS_Store

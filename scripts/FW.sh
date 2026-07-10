@@ -149,6 +149,9 @@ DOWNLOAD_FIRMWARE() {
         echo -e "- ✅ Firmware decrypted successfully! Firmware Size: ${file_size} MB"
         echo -e "- Saved to: ${DOWN_DIR}/${MODEL}.zip"
 
+        mv "${DOWN_DIR}/${MODEL}"/SM-*.zip "IMGs/${MODEL}.zip"
+        echo -e "- Moved to: IMGs/${MODEL}.zip"
+
         # --- Cleanup ---
         rm -f "$enc_file"
 }
@@ -209,8 +212,8 @@ MERGE_OTA() {
     local OTA_DIR="$2"
     local IMG_DIR="$3"
 
-    mv "${FW_DIR}/${TARGET_DEVICE}/${TARGET_DEVICE}.zip" ./bin/MergeOTA/ 2>&1 | tee -a "$LOG_FILE"
-    mv "${OTA_DIR}/OTA_${TARGET_DEVICE}.zip" ./bin/MergeOTA/ 2>&1 | tee -a "$LOG_FILE"
+    mv "${FW_DIR}/${TARGET_DEVICE}/${TARGET_DEVICE}.zip" ./bin/MergeOTA/
+    mv "${OTA_DIR}/OTA_${TARGET_DEVICE}.zip" ./bin/MergeOTA/
     
     echo -e "${YELLOW}Running MergeAll.sh...${RESET}"
     ./bin/MergeOTA/MergeAll.sh "./bin/MergeOTA/${TARGET_DEVICE}.zip" "./bin/MergeOTA/OTA_${TARGET_DEVICE}.zip" 2>&1 | tee -a "$LOG_FILE"
@@ -248,27 +251,113 @@ DOWNLOAD_VENDOR() {
 }
 
 EXTRACT_FIRMWARE() {
+    echo " "
+
     if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
     local FIRM_DIR="$1"
-    local FIRM_FILE="$FIRM_DIR/BASE_FW.zip"
 
-    echo -e "${YELLOW}Extracting downloaded firmware.${RESET}"
+    echo -e "Extracting downloaded firmware."
 
-    if [ ! -f "$FIRM_FILE" ]; then
-        echo "Error: BASE_FW.zip not found in $FIRM_DIR"
+	if [ ! -d "$FIRM_DIR" ]; then
+        echo -e "- Directory not found: $FIRM_DIR"
+        exit
+    fi
+
+    # ---- ZIP ----
+    for file in "$FIRM_DIR"/*.zip; do
+        [ -e "$file" ] || continue
+
+        echo -e "Extracting zip: $(basename "$file")"
+        7z x -y -bd -bsp1 -o"$FIRM_DIR" "$file"
+
+        rm -f "$file"
+    done
+
+    # remove unwanted archives before extraction
+    rm -f "$FIRM_DIR"/BL_*.tar.md5
+    rm -f "$FIRM_DIR"/CP_*.tar.md5
+    rm -f "$FIRM_DIR"/HOME_CSC_*.tar.md5
+	rm -f "$FIRM_DIR"/USERDATA_*.tar.md5
+
+    # ---- XZ ----
+    for file in "$FIRM_DIR"/*.xz; do
+        [ -e "$file" ] || continue
+
+        echo -e "Extracting xz: $(basename "$file")"
+        7z x -y -bd -bsp1 -o"$FIRM_DIR" "$file"
+
+        rm -f "$file"
+    done
+
+    # ---- RENAME .MD5 -> .TAR ----
+    for file in "$FIRM_DIR"/*.md5; do
+        [ -e "$file" ] || continue
+
+        mv -- "$file" "${file%.md5}"
+    done
+
+    # ---- TAR ----
+    for file in "$FIRM_DIR"/*.tar; do
+        [ -e "$file" ] || continue
+
+        echo -e "Extracting tar: $(basename "$file")"
+
+        tar -xf "$file" -C "$FIRM_DIR"
+
+        # remove only samsung firmware tar archives
+        case "$(basename "$file")" in
+            AP_*|BL_*|CP_*|CSC_*|HOME_CSC_*)
+                rm -f "$file"
+                ;;
+        esac
+    done
+
+    # ---- LZ4 ----
+    for file in "$FIRM_DIR"/*.lz4; do
+        [ -e "$file" ] || continue
+
+        echo -e "Extracting lz4: $(basename "$file")"
+
+        lz4 -d "$file" "${file%.lz4}"
+
+        rm -f "$file"
+    done
+
+    echo -e "Firmware Extraction complete."
+}
+
+EXTRACT_SUPER_IMG() {
+    echo " "
+
+    if [ "$#" -ne 1 ]; then
+        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
-    echo "- Extracting zip file."
-    find "$FIRM_DIR" -maxdepth 1 -name "*.zip" \
-        -exec 7z x -y -bd -o"$FIRM_DIR" {} \; >/dev/null 2>&1
-    rm -rf "$FIRM_DIR"/*.zip
+    local FIRM_DIR="$1"
 
-    rm -f "$FIRM_FILE"
+    if [ -f "$FIRM_DIR/super.img" ]; then
+        echo -e "Extracting super.img"
+        if [ "$(file -b "$FIRM_DIR/super.img")" = "Android sparse image" ]; then
+		    echo -e "Converting to raw super.img"
+            simg2img "$FIRM_DIR/super.img" "$FIRM_DIR/super_raw.img"
+            rm -f "$FIRM_DIR/super.img"
+            mv -f "$FIRM_DIR/super_raw.img" "$FIRM_DIR/super.img"
+        fi
+
+        echo "- Extracting partitions from super.img"
+        ./bin/lp/lpunpack "$FIRM_DIR/super.img" "$FIRM_DIR" || return 1
+        rm -f "$FIRM_DIR/super.img"
+
+        echo -e "- super.img extraction complete"
+
+    else
+        echo -e "- No super.img found."
+    fi
 }
 
 

@@ -4,10 +4,16 @@ START_TIME=$(date +%s)
 
 # --- Variable Configuration ---
 # Edit these values according to what you need for your build
-STOCK_DEVICE="SM-A325F"
+STOCK_DEVICE="$1"
+TARGET_DEVICE="$2"
+TARGET_CSC="$3"
+TARGET_IMEI="$4"
 USE_MODS="Yes"
 USE_GALAXY_AI="Yes"
 USE_UI_8_TETHERING_APEX="False"
+
+# A346B imei = 352990180814770
+# A245F imei = 358212589089183
 
 # --- System Environment Variables ---
 export OUTPUT_FILESYSTEM="erofs"
@@ -23,7 +29,7 @@ export BUILD_PARTITIONS="product,vendor,odm,system_ext,system"
 
 # --- Load Logging System ---
 source scripts/logging.sh
-initialize_logs "$STOCK_DEVICE" "$LUMIROM_VERSION" "$OUTPUT_FILESYSTEM" "$USE_MODS" "$USE_GALAXY_AI"
+initialize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$LUMIROM_VERSION" "$OUTPUT_FILESYSTEM" "$USE_MODS" "$USE_GALAXY_AI"
 
 # --- Start of Process ---
 
@@ -43,7 +49,7 @@ log_section "Setting up directories"
 mkdir -p "$WORK_DIR"
 bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
 
-log_section "Downloading Firmware and OTA"
+log_section "Downloading Firmware"
 source scripts/FW.sh
 source "$DEVICES_DIR/$STOCK_DEVICE/config"
 
@@ -53,7 +59,7 @@ if CHECK_FIRMWARE_IMAGES "$IMGS_DIR" "$BUILD_PARTITIONS"; then
     log_message "✓ Firmware cache found. Skipping download..."
 else
     log_message "✗ No firmware cache found. Proceeding with download..."
-    DOWNLOAD_FIRMWARE_LUMI "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+    DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
     
     # Detect TARGET_DEVICE from the downloaded firmware directory
     if [ -d "FIRMWARE/SM-A346B" ]; then
@@ -66,11 +72,6 @@ else
         log_error "Could not detect TARGET_DEVICE from downloaded firmware!"
         exit 1
     fi
-    
-    DOWNLOAD_OTA "OTA" 2>&1 | tee -a "$LOG_FILE"
-    log_message "OTA downloaded for $TARGET_DEVICE"
-    
-    MERGE_OTA "FIRMWARE" "OTA" "IMGs" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 # Check if vendor image is already cached
@@ -83,7 +84,8 @@ else
     DOWNLOAD_VENDOR "IMGs" 2>&1 | tee -a "$LOG_FILE"
 fi
 
-log_section "Extracting and patching"
+log_section "Extracting"
+EXTRACT_FIRMWARE "IMGs" 2>&1 | tee -a "$LOG_FILE"
 PREPARE_PARTITIONS "IMGs" 2>&1 | tee -a "$LOG_FILE"
 EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 

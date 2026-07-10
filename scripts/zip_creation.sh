@@ -71,8 +71,9 @@ FLASHABLE_ZIP_CREATION() {
             DEVICE_CODENAME="unknown"
         fi
 
-        TEMPLATE_DIR="$(pwd)/template"
-        mkdir -p "$TEMPLATE_DIR"
+        MAKEROM_DIR="$(pwd)/makerom"
+        mkdir -p "$MAKEROM_DIR"
+        cp -r template/* "$MAKEROM_DIR"/
 
         echo "Generating build_info.txt..."
         {
@@ -80,27 +81,27 @@ FLASHABLE_ZIP_CREATION() {
             echo "version=$LUMIROM_VERSION-$BUILD_DATE"
             echo "timestamp=$TIMESTAMP"
             echo "status=$BUILD_STATUS"
-        } > "$TEMPLATE_DIR/build_info.txt"
+        } > "$MAKEROM_DIR/build_info.txt"
 
         SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$DEVICE/boot.img"
 
         if [ -f "$SPECIFIC_BOOT" ]; then
             echo -e "${GREEN}-> Copying boot.img from${RESET} $DEVICE..."
-            cp "$SPECIFIC_BOOT" "$TEMPLATE_DIR/boot.img"
+            cp "$SPECIFIC_BOOT" "$MAKEROM_DIR/boot.img"
         else
             echo -e "${RED}There is no boot.img for${RESET} $DEVICE"
         fi
 
-        echo -e "${GREEN}Moving compressed DAT files to template...${RESET}"
-        mv TMP/*.new.dat.br "$TEMPLATE_DIR"/
-        mv TMP/*.patch.dat "$TEMPLATE_DIR"/
-        mv TMP/*.transfer.list "$TEMPLATE_DIR"/ 2>/dev/null || true
+        echo -e "${GREEN}Moving compressed DAT files to ROM Folder...${RESET}"
+        mv TMP/*.new.dat.br "$MAKEROM_DIR"/
+        mv TMP/*.patch.dat "$MAKEROM_DIR"/
+        mv TMP/*.transfer.list "$MAKEROM_DIR"/ 2>/dev/null || true
 
         echo -e "${GREEN}Creating ZIP package...${RESET}"
         ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
         [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
 
-        cd "$TEMPLATE_DIR"
+        cd "$MAKEROM_DIR"
 
         # ZIP the rom with mixed compression levels (Multithreaded 7z)
         echo -e "${YELLOW}Adding large/compressed files (Store)...${RESET}"
@@ -108,6 +109,7 @@ FLASHABLE_ZIP_CREATION() {
         
         echo -e "${YELLOW}Adding scripts and compressible data (Compress)...${RESET}"
         7z a -mx=6 -mmt=4 "$ZIP_FILE" ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list 2>/dev/null || true
+        
 
         mkdir -p "../ROM/${BUILD_DATE}-${TIMESTAMP}/"
         mv "$ZIP_FILE" "../ROM/${BUILD_DATE}-${TIMESTAMP}/"
@@ -115,4 +117,5 @@ FLASHABLE_ZIP_CREATION() {
         echo -e "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
 
         cd ..
+        rm -rf "$MAKEROM_DIR"
 }
