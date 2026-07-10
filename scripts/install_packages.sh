@@ -6,7 +6,7 @@ sudo apt install -y -q p7zip-full android-sdk-libsparse-utils python3 python3-pi
 
 # Installing Python packages.
 pip3 install liblp tgcrypto pyrogram --break-system-packages
-pip3 install git+https://github.com/martinetd/samloader.git --break-system-packages
+pip3 install git+https://github.com/ananjaser1211/samloader.git --break-system-packages
 
 # Cleanup.
 sudo apt clean
