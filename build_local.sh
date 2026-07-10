@@ -11,7 +11,7 @@ USE_UI_8_TETHERING_APEX="False"
 
 # --- System Environment Variables ---
 export OUTPUT_FILESYSTEM="erofs"
-export LUMIROM_VERSION="8.6.2"
+export LUMIROM_VERSION="8.6.3"
 export OUT_DIR="$PWD/OUT"
 export WORK_DIR="$PWD/TMP/LumiWORK"
 export FIRM_DIR="$PWD/FIRMWARE"

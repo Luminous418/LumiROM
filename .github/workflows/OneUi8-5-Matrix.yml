@@ -63,7 +63,7 @@ jobs:
         echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
         echo "USE_GALAXY_AI=${{ github.event.inputs.USE_GALAXY_AI }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
-        echo "LUMIROM_VERSION=8.6.2" >> $GITHUB_ENV
+        echo "LUMIROM_VERSION=8.6.3" >> $GITHUB_ENV
 
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
         echo "WORK_DIR=/dev/shm/WORK" >> $GITHUB_ENV
