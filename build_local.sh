@@ -36,9 +36,10 @@ initialize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$
 # Give execution permissions
 log_section "Setting up permissions"
 chmod +x scripts/*.sh
+chmod +x bin/MergeOTA/MergeAll.sh
 chmod +x bin/erofs-utils/extract.erofs
 chmod +x bin/erofs-utils/mkfs.erofs
-chmod +x bin/MergeOTA/MergeAll.sh
+chmod +x bin/lp/*
 log_message "Permissions set successfully"
 
 log_section "Installing required packages"
@@ -47,7 +48,7 @@ clear
 
 log_section "Setting up directories"
 mkdir -p "$WORK_DIR"
-bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
+bash scripts/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Downloading Firmware"
 source scripts/FW.sh
@@ -60,7 +61,6 @@ if CHECK_FIRMWARE_IMAGES "$IMGS_DIR" "$BUILD_PARTITIONS"; then
 else
     log_message "✗ No firmware cache found. Proceeding with download..."
     DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-    
     # Detect TARGET_DEVICE from the downloaded firmware directory
     if [ -d "FIRMWARE/SM-A346B" ]; then
         export TARGET_DEVICE="SM-A346B"
@@ -86,6 +86,7 @@ fi
 
 log_section "Extracting"
 EXTRACT_FIRMWARE "IMGs" 2>&1 | tee -a "$LOG_FILE"
+EXTRACT_SUPER_IMG "IMGs" 2>&1 | tee -a "$LOG_FILE"
 PREPARE_PARTITIONS "IMGs" 2>&1 | tee -a "$LOG_FILE"
 EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 
@@ -147,10 +148,10 @@ UPDATE_ZIP_SCRIPT "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
 
 log_message "Cleaning up temporary directories..."
-rm -rf ./OTA/ ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/ 2>&1 | tee -a "$LOG_FILE"
+rm -rf ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/ 2>&1 | tee -a "$LOG_FILE"
 
 log_message "✓ LumiROM $LUMIROM_VERSION for $STOCK_DEVICE is ready!"
 log_message "✓ You can find it in the ROM folder"
 
 # Generate build summary and finalize logs
-finalize_logs "$STOCK_DEVICE" "$LUMIROM_VERSION" "$OUTPUT_FILESYSTEM" "$USE_MODS" "$USE_GALAXY_AI" "$START_TIME"
+finalize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$LUMIROM_VERSION" "$OUTPUT_FILESYSTEM" "$USE_MODS" "$USE_GALAXY_AI" "$START_TIME"

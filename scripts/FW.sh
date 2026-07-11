@@ -87,7 +87,6 @@ DOWNLOAD_FIRMWARE() {
     local CSC="$2"
     local IMEI="$3"
     local DOWN_DIR="${4}/$MODEL"
-    local VERSION="${5:-}"
 
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
@@ -118,42 +117,19 @@ DOWNLOAD_FIRMWARE() {
         fi
 
         # --- Step 2: Download Firmware ---
-        python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -v "$VERSION" -O "$DOWN_DIR"
+        python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -O "$DOWN_DIR"
         if [ $? -ne 0 ]; then
-            echo -e "- ⛔️ Download failed. Check IMEI/MODEL/CSC."
+            echo -e "⛔️ Download failed. Check IMEI/MODEL/CSC."
             exit 1
         fi
 
-        # --- Step 3: Decrypt Firmware ---
-        enc_file=$(find "$DOWN_DIR" -name "*.enc*" | head -n 1)
-
-        if [ -z "$enc_file" ]; then
-            echo -e "- ⛔️ No encrypted firmware file found!"
-            exit 1
-        fi
-
-        python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" decrypt \
-            -v "$VERSION" \
-            -i "$enc_file" \
-            -o "${DOWN_DIR}/${MODEL}.zip" >/dev/null 2>&1
-
-        if [ $? -ne 0 ]; then
-            echo -e "- ⛔️ Decryption failed."
-            exit 1
-        fi
+        find "$DOWN_DIR" -type f -name "*.zip.enc*" -delete
 
         # --- Show Firmware Info ---
-        file_size=$(du -m "${DOWN_DIR}/${MODEL}.zip" | cut -f1)
+        local file_size=$(du -m "${DOWN_DIR}"/${MODEL}_*_fac.zip 2>/dev/null | cut -f1)
+        echo -e "Firmware Size: ${file_size} MB"
 
-        echo
-        echo -e "- ✅ Firmware decrypted successfully! Firmware Size: ${file_size} MB"
-        echo -e "- Saved to: ${DOWN_DIR}/${MODEL}.zip"
-
-        mv "${DOWN_DIR}/${MODEL}"/SM-*.zip "IMGs/${MODEL}.zip"
-        echo -e "- Moved to: IMGs/${MODEL}.zip"
-
-        # --- Cleanup ---
-        rm -f "$enc_file"
+        mv "${DOWN_DIR}"/${MODEL}_*_fac.zip "IMGs/${MODEL}.zip"
 }
 
 DOWNLOAD_FIRMWARE_LUMI() {
@@ -243,7 +219,7 @@ DOWNLOAD_VENDOR() {
     local DOWN_DIR="${1}"
 
     echo -e "${YELLOW}Downloading vendor for${RESET} ${STOCK_DEVICE}"
-    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" 2>&1 | tee -a "$LOG_FILE" &
+    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
     
     # Cleanup any leftover .aria2 control files
     wait
@@ -251,8 +227,6 @@ DOWNLOAD_VENDOR() {
 }
 
 EXTRACT_FIRMWARE() {
-    echo " "
-
     if [ "$#" -ne 1 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
@@ -280,10 +254,11 @@ EXTRACT_FIRMWARE() {
     # remove unwanted archives before extraction
     rm -f "$FIRM_DIR"/BL_*.tar.md5
     rm -f "$FIRM_DIR"/CP_*.tar.md5
+    rm -f "$FIRM_DIR"/CSC_*.tar.md5
     rm -f "$FIRM_DIR"/HOME_CSC_*.tar.md5
 	rm -f "$FIRM_DIR"/USERDATA_*.tar.md5
 
-    # ---- XZ ----
+    # Extract XZ 
     for file in "$FIRM_DIR"/*.xz; do
         [ -e "$file" ] || continue
 
@@ -293,65 +268,49 @@ EXTRACT_FIRMWARE() {
         rm -f "$file"
     done
 
-    # ---- RENAME .MD5 -> .TAR ----
+    # Rename .MD5 to .TAR
     for file in "$FIRM_DIR"/*.md5; do
         [ -e "$file" ] || continue
 
         mv -- "$file" "${file%.md5}"
     done
 
-    # ---- TAR ----
+    # UN-TAR
     for file in "$FIRM_DIR"/*.tar; do
         [ -e "$file" ] || continue
 
         echo -e "Extracting tar: $(basename "$file")"
 
         tar -xf "$file" -C "$FIRM_DIR"
-
-        # remove only samsung firmware tar archives
-        case "$(basename "$file")" in
-            AP_*|BL_*|CP_*|CSC_*|HOME_CSC_*)
-                rm -f "$file"
-                ;;
-        esac
     done
 
-    # ---- LZ4 ----
-    for file in "$FIRM_DIR"/*.lz4; do
-        [ -e "$file" ] || continue
-
-        echo -e "Extracting lz4: $(basename "$file")"
-
-        lz4 -d "$file" "${file%.lz4}"
-
-        rm -f "$file"
-    done
-
+    # LZ4 Extraction
+    echo -e "Extracting super.img.lz4"
+    find "$FIRM_DIR" -type f -name "*.lz4" ! -name "super.img.lz4" -delete
+    lz4 -d "$FIRM_DIR/super.img.lz4" "$FIRM_DIR/super.img" 
     echo -e "Firmware Extraction complete."
 }
 
 EXTRACT_SUPER_IMG() {
-    echo " "
-
     if [ "$#" -ne 1 ]; then
         echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
-    local FIRM_DIR="$1"
+    local IMGS_DIR="$1"
 
-    if [ -f "$FIRM_DIR/super.img" ]; then
+    if [ -f "$IMGS_DIR/super.img" ]; then
+    
         echo -e "Extracting super.img"
-        if [ "$(file -b "$FIRM_DIR/super.img")" = "Android sparse image" ]; then
-		    echo -e "Converting to raw super.img"
-            simg2img "$FIRM_DIR/super.img" "$FIRM_DIR/super_raw.img"
-            rm -f "$FIRM_DIR/super.img"
-            mv -f "$FIRM_DIR/super_raw.img" "$FIRM_DIR/super.img"
-        fi
+		echo -e "Converting to raw super.img"
+        simg2img "$IMGS_DIR/super.img" "$IMGS_DIR/super_raw.img"
+        rm -f "$IMGS_DIR/super.img"
+        mv -f "$IMGS_DIR/super_raw.img" "$IMGS_DIR/super.img"
+
 
         echo "- Extracting partitions from super.img"
-        ./bin/lp/lpunpack "$FIRM_DIR/super.img" "$FIRM_DIR" || return 1
-        rm -f "$FIRM_DIR/super.img"
+        ./bin/lp/lpunpack "$IMGS_DIR/super.img" "$IMGS_DIR" || return 1
+        rm -f "$IMGS_DIR/super.img"
 
         echo -e "- super.img extraction complete"
 

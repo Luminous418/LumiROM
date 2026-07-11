@@ -8,8 +8,12 @@ UPDATE_ZIP_SCRIPT() {
         BUILD_PROP_PATH="$EXTRACTED_FIRM_DIR/system/system/build.prop"
         FINGERPRINT=$(grep -m 1 "ro.system.build.fingerprint=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
         BUILD_DATE=$(date +'%d%m%Y')
+        MAKEROM_DIR="$(pwd)/makerom"
         DEVICE="$STOCK_DEVICE"
-        UPDATER_PATH="$(pwd)/template/META-INF/com/google/android/updater-script"
+        UPDATER_PATH="$(pwd)/makerom/META-INF/com/google/android/updater-script"
+
+        mkdir -p "$MAKEROM_DIR"
+        cp -r template/* "$MAKEROM_DIR"/
 
         if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
             DEVICE_CODENAME="a32"
@@ -54,6 +58,7 @@ FLASHABLE_ZIP_CREATION() {
         BUILD_DATE=$(date +'%d%m%Y')
         TIMESTAMP=$(date +'%s')
         DEVICE="$STOCK_DEVICE"
+        MAKEROM_DIR="$(pwd)/makerom"
 
         if [[ "$DEVICE" == "SM-A325F" ]]; then
             DEVICE_CODENAME="a32"
@@ -70,10 +75,6 @@ FLASHABLE_ZIP_CREATION() {
         else
             DEVICE_CODENAME="unknown"
         fi
-
-        MAKEROM_DIR="$(pwd)/makerom"
-        mkdir -p "$MAKEROM_DIR"
-        cp -r template/* "$MAKEROM_DIR"/
 
         echo "Generating build_info.txt..."
         {

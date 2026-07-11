@@ -85,11 +85,14 @@ initialize_logs() {
 # finalize_logs: Create final summary log with build duration and status
 finalize_logs() {
     local stock_device="$1"
-    local lumirom_version="$2"
-    local output_filesystem="$3"
-    local use_mods="$4"
-    local use_galaxy_ai="$5"
-    local start_time="$6"
+    local target_device="$2"
+    local target_csc="$3"
+    local target_imei="$4"
+    local lumirom_version="$5"
+    local output_filesystem="$6"
+    local use_mods="$7"
+    local use_galaxy_ai="$8"
+    local start_time="$9"
     
     local end_time=$(date +%s)
     local elapsed=$((end_time - start_time))
@@ -115,6 +118,7 @@ finalize_logs() {
         echo "======================================"
         echo "Device: $stock_device"
         echo "Target Device: $target_device"
+        echo "Target CSC: $target_csc"  
         echo "Version: $lumirom_version"
         echo "Output Filesystem: $output_filesystem"
         echo "Use Mods: $use_mods"
