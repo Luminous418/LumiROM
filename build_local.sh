@@ -2,6 +2,13 @@
 
 START_TIME=$(date +%s)
 
+if [ "$#" -lt 4 ]; then
+        echo -e "Usage:${FUNCNAME[0]} <STOCK_MODEL> <TARGET_MODEL> <CSC> <IMEI>"
+        echo ""
+        echo -e "Example: bash build_local.sh SM-A325F SM-A346B EUX 352990180814770"
+        exit 1
+    fi
+
 # --- Variable Configuration ---
 # Edit these values according to what you need for your build
 STOCK_DEVICE="$1"
