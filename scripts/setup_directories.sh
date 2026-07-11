@@ -20,3 +20,6 @@ for DIR in "$@"; do
         echo -e "${YELLOW}Directory already exists:${RESET} $DIR"
     fi
 done
+
+mkdir -p "makerom"
+cp -r template/* "makerom"/

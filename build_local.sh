@@ -68,17 +68,6 @@ if CHECK_FIRMWARE_IMAGES "$IMGS_DIR" "$BUILD_PARTITIONS"; then
 else
     log_message "✗ No firmware cache found. Proceeding with download..."
     DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-    # Detect TARGET_DEVICE from the downloaded firmware directory
-    if [ -d "FIRMWARE/SM-A346B" ]; then
-        export TARGET_DEVICE="SM-A346B"
-        log_message "✓ Detected TARGET_DEVICE: $TARGET_DEVICE"
-    elif [ -d "FIRMWARE/SM-A245F" ]; then
-        export TARGET_DEVICE="SM-A245F"
-        log_message "✓ Detected TARGET_DEVICE: $TARGET_DEVICE"
-    else
-        log_error "Could not detect TARGET_DEVICE from downloaded firmware!"
-        exit 1
-    fi
 fi
 
 # Check if vendor image is already cached

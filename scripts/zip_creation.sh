@@ -8,12 +8,8 @@ UPDATE_ZIP_SCRIPT() {
         BUILD_PROP_PATH="$EXTRACTED_FIRM_DIR/system/system/build.prop"
         FINGERPRINT=$(grep -m 1 "ro.system.build.fingerprint=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
         BUILD_DATE=$(date +'%d%m%Y')
-        MAKEROM_DIR="$(pwd)/makerom"
         DEVICE="$STOCK_DEVICE"
         UPDATER_PATH="$(pwd)/makerom/META-INF/com/google/android/updater-script"
-
-        mkdir -p "$MAKEROM_DIR"
-        cp -r template/* "$MAKEROM_DIR"/
 
         if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
             DEVICE_CODENAME="a32"

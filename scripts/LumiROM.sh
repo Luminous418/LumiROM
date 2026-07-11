@@ -1098,7 +1098,7 @@ BUILD_IMG() {
     local FILE_SYSTEM="$2"
 	local OUT_DIR="$3"
     local DEVICE_CONFIG="$(pwd)/LumiROM/Devices/${STOCK_DEVICE}/config"
-    local OP_LIST="$(pwd)/template/dynamic_partitions_op_list"
+    local OP_LIST="$(pwd)/makerom/dynamic_partitions_op_list"
 
     if [[ -f "$DEVICE_CONFIG" ]]; then
         local SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')
