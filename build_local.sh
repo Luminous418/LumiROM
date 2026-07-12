@@ -59,7 +59,7 @@ bash scripts/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs LOGS 2>&1 | tee
 
 log_section "Checking the environment"
 source scripts/local_official.sh 
-IS_LOCAL_OFFICIAL 2>&1 | tee -a "$LOG_FILE"
+IS_LOCAL_OFFICIAL >> "$LOG_FILE" 2>&1
 
 log_section "Downloading Firmware"
 source scripts/FW.sh

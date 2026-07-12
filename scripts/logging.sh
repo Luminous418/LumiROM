@@ -120,6 +120,7 @@ finalize_logs() {
         echo "Target Device: $target_device"
         echo "Target CSC: $target_csc"  
         echo "Version: $lumirom_version"
+        echo "Environment: $BUILD_STATUS"
         echo "Output Filesystem: $output_filesystem"
         echo "Use Mods: $use_mods"
         echo "Use Galaxy AI: $use_galaxy_ai"
