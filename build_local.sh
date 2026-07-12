@@ -70,6 +70,10 @@ else
     DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 fi
 
+log_section "Extracting"
+EXTRACT_FIRMWARE "IMGs" 2>&1 | tee -a "$LOG_FILE"
+EXTRACT_SUPER_IMG "IMGs" 2>&1 | tee -a "$LOG_FILE"
+
 # Check if vendor image is already cached
 log_message "Checking vendor cache..."
 if CHECK_VENDOR_IMAGE "$IMGS_DIR"; then
@@ -79,10 +83,7 @@ else
     log_message "✗ No vendor cache found. Proceeding with download..."
     DOWNLOAD_VENDOR "IMGs" 2>&1 | tee -a "$LOG_FILE"
 fi
-
-log_section "Extracting"
-EXTRACT_FIRMWARE "IMGs" 2>&1 | tee -a "$LOG_FILE"
-EXTRACT_SUPER_IMG "IMGs" 2>&1 | tee -a "$LOG_FILE"
+log_section "Preparing partitions"
 PREPARE_PARTITIONS "IMGs" 2>&1 | tee -a "$LOG_FILE"
 EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 

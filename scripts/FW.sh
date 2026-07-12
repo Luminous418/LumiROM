@@ -169,9 +169,9 @@ DOWNLOAD_OTA() {
 
     echo -e "${YELLOW}Downloading OTA${RESET}"
     if [ -d "FIRMWARE/SM-A346B" ]; then
-        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_SM-A346B.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" 2>&1 | tee -a "$LOG_FILE" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_SM-A346B.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
     elif [ -d "FIRMWARE/SM-A245F" ]; then
-        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_SM-A245F.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A245F_BOMB.zip?download=true" 2>&1 | tee -a "$LOG_FILE" || return 1
+        aria2c -x 16 -d "$DOWN_DIR" -o "OTA_SM-A245F.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A245F_BOMB.zip?download=true" || return 1
     fi
     # Cleanup any leftover .aria2 control files
     wait
@@ -219,7 +219,7 @@ DOWNLOAD_VENDOR() {
     local DOWN_DIR="${1}"
 
     echo -e "${YELLOW}Downloading vendor for${RESET} ${STOCK_DEVICE}"
-    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" &
+    aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" || return 1
     
     # Cleanup any leftover .aria2 control files
     wait
@@ -311,6 +311,8 @@ EXTRACT_SUPER_IMG() {
         echo "- Extracting partitions from super.img"
         ./bin/lp/lpunpack "$IMGS_DIR/super.img" "$IMGS_DIR" || return 1
         rm -f "$IMGS_DIR/super.img"
+        # Delete the vendor as it is from the firmware and not from the stock device
+        rm -f "$IMGS_DIR/vendor.img"
 
         echo -e "- super.img extraction complete"
 
