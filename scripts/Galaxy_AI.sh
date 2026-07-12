@@ -95,7 +95,10 @@ GALAXY_AI() {
         # Adding Now Brief
         echo -e "${YELLOW}Adding Now Brief${RESET}"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk"
-        wget -O "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk" "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/SamsungSmartSuggestions.apk?download=true"
+        aria2c -x 16 -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/" -o "SamsungSmartSuggestions.apk" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/SamsungSmartSuggestions.apk?download=true" || return 1
+        # Cleanup any leftover .aria2 control files
+        wait
+        find "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/" -name "*.aria2" -exec rm -f {} +
     else
     	echo
         echo -e "${RED}The use of Galaxy AI for this build have been disabled by the user${RESET}"
