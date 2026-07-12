@@ -10,7 +10,7 @@ if [ "$#" -lt 4 ]; then
     fi
 
 # --- Variable Configuration ---
-# Edit these values according to what you need for your build
+# Edit these values according to what you need for your build (dont touch the ${VAR} variables unless you know what you are doing)
 STOCK_DEVICE="$1"
 TARGET_DEVICE="$2"
 TARGET_CSC="$3"

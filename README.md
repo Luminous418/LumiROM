@@ -158,13 +158,21 @@ cd LumiROM
 ```
 
 #### 2. Configure your build:
-Edit the variables at the top of `build_local.sh`:
+You will find these variables on `build_local.sh`:
 ```bash
-STOCK_DEVICE="SM-A325F"       # Your device model
-USE_MODS="Yes"                # Include mods (Vulkan fix, VoLTE fix, tweaks, wallpapers)
-USE_GALAXY_AI="Yes"           # Include Galaxy AI features
-USE_UI_8_TETHERING_APEX="False"  # Set to True if kernel BPF < 5.10
+STOCK_DEVICE="$1"               # Your device model
+TARGET_DEVICE="$2"              # The phone you want to port
+TARGET_CSC="$3"                 # The region from the target device
+TARGET_IMEI="$4"                # The IMEI from target device
+USE_MODS="Yes"                  # Include mods (Vulkan fix, VoLTE fix, tweaks, wallpapers)
+USE_GALAXY_AI="Yes"             # Include Galaxy AI features
+USE_UI_8_TETHERING_APEX="False" # Set to True if kernel BPF < 5.10
 ```
+The use for this is: 
+```bash
+bash build_local.sh <STOCK_MODEL> <TARGET_MODEL> <CSC> <IMEI>
+```
+Change accordingly to your needs but dont touch the $1, $2 etc.
 
 #### 3. Run the build:
 ```bash

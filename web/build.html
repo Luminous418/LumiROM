@@ -196,13 +196,18 @@ cd LumiROM</code>
                             <span class="term-dot dot-yellow"></span>
                             <span class="term-dot dot-green"></span>
                             <span class="terminal-title">build_local.sh</span>
-                            <button class="copy-term-btn">Copy</button>
                           </div>
                           <div class="terminal-body">
-                            <code>STOCK_DEVICE="SM-A325F"         # Your model
-USE_MODS="Yes"                  # Include mods
-USE_GALAXY_AI="Yes"             # Include AI features
-USE_UI_8_TETHERING_APEX="False" # Set True if kernel BPF &lt; 5.10</code>
+                          <span class="terminal-cmd">VARIABLES TO CONFIGURE:</span>
+<span class="terminal-output">
+STOCK_DEVICE="$1"               # Your device model
+TARGET_DEVICE="$2"              # The phone you want to port
+TARGET_CSC="$3"                 # The region from the target device
+TARGET_IMEI="$4"                # The IMEI from target device
+USE_MODS="Yes"                  # Include mods (Vulkan fix, VoLTE fix, tweaks, wallpapers)
+USE_GALAXY_AI="Yes"             # Include Galaxy AI features
+USE_UI_8_TETHERING_APEX="False" # Set to True if kernel BPF &lt; 5.10
+</span>
                           </div>
                         </div>
                       </div>
@@ -215,7 +220,8 @@ USE_UI_8_TETHERING_APEX="False" # Set True if kernel BPF &lt; 5.10</code>
                       <h3 class="step-title">Execute the Script</h3>
                       <div class="step-content">
                         <p>Run the script to download dependencies, apply modifications, and package
-                        the flashable ZIP into the <code>ROM/</code> directory:</p>
+                        the flashable ZIP into the <code>ROM/</code> directory <br><br>
+                      The use for <code>build_local.sh</code>is:</p>
                         <div class="terminal-block">
                           <div class="terminal-header">
                             <span class="term-dot dot-red"></span>
@@ -225,10 +231,11 @@ USE_UI_8_TETHERING_APEX="False" # Set True if kernel BPF &lt; 5.10</code>
                             <button class="copy-term-btn">Copy</button>
                           </div>
                           <div class="terminal-body">
-                            <code>bash build_local.sh</code>
+                            <code>bash build_local.sh &lt;STOCK_MODEL> &lt;TARGET_MODEL> &lt;CSC> &lt;IMEI></code>
                           </div>
                         </div>
                       </div>
+                      <p>Change accordingly to your needs but dont touch the $1, $2 etc.</p>
                     </div>
                   </div>
 
