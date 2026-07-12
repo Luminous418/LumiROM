@@ -8,6 +8,7 @@ TMP/
 IMGs/
 LOGS/
 CACHE/
+makerom/
 .local/
 bin/py_scripts/__pycache__/*
 .env
