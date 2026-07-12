@@ -57,6 +57,9 @@ log_section "Setting up directories"
 mkdir -p "$WORK_DIR"
 bash scripts/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
 
+log_section "Checking the environment"
+bash scripts/local_official.sh 2>&1 | tee -a "$LOG_FILE"
+
 log_section "Downloading Firmware"
 source scripts/FW.sh
 source "$DEVICES_DIR/$STOCK_DEVICE/config"

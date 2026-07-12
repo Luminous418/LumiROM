@@ -10,6 +10,7 @@ LOGS/
 CACHE/
 .local/
 bin/py_scripts/__pycache__/*
+.env
 
 # Logs
 *.log
