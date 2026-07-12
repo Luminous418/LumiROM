@@ -16,7 +16,6 @@ bin/py_scripts/__pycache__/*
 apt.log
 pip.log
 apt_fast_setup.log
-logs/
 
 # Firmware and Flashable ZIPs
 OUT/*.img
@@ -25,8 +24,6 @@ OUT/*.zip
 
 # Ignore generated/transient files in the template directory
 template/build_info.txt
-template/boot.img
-template/dynamic_partitions_op_list
 template/
 
 # OS Specific
