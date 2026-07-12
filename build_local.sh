@@ -70,7 +70,7 @@ else
     DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
 fi
 
-log_section "Extracting"
+log_section "Extracting $TARGET_DEVICE images"
 EXTRACT_FIRMWARE "IMGs" 2>&1 | tee -a "$LOG_FILE"
 EXTRACT_SUPER_IMG "IMGs" 2>&1 | tee -a "$LOG_FILE"
 

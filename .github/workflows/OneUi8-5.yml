@@ -1,4 +1,4 @@
-name: LumiROM Tools for specific device
+name: LumiROM Tools
 
 on:
   workflow_dispatch:
@@ -6,7 +6,19 @@ on:
       STOCK_DEVICE:
         description: "Put the Model of your phone, remember it starts with SM-"
         required: true
-        default: "SM-A325F"
+        default: "SM-"
+      TARGET_DEVICE:
+        description: "Put the Model of the target, remember it starts with SM-"
+        required: true
+        default: "SM-"
+      TARGET_CSC:
+        description: "Put the CSC of the target, remember it is 3 letters"
+        required: true
+        default: "EUX"
+      TARGET_IMEI:
+        description: "Put the IMEI of the target, remember it is 15 digits"
+        required: true
+        default: "358212589089183"
       USE_MODS:
         description: "Add mods to the ROM, 'Yes' to add, 'No' to don't add"
         required: true
@@ -35,16 +47,20 @@ jobs:
 
     - name: Setup directories
       run: |
-        bash scripts/setup_directories.sh FIRMWARE WORK OUT OTA ROM TMP IMGs
+        bash scripts/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs
         chmod +x scripts/*.sh
+        chmod +x bin/MergeOTA/MergeAll.sh
         chmod +x bin/erofs-utils/extract.erofs
         chmod +x bin/erofs-utils/mkfs.erofs
-        chmod +x bin/MergeOTA/MergeAll.sh
+        chmod +x bin/lp/*
     
     - name: Set build environment
       shell: bash
       run: |
         echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
+        echo "TARGET_DEVICE=${{ github.event.inputs.TARGET_DEVICE }}" >> $GITHUB_ENV
+        echo "TARGET_CSC=${{ github.event.inputs.TARGET_CSC }}" >> $GITHUB_ENV
+        echo "TARGET_IMEI=${{ github.event.inputs.TARGET_IMEI }}" >> $GITHUB_ENV
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
         echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
         echo "USE_GALAXY_AI=${{ github.event.inputs.USE_GALAXY_AI }}" >> $GITHUB_ENV
@@ -73,17 +89,14 @@ jobs:
       run: |
         source scripts/FW.sh
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
-        DOWNLOAD_FIRMWARE_LUMI "FIRMWARE"
+        DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "FIRMWARE"
 
-    - name: Download OTA
+    - name: Extract firmware
+      shell: bash
       run: |
         source scripts/FW.sh
-        DOWNLOAD_OTA "OTA"
-
-    - name: Merge OTA and FW
-      run: |
-        source scripts/FW.sh
-        MERGE_OTA "FIRMWARE" "OTA" "IMGs"
+        EXTRACT_FIRMWARE "IMGs"
+        EXTRACT_SUPER_IMG "IMGs"
 
     - name: Download vendor for ${{ github.event.inputs.STOCK_DEVICE }}
       shell: bash
@@ -91,8 +104,7 @@ jobs:
         source scripts/FW.sh
         DOWNLOAD_VENDOR "IMGs"
 
-
-    - name: Extract firmware
+    - name: Preparing partitions
       shell: bash
       run: |
         source scripts/FW.sh
