@@ -32,7 +32,7 @@ export BUILD_PARTITIONS="product,vendor,odm,system_ext,system"
 
 # --- Load Logging System ---
 source scripts/logging.sh
-initialize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$LUMIROM_VERSION" "$OUTPUT_FILESYSTEM" "$USE_MODS" "$USE_GALAXY_AI"
+initialize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$LUMIROM_VERSION" "$USE_MODS" "$USE_GALAXY_AI" "$USE_UI_8_TETHERING_APEX" "$OUTPUT_FILESYSTEM"
 
 # --- Start of Process ---
 
@@ -153,4 +153,4 @@ log_message "✓ LumiROM $LUMIROM_VERSION for $STOCK_DEVICE is ready!"
 log_message "✓ You can find it in the ROM folder"
 
 # Generate build summary and finalize logs
-finalize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$LUMIROM_VERSION" "$OUTPUT_FILESYSTEM" "$USE_MODS" "$USE_GALAXY_AI" "$START_TIME"
+finalize_logs "$START_TIME"

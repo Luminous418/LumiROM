@@ -45,9 +45,10 @@ initialize_logs() {
     local target_csc="$3"
     local target_imei="$4"
     local lumirom_version="$5"
-    local output_filesystem="$6"
-    local use_mods="$7"
-    local use_galaxy_ai="$8"
+    local use_mods="$6"
+    local use_galaxy_ai="$7"
+    local use_ui_8_tethering_apex="$8"
+    local output_filesystem="$9"
     
     {
         echo "======================================"
@@ -59,9 +60,10 @@ initialize_logs() {
         echo "Target CSC: $target_csc"
         echo "Target IMEI: $target_imei"
         echo "Version: $lumirom_version"
-        echo "Output Filesystem: $output_filesystem"
         echo "Use Mods: $use_mods"
         echo "Use Galaxy AI: $use_galaxy_ai"
+        echo "Use UI 8 Tethering Apex: $use_ui_8_tethering_apex"
+        echo "Output Filesystem: $output_filesystem"
         echo "======================================"
         echo
     } > "$LOG_FILE"
@@ -71,12 +73,15 @@ initialize_logs() {
         echo "LumiROM Build Log"
         echo "======================================"
         echo "Start Time: $(date)"
-        echo "Device: $stock_device"
+        echo "Stock Device: $stock_device"
         echo "Target Device: $target_device"
+        echo "Target CSC: $target_csc"
+        echo "Target IMEI: $target_imei"
         echo "Version: $lumirom_version"
-        echo "Output Filesystem: $output_filesystem"
         echo "Use Mods: $use_mods"
         echo "Use Galaxy AI: $use_galaxy_ai"
+        echo "Use UI 8 Tethering Apex: $use_ui_8_tethering_apex"
+        echo "Output Filesystem: $output_filesystem"
         echo "======================================"
         echo
     } > "$LOG_FILE"
@@ -84,15 +89,7 @@ initialize_logs() {
 
 # finalize_logs: Create final summary log with build duration and status
 finalize_logs() {
-    local stock_device="$1"
-    local target_device="$2"
-    local target_csc="$3"
-    local target_imei="$4"
-    local lumirom_version="$5"
-    local output_filesystem="$6"
-    local use_mods="$7"
-    local use_galaxy_ai="$8"
-    local start_time="$9"
+    local start_time="$1"
     
     local end_time=$(date +%s)
     local elapsed=$((end_time - start_time))
@@ -116,15 +113,6 @@ finalize_logs() {
         echo "======================================"
         echo "LumiROM Build Summary"
         echo "======================================"
-        echo "Device: $stock_device"
-        echo "Target Device: $target_device"
-        echo "Target CSC: $target_csc"  
-        echo "Version: $lumirom_version"
-        echo "Environment: $BUILD_STATUS"
-        echo "Output Filesystem: $output_filesystem"
-        echo "Use Mods: $use_mods"
-        echo "Use Galaxy AI: $use_galaxy_ai"
-        echo
         echo "Build started: $(date -d @$start_time)"
         echo "Build ended:   $(date -d @$end_time)"
         echo "Build duration: $time_str"
