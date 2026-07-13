@@ -41,6 +41,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
 
+    - name: Validate inputs
+      shell: bash
+      run: |
+        source scripts/validation.sh
+        VALIDATION
+
     - name: Install required packages
       run: |
         bash scripts/install_packages.sh

@@ -2,22 +2,18 @@
 
 START_TIME=$(date +%s)
 
-if [ "$#" -lt 4 ]; then
-        echo -e "Usage:${FUNCNAME[0]} <STOCK_MODEL> <TARGET_MODEL> <CSC> <IMEI>"
-        echo ""
-        echo -e "Example: bash build_local.sh SM-A325F SM-A346B EUX 352990180814770"
-        exit 1
-    fi
-
 # --- Variable Configuration ---
 # Edit these values according to what you need for your build (dont touch the ${VAR} variables unless you know what you are doing)
 STOCK_DEVICE="$1"
 TARGET_DEVICE="$2"
 TARGET_CSC="$3"
 TARGET_IMEI="$4"
-USE_MODS="Yes"
-USE_GALAXY_AI="Yes"
-USE_UI_8_TETHERING_APEX="False"
+USE_MODS="$5"
+USE_GALAXY_AI="$6"
+USE_UI_8_TETHERING_APEX="$7"
+
+source scripts/validation.sh
+VALIDATION
 
 # A346B imei = 352990180814770
 # A245F imei = 358212589089183

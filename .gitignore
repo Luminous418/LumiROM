@@ -11,6 +11,7 @@ CACHE/
 makerom/
 .local/
 bin/py_scripts/__pycache__/*
+test.sh
 .env
 
 # Logs
