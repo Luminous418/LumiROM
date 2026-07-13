@@ -168,16 +168,14 @@ USE_MODS="Yes"                  # Include mods (Vulkan fix, VoLTE fix, tweaks, w
 USE_GALAXY_AI="Yes"             # Include Galaxy AI features
 USE_UI_8_TETHERING_APEX="False" # Set to True if kernel BPF < 5.10
 ```
+
+#### 3. Run the build:
 The use for this is: 
 ```bash
 bash build_local.sh <STOCK_MODEL> <TARGET_MODEL> <CSC> <IMEI>
 ```
 Change accordingly to your needs but dont touch the $1, $2 etc.
-
-#### 3. Run the build:
-```bash
-bash build_local.sh
-```
+<br>
 The script will install dependencies, download firmware (if not cached), apply all patches and build the ROM. The output ZIP will be in the `ROM/` folder.
 
 #### 4. Manage firmware cache:
