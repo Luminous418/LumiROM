@@ -2,8 +2,7 @@
 
 START_TIME=$(date +%s)
 
-# --- Variable Configuration ---
-# Edit these values according to what you need for your build (dont touch the ${VAR} variables unless you know what you are doing)
+# Variables that need an input from the user
 STOCK_DEVICE="$1"
 TARGET_DEVICE="$2"
 TARGET_CSC="$3"
