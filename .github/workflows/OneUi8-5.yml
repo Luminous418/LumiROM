@@ -21,15 +21,15 @@ on:
         default: "358212589089183"
       USE_MODS:
         description: "Add mods to the ROM, 'Yes' to add, 'No' to don't add"
-        required: true
+        required: false
         default: "Yes"
       USE_GALAXY_AI:
         description: "Add Galaxy AI to the ROM, 'Yes' to add, 'No' to don't add"
-        required: true
+        required: false
         default: "Yes"
       USE_UI_8_TETHERING_APEX:
         description: "Set True if your kernel BPF version is lower than 5.10"
-        required: true
+        required: false
         default: "False"
 
 jobs:
