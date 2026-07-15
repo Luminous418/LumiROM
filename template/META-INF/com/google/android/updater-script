@@ -12,7 +12,7 @@ ui_print(" ");
 ui_print("   8.0.0-01012000 for Galaxy Axx XG");
 ui_print(" ");
 ui_print("************************************************");
-ui_print("One UI version: 8.5");
+ui_print("One UI version: 0.0");
 ui_print("Source: samsung/a00xdxx/a00x:00/BOMB.000000.000/A000BOMBA0418:user/release-keys");
 ui_print("************************************************");
 
