@@ -9,6 +9,7 @@ IMGs/
 LOGS/
 CACHE/
 makerom/
+SAVEDIMGS/
 .local/
 bin/py_scripts/__pycache__/*
 test.sh
