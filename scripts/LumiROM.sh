@@ -382,6 +382,7 @@ FIX_VNDK() {
         echo -e "${RED}- VNDK mismatch or missing.${RESET}"
         echo -e "${YELLOW}- Extracting VNDK from $STOCK_DEVICE${RESET}"
         rm -f "$TARGET_ROM_SYSTEM_EXT_DIR/apex/com.android.vndk"*.apex
+        mkdir -p "$TARGET_ROM_SYSTEM_EXT_DIR/apex/"
         cp -rfa "$VNDKS_COLLECTION/vndk31-a16/com.android.vndk.v${STOCK_VNDK_VERSION}.apex" "$TARGET_ROM_SYSTEM_EXT_DIR/apex/"
         sed -i "/<vendor-ndk>/,/<\/vendor-ndk>/ s|<version>[0-9]\+</version>|<version>${STOCK_VNDK_VERSION}</version>|" "$TARGET_ROM_SYSTEM_EXT_DIR/etc/vintf/manifest.xml"
     fi

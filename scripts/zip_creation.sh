@@ -5,14 +5,14 @@ source scripts/bash_colors.sh
 UPDATE_ZIP_SCRIPT() {
     
         local EXTRACTED_FIRM_DIR="$1"
-        local oneui_prop_ver=$(grep -m 1 "ro.build.version.oneui=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
-        local cut_version="${oneui_prop_ver:0:3}"
-        ONEUI_VERSION="${cut_version/0/.}"
         BUILD_PROP_PATH="$EXTRACTED_FIRM_DIR/system/system/build.prop"
         FINGERPRINT=$(grep -m 1 "ro.system.build.fingerprint=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
         BUILD_DATE=$(date +'%d%m%Y')
         DEVICE="$STOCK_DEVICE"
         UPDATER_PATH="$(pwd)/makerom/META-INF/com/google/android/updater-script"
+        local oneui_prop_ver=$(grep -m 1 "ro.build.version.oneui=" "$BUILD_PROP_PATH" | cut -d'=' -f2)
+        local cut_version="${oneui_prop_ver:0:3}"
+        ONEUI_VERSION="${cut_version/0/.}"
 
         if [[ "$DEVICE" == "SM-A325F" || "$DEVICE" == "SM-A325M" ]]; then
             DEVICE_CODENAME="a32"
@@ -49,6 +49,8 @@ UPDATE_ZIP_SCRIPT() {
         sed -i "s!^getprop(\"ro.boot.em.model\").*!$NEW_CHECK!" "$UPDATER_PATH"
 
         sed -i "s!ui_print(\".*for .*\");!ui_print(\"   $LUMIROM_VERSION-$BUILD_DATE $BUILD_STATUS for $DISPLAY_NAME\");!" "$UPDATER_PATH"
+
+        echo -e "${GREEN}Updating One UI version to${RESET} $ONEUI_VERSION ${GREEN}on updater-script...${RESET}"
 
         sed -i "s!ui_print(\"One UI version: .*\");!ui_print(\"One UI version: $ONEUI_VERSION\");!" "$UPDATER_PATH"
 
