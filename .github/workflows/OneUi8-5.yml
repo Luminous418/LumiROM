@@ -67,15 +67,16 @@ jobs:
         echo "TARGET_DEVICE=${{ github.event.inputs.TARGET_DEVICE }}" >> $GITHUB_ENV
         echo "TARGET_CSC=${{ github.event.inputs.TARGET_CSC }}" >> $GITHUB_ENV
         echo "TARGET_IMEI=${{ github.event.inputs.TARGET_IMEI }}" >> $GITHUB_ENV
-        echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
         echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
         echo "USE_GALAXY_AI=${{ github.event.inputs.USE_GALAXY_AI }}" >> $GITHUB_ENV
+        echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
         echo "LUMIROM_VERSION=8.6.3" >> $GITHUB_ENV
 
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
-        echo "WORK_DIR=/dev/shm/WORK" >> $GITHUB_ENV
+        echo "WORK_DIR=$PWD/TMP/LumiWORK" >> $GITHUB_ENV
         echo "FIRM_DIR=$PWD/FIRMWARE" >> $GITHUB_ENV
+        echo "IMGS_DIR=$PWD/IMGs" >> $GITHUB_ENV
         echo "DEVICES_DIR=$PWD/LumiROM/Devices" >> $GITHUB_ENV
         echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
         echo "VNDKS_COLLECTION=$PWD/LumiROM/vndks" >> $GITHUB_ENV
