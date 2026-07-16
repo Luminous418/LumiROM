@@ -153,33 +153,33 @@ PATCH_FSTAB_EROFS() {
 
     echo -e "${YELLOW}Applying patches EROFS to fstab...${RESET}"
 
-    local fstab_files="
-        vendor/etc/fstab.mt6768
-        vendor/etc/fstab.mt6769t
-        vendor/etc/fstab.mt6833
-    "
-    # Patch fstab to add EROFS
-    for fstab in $fstab_files; do
-        local target="$EXTRACTED_FIRM_DIR/$fstab"
+    local vendor_etc_dir="$EXTRACTED_FIRM_DIR/vendor/etc"
+    local fstab_files=()
+    mapfile -t fstab_files < <(find "$vendor_etc_dir" -maxdepth 1 -type f -name "fstab.mt*")
 
-        if [ -f "$target" ]; then
-            echo "- Processing: $fstab"
-            
-            # system
-            sudo sed -i '/^system \/system ext4/a system\t/system\terofs\tro\twait,,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey' "$target"
-            
-            # vendor
-            sudo sed -i '/^vendor \/vendor ext4/a vendor\t/vendor\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
-            
-            # product
-            sudo sed -i '/^product \/product ext4/a product\t/product\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
-            
-            # odm
-            sudo sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
-        else
-            echo -e "${RED}[Omitted]${RESET} $fstab ${RED}not found${RESET}"
-        fi
+    if [ ${#fstab_files[@]} -eq 0 ]; then
+        echo -e "${RED}No fstab files found in${RESET} $vendor_etc_dir"
+        return 1
+    fi
+
+    # Patch fstab to add EROFS
+    for target in "${fstab_files[@]}"; do
+        local fstab_name=$(basename "$target")
+        echo "- Processing: /vendor/etc/$fstab_name"
+        
+        # system
+        sudo sed -i '/^system \/system ext4/a system\t/system\terofs\tro\twait,,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey' "$target"
+        
+        # vendor
+        sudo sed -i '/^vendor \/vendor ext4/a vendor\t/vendor\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+        
+        # product
+        sudo sed -i '/^product \/product ext4/a product\t/product\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+        
+        # odm
+        sudo sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
     done
+
     echo -e "${GREEN}Done, now${RESET} $STOCK_DEVICE ${GREEN}is EROFS-enabled.${RESET}"
 }
 
