@@ -162,22 +162,17 @@ PATCH_FSTAB_EROFS() {
         return 1
     fi
 
-    # Patch fstab to add EROFS
+    local partitions="system vendor product odm"
+
     for target in "${fstab_files[@]}"; do
         local fstab_name=$(basename "$target")
-        echo "- Processing: /vendor/etc/$fstab_name"
+        echo "- Processing: vendor/etc/$fstab_name"
         
-        # system
-        sudo sed -i '/^system \/system ext4/a system\t/system\terofs\tro\twait,,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey' "$target"
-        
-        # vendor
-        sudo sed -i '/^vendor \/vendor ext4/a vendor\t/vendor\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
-        
-        # product
-        sudo sed -i '/^product \/product ext4/a product\t/product\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
-        
-        # odm
-        sudo sed -i '/^odm \/odm ext4/a odm\t/odm\terofs\tro\twait,,avb,logical,first_stage_mount' "$target"
+        for part in $partitions; do
+            if sudo grep -q "^$part .* ext4 " "$target"; then
+                sudo sed -i -E "/^$part[[:space:]]+[^[:space:]]+[[:space:]]+ext4/ { p; s/([[:space:]]+)ext4([[:space:]]+)/\1erofs\2/ }" "$target"
+            fi
+        done
     done
 
     echo -e "${GREEN}Done, now${RESET} $STOCK_DEVICE ${GREEN}is EROFS-enabled.${RESET}"
