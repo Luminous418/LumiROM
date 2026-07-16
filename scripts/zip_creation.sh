@@ -61,6 +61,8 @@ FLASHABLE_ZIP_CREATION() {
         BUILD_DATE=$(date +'%d%m%Y')
         TIMESTAMP=$(date +'%s')
         DEVICE="$STOCK_DEVICE"
+        local cut_version_stock="${STOCK_DEVICE:3:3}"
+        local cut_version_target="${TARGET_DEVICE:3:3}"
         MAKEROM_DIR="$(pwd)/makerom"
 
         if [[ "$DEVICE" == "SM-A325F" ]]; then
@@ -115,8 +117,8 @@ FLASHABLE_ZIP_CREATION() {
         7z a -mx=6 -mmt=4 "$ZIP_FILE" ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list 2>/dev/null || true
         
 
-        mkdir -p "../ROM/${BUILD_DATE}-${TIMESTAMP}/"
-        mv "$ZIP_FILE" "../ROM/${BUILD_DATE}-${TIMESTAMP}/"
+        mkdir -p "../ROM/${BUILD_DATE}-${TIMESTAMP}-${cut_version_stock}_to_${cut_version_target}/"
+        mv "$ZIP_FILE" "../ROM/${BUILD_DATE}-${TIMESTAMP}-${cut_version_stock}_to_${cut_version_target}/"
 
         echo -e "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
 
