@@ -33,9 +33,9 @@ log_error() {
 # log_section: Print section header with dividers
 log_section() {
     local section="$1"
-    log_message "========================================="
-    log_message "$section"
-    log_message "========================================="
+    log_message "${BLUE}=========================================${RESET}"
+    log_message "${HI_BLUE}$section${RESET}"
+    log_message "${BLUE}=========================================${RESET}"
 }
 
 # initialize_logs: Create header for the log file
@@ -51,9 +51,9 @@ initialize_logs() {
     local output_filesystem="$9"
     
     {
-        echo "======================================"
-        echo "LumiROM Build Log"
-        echo "======================================"
+        echo "${BLUE}======================================${RESET}"
+        echo "${HI_BLUE}LumiROM Build Log${RESET}"
+        echo "${BLUE}======================================${RESET}"
         echo "Start Time: $(date)"
         echo "Stock Device: $stock_device"
         echo "Target Device: $target_device"
@@ -64,14 +64,14 @@ initialize_logs() {
         echo "Use Galaxy AI: $use_galaxy_ai"
         echo "Use UI 8 Tethering Apex: $use_ui_8_tethering_apex"
         echo "Output Filesystem: $output_filesystem"
-        echo "======================================"
+        echo "${BLUE}======================================${RESET}"
         echo
     } > "$LOG_FILE"
     
     {
-        echo "======================================"
-        echo "LumiROM Build Log"
-        echo "======================================"
+        echo "${BLUE}======================================${RESET}"
+        echo "${HI_BLUE}LumiROM Build Log${RESET}"
+        echo "${BLUE}======================================${RESET}"
         echo "Start Time: $(date)"
         echo "Stock Device: $stock_device"
         echo "Target Device: $target_device"
@@ -82,7 +82,7 @@ initialize_logs() {
         echo "Use Galaxy AI: $use_galaxy_ai"
         echo "Use UI 8 Tethering Apex: $use_ui_8_tethering_apex"
         echo "Output Filesystem: $output_filesystem"
-        echo "======================================"
+        echo "${BLUE}======================================${RESET}"
         echo
     } > "$LOG_FILE"
 }
@@ -110,9 +110,9 @@ finalize_logs() {
     
     # Create summary log
     {
-        echo "======================================"
-        echo "LumiROM Build Summary"
-        echo "======================================"
+        echo "${BLUE}======================================${RESET}"
+        echo "${HI_BLUE}LumiROM Build Summary${RESET}"
+        echo "${BLUE}======================================${RESET}"
         echo "Build started: $(date -d @$start_time)"
         echo "Build ended:   $(date -d @$end_time)"
         echo "Build duration: $time_str"
@@ -123,7 +123,7 @@ finalize_logs() {
         else
             echo "✓ Build completed successfully with no errors"
         fi
-        echo "======================================"
+        echo "${BLUE}======================================${RESET}"
     } | tee -a "$SUMMARY_LOG"
     
     log_section "Process completed - See logs in $LOGS_DIR"
