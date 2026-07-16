@@ -166,16 +166,17 @@ PATCH_FSTAB_EROFS() {
 
     for target in "${fstab_files[@]}"; do
         local fstab_name=$(basename "$target")
-        echo "- Processing: vendor/etc/$fstab_name"
+        echo -e "${CYAN}Processing:${RESET} /vendor/etc/$fstab_name"
         
         for part in $partitions; do
             if sudo grep -E -q "^$part[[:space:]]+.*erofs" "$target"; then
-                echo -e "  -> ${YELLOW}[Skipped]${RESET} Partition '$part' already contains 'erofs'."
+                echo -e "${YELLOW}Skipped:${RESET} Partition $part already contains 'erofs'."
                 continue
             fi
 
-            if sudo grep -q "^$part .* ext4 " "$target"; then
-                sudo sed -i -E "/^$part[[:space:]]+[^[:space:]]+[[:space:]]+ext4/ { p; s/([[:space:]]+)ext4([[:space:]]+)/\1erofs\2/ }" "$target"
+            if sudo grep -E -q "^$part[[:space:]]+.*ext4" "$target"; then
+                echo -e "${GREEN}Patching:${RESET} $part (ext4 -> erofs)"
+                sudo sed -i -E "/^$part[[:space:]]+.*ext4/ { p; s/ext4/erofs/2; t; s/ext4/erofs/ }" "$target"
             fi
         done
     done
