@@ -12,6 +12,7 @@ GALAXY_AI() {
     source "scripts/LumiROM.sh"
 
     local EXTRACTED_FIRM_DIR="$1"
+    local AI_DIR="./LumiROM/Mods/Galaxy_AI"
     local STOCK_FLOATING_FEATURE="$DEVICES_DIR/$STOCK_DEVICE/floating_feature.xml"
     local TARGET_FLOATING_FEATURE="$EXTRACTED_FIRM_DIR/system/system/etc/floating_feature.xml"
 
@@ -94,11 +95,19 @@ GALAXY_AI() {
 
         # Adding Now Brief
         echo -e "${YELLOW}Adding Now Brief${RESET}"
+        mkdir -p "$AI_DIR/system/system/priv-app/SamsungSmartSuggestions/"
+        mkdir -p "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/"
+
+        if [ ! -f "$AI_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk" ]; then
+            aria2c -x 1 -d "$AI_DIR/system/system/priv-app/SamsungSmartSuggestions/" -o "SamsungSmartSuggestions.apk" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/SamsungSmartSuggestions.apk?download=true" || return 1
+        fi
+
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/SamsungSmartSuggestions.apk"
-        aria2c -x 4 -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/" -o "SamsungSmartSuggestions.apk" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/SamsungSmartSuggestions.apk?download=true" || return 1
+        cp -rfa "$AI_DIR/system/system/priv-app/SamsungSmartSuggestions/"* "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/"
+        
         # Cleanup any leftover .aria2 control files
         wait
-        find "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/" -name "*.aria2" -exec rm -f {} +
+        find "$AI_DIR/system/system/priv-app/SamsungSmartSuggestions/" -name "*.aria2" -exec rm -f {} +
     else
     	echo
         echo -e "${RED}The use of Galaxy AI for this build have been disabled by the user${RESET}"

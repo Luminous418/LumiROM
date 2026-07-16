@@ -12,6 +12,7 @@ makerom/
 SAVEDIMGS/
 .local/
 bin/py_scripts/__pycache__/*
+LumiROM/Mods/Galaxy_AI/system/system/priv-app/SamsungSmartSuggestions/*
 test.sh
 .env
 
@@ -20,15 +21,6 @@ test.sh
 apt.log
 pip.log
 apt_fast_setup.log
-
-# Firmware and Flashable ZIPs
-OUT/*.img
-OUT/*.img.raw
-OUT/*.zip
-
-# Ignore generated/transient files in the template directory
-template/build_info.txt
-template/
 
 # OS Specific
 .DS_Store
