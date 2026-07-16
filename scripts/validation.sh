@@ -3,6 +3,7 @@
 source scripts/bash_colors.sh
 
 VALIDATION() {
+    SUPPORTED_DEVICES=(LumiROM/Devices/*)
 
     # STOCK_DEVICE
     if [ -z "$STOCK_DEVICE" ]; then
@@ -10,7 +11,7 @@ VALIDATION() {
         exit 1
     fi
 
-    if [ "$STOCK_DEVICE" != "SM-A325F" ] && [ "$STOCK_DEVICE" != "SM-A325M" ] && [ "$STOCK_DEVICE" != "SM-A225F" ] && [ "$STOCK_DEVICE" != "SM-A226B" ] && [ "$STOCK_DEVICE" != "SM-E225F" ] && [ "$STOCK_DEVICE" != "SM-M325F" ]; then
+    if [[ ! " ${SUPPORTED_DEVICES[@]} " =~ " LumiROM/Devices/$STOCK_DEVICE " ]]; then
         echo -e "${RED}Error:${RESET} STOCK_DEVICE must be supported by the script. Check ${BLUE}LumiROM/Devices${RESET} for supported devices."
         exit 1
     fi
