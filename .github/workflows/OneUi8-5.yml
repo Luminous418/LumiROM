@@ -96,73 +96,73 @@ jobs:
       run: |
         source scripts/FW.sh
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
-        DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "FIRMWARE"
+        DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$FIRM_DIR"
 
     - name: Extract firmware
       shell: bash
       run: |
         source scripts/FW.sh
-        EXTRACT_FIRMWARE "IMGs"
-        EXTRACT_SUPER_IMG "IMGs"
+        EXTRACT_FIRMWARE "$IMGS_DIR"
+        EXTRACT_SUPER_IMG "$IMGS_DIR"
 
     - name: Download vendor for ${{ github.event.inputs.STOCK_DEVICE }}
       shell: bash
       run: |
         source scripts/FW.sh
-        DOWNLOAD_VENDOR "IMGs"
+        DOWNLOAD_VENDOR "$IMGS_DIR"
 
     - name: Preparing partitions
       shell: bash
       run: |
         source scripts/FW.sh
-        PREPARE_PARTITIONS "IMGs"
-        EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE"
+        PREPARE_PARTITIONS "$IMGS_DIR"
+        EXTRACT_FIRMWARE_IMG "$IMGS_DIR" "$FIRM_DIR"
 
     - name: Apply vendor patches
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        DISABLE_FBE "FIRMWARE"
-        DISABLE_FDE "FIRMWARE"
-        DELETE_ICCC "FIRMWARE"
-        DEBLOAT_VENDOR "FIRMWARE"
-        PATCH_FSTAB_EROFS "FIRMWARE"
+        DISABLE_FBE "$FIRM_DIR"
+        DISABLE_FDE "$FIRM_DIR"
+        DELETE_ICCC "$FIRM_DIR"
+        DEBLOAT_VENDOR "$FIRM_DIR"
+        PATCH_FSTAB_EROFS "$FIRM_DIR"
 
     - name: Apply stock config
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        APPLY_STOCK_CONFIG "FIRMWARE"
+        APPLY_STOCK_CONFIG "$FIRM_DIR"
 
     - name: Debloat ROM
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        DEBLOAT "FIRMWARE"
+        DEBLOAT "$FIRM_DIR"
 
     - name: Apply prop features
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        APPLY_PROP_FEATURES "FIRMWARE"
+        APPLY_PROP_FEATURES "$FIRM_DIR"
 
     - name: Adding mods
       shell: bash
       run: |
         source scripts/Mods.sh
-        ADD_MODS "FIRMWARE"
+        ADD_MODS "$FIRM_DIR"
 
     - name: Adding Galaxy AI
       shell: bash
       run: |
         source scripts/Galaxy_AI.sh
-        GALAXY_AI "FIRMWARE"
+        GALAXY_AI "$FIRM_DIR"
 
     - name: Update Build ID
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        APPENDING_DISPLAY_ID "FIRMWARE"
+        APPENDING_DISPLAY_ID "$FIRM_DIR"
 
     - name: Install stock framework-res
       shell: bash
@@ -208,14 +208,14 @@ jobs:
       shell: bash
       run: |
         source scripts/LumiROM.sh
-        BUILD_IMG "FIRMWARE" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
+        BUILD_IMG "$FIRM_DIR" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
         IMG_TO_BROTLI "$OUT_DIR" "TMP"
 
     - name: Update updater-script
       shell: bash
       run: |
         source scripts/zip_creation.sh
-        UPDATE_ZIP_SCRIPT "FIRMWARE"
+        UPDATE_ZIP_SCRIPT "$FIRM_DIR"
         
     - name: Prepare flashable zip
       shell: bash

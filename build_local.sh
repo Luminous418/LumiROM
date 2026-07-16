@@ -66,13 +66,13 @@ if CHECK_FIRMWARE_IMAGES "$IMGS_DIR" "$BUILD_PARTITIONS"; then
     log_message "✓ Firmware cache found. Skipping download..."
 else
     log_message "✗ No firmware cache found. Proceeding with download..."
-    DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+    DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 if [[ -f "IMGs/${TARGET_DEVICE}.zip" ]]; then
     log_section "Extracting $TARGET_DEVICE images"
-    EXTRACT_FIRMWARE "IMGs" 2>&1 | tee -a "$LOG_FILE"
-    EXTRACT_SUPER_IMG "IMGs" 2>&1 | tee -a "$LOG_FILE"
+    EXTRACT_FIRMWARE "$IMGS_DIR" 2>&1 | tee -a "$LOG_FILE"
+    EXTRACT_SUPER_IMG "$IMGS_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 # Check if vendor image is already cached
@@ -82,37 +82,37 @@ if CHECK_VENDOR_IMAGE "$IMGS_DIR"; then
     sleep 1
 else
     log_message "✗ No vendor cache found. Proceeding with download..."
-    DOWNLOAD_VENDOR "IMGs" 2>&1 | tee -a "$LOG_FILE"
+    DOWNLOAD_VENDOR "$IMGS_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 log_section "Preparing partitions"
-PREPARE_PARTITIONS "IMGs" 2>&1 | tee -a "$LOG_FILE"
-EXTRACT_FIRMWARE_IMG "IMGs" "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+PREPARE_PARTITIONS "$IMGS_DIR" 2>&1 | tee -a "$LOG_FILE"
+EXTRACT_FIRMWARE_IMG "$IMGS_DIR" "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 
 source scripts/LumiROM.sh
 log_message "Loading LumiROM functions..."
-DISABLE_FBE "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-DISABLE_FDE "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-DELETE_ICCC "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-DEBLOAT_VENDOR "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-PATCH_FSTAB_EROFS "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-APPLY_STOCK_CONFIG "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-DEBLOAT "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
-APPLY_PROP_FEATURES "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+DISABLE_FBE "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+DISABLE_FDE "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+DELETE_ICCC "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+DEBLOAT_VENDOR "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+PATCH_FSTAB_EROFS "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+APPLY_STOCK_CONFIG "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+DEBLOAT "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+APPLY_PROP_FEATURES "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 
 if [ "$USE_MODS" = "Yes" ]; then
     log_section "Adding Mods"
     source scripts/Mods.sh
-    ADD_MODS "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+    ADD_MODS "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 if [ "$USE_GALAXY_AI" = "Yes" ]; then
     log_section "Adding Galaxy AI"
     source scripts/Galaxy_AI.sh
-    GALAXY_AI "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+    GALAXY_AI "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 log_section "Appending Display ID"
-APPENDING_DISPLAY_ID "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+APPENDING_DISPLAY_ID "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 INSTALL_FRAMEWORK "FIRMWARE/system/system/framework/framework-res.apk" 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Patching Knox and Framework"
@@ -137,12 +137,12 @@ cp -fv "$WORK_DIR"/*.jar "FIRMWARE/system/system/framework/" 2>&1 | tee -a "$LOG
 
 log_section "Building ROM"
 source scripts/LumiROM.sh 2>&1 | tee -a "$LOG_FILE"
-BUILD_IMG "FIRMWARE" "$OUTPUT_FILESYSTEM" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
+BUILD_IMG "$FIRM_DIR" "$OUTPUT_FILESYSTEM" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
 IMG_TO_BROTLI "$OUT_DIR" "TMP" 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Creating flashable ZIP"
 source scripts/zip_creation.sh
-UPDATE_ZIP_SCRIPT "FIRMWARE" 2>&1 | tee -a "$LOG_FILE"
+UPDATE_ZIP_SCRIPT "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
 
 log_message "Cleaning up temporary directories..."
