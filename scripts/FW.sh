@@ -9,7 +9,7 @@ fi
 
 CHECK_FIRMWARE_IMAGES() {
     if [ "$#" -lt 2 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <PARTITION_LIST>"
+        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <PARTITION_LIST>"
         return 1
     fi
 
@@ -35,30 +35,30 @@ CHECK_FIRMWARE_IMAGES() {
     done
 
     if [ $all_exist -eq 1 ]; then
-        echo -e "${GREEN}✅ All firmware images found in cache!${RESET}"
+        echo "${GREEN}✅ All firmware images found in cache!${RESET}"
         return 0
     else
-        echo -e "${YELLOW}⚠️  Some firmware images are missing.${RESET}"
+        echo "${YELLOW}⚠️  Some firmware images are missing.${RESET}"
         return 1
     fi
 }
 
 CLEAR_FIRMWARE_CACHE() {
     if [ "$#" -ne 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR>"
+        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR>"
         return 1
     fi
 
     local FIRM_DIR="$1"
-    echo -e "${YELLOW}Clearing firmware cache...${RESET}"
+    echo "${YELLOW}Clearing firmware cache...${RESET}"
     rm -rf "$FIRM_DIR"
     mkdir -p "$FIRM_DIR"
-    echo -e "${GREEN}Cache cleared.${RESET}"
+    echo "${GREEN}Cache cleared.${RESET}"
 }
 
 CHECK_VENDOR_IMAGE() {
     if [ "$#" -lt 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR>"
+        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR>"
         return 1
     fi
 
@@ -69,17 +69,17 @@ CHECK_VENDOR_IMAGE() {
     fi
 
     if [ -f "$FIRM_DIR/vendor.img" ]; then
-        echo -e "${GREEN}✅ Vendor image found in cache!${RESET}"
+        echo "${GREEN}✅ Vendor image found in cache!${RESET}"
         return 0
     else
-        echo -e "${YELLOW}⚠️  Vendor image not found in cache.${RESET}"
+        echo "${YELLOW}⚠️  Vendor image not found in cache.${RESET}"
         return 1
     fi
 }
 
 DOWNLOAD_FIRMWARE() {
     if [ "$#" -lt 4 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY> [VERSION]"
+        echo "Usage: ${FUNCNAME[0]} <MODEL> <CSC> <IMEI> <DOWNLOAD_DIRECTORY> [VERSION]"
         return 1
     fi
 
@@ -91,26 +91,26 @@ DOWNLOAD_FIRMWARE() {
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
-        echo -e "${BLUE}======================================${RESET}"
-        echo -e "${BLUE}       Samsung FW Downloader${RESET}"
-        echo -e "${BLUE}======================================${RESET}"
-        echo -e "${PURPLE}MODEL:${RESET} $MODEL | ${PURPLE}CSC:${RESET} $CSC"
+        echo "${BLUE}======================================${RESET}"
+        echo "${BLUE}       Samsung FW Downloader${RESET}"
+        echo "${BLUE}======================================${RESET}"
+        echo "${PURPLE}MODEL:${RESET} $MODEL | ${PURPLE}CSC:${RESET} $CSC"
 
         # --- Step 1: Determine Version ---
         if [ -n "$VERSION" ]; then
-            echo -e "- ✅ Downloading provided version: $VERSION"
+            echo "- ✅ Downloading provided version: $VERSION"
         else
-            echo -e "- Fetching latest firmware..."
+            echo "- Fetching latest firmware..."
 
             VERSION=$(python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" checkupdate 2>&1)
 
             if [ $? -ne 0 ] || [ -z "$VERSION" ]; then
-                echo -e "- ⛔️ MODEL/CSC/IMEI not valid or no update found."
-                echo -e "- Error: $VERSION"
+                echo "- ⛔️ MODEL/CSC/IMEI not valid or no update found."
+                echo "- Error: $VERSION"
                 return 1
             fi
 
-            echo -e "- ✅ Latest version found: $VERSION"
+            echo "- ✅ Latest version found: $VERSION"
             if [ -n "$GITHUB_ENV" ]; then
                 echo "VERSION=$VERSION" >> "$GITHUB_ENV"
             fi
@@ -119,7 +119,7 @@ DOWNLOAD_FIRMWARE() {
         # --- Step 2: Download Firmware ---
         python3 -m samloader -m "$MODEL" -r "$CSC" -i "$IMEI" download -O "$DOWN_DIR"
         if [ $? -ne 0 ]; then
-            echo -e "⛔️ Download failed. Check IMEI/MODEL/CSC."
+            echo "⛔️ Download failed. Check IMEI/MODEL/CSC."
             exit 1
         fi
 
@@ -127,14 +127,14 @@ DOWNLOAD_FIRMWARE() {
 
         # --- Show Firmware Info ---
         local file_size=$(du -m "${DOWN_DIR}"/${MODEL}_*_fac.zip 2>/dev/null | cut -f1)
-        echo -e "Firmware Size: ${file_size} MB"
+        echo "Firmware Size: ${file_size} MB"
 
         mv "${DOWN_DIR}"/${MODEL}_*_fac.zip "IMGs/${MODEL}.zip"
 }
 
 DOWNLOAD_FIRMWARE_LUMI() {
     if [ "$#" -lt 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <DOWNLOAD_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <DOWNLOAD_DIRECTORY>"
         return 1
     fi
 
@@ -144,11 +144,11 @@ DOWNLOAD_FIRMWARE_LUMI() {
 
     if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
         export TARGET_DEVICE="SM-A346B"
-        echo -e "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
+        echo "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
         aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A346B/SM-A346B.zip?download=true" || return 1
     elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-M225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
         export TARGET_DEVICE="SM-A245F"
-        echo -e "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
+        echo "${YELLOW}Downloading firmware for${RESET} ${TARGET_DEVICE}"
         aria2c -x 16 -d "${DOWN_DIR}/${TARGET_DEVICE}" -o "${TARGET_DEVICE}.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/FW/SM-A245F_4_20260220151250_g2yvot48sr_fac_A245FXXSBEZB5_A245FOXMBEZB5_A245FXXSBEZB5_A245FXXSBEZB5_SEK.zip?download=true" || return 1
     fi
 
@@ -159,7 +159,7 @@ DOWNLOAD_FIRMWARE_LUMI() {
 
 DOWNLOAD_OTA() {
     if [ "$#" -lt 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <DOWNLOAD_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <DOWNLOAD_DIRECTORY>"
         return 1
     fi
 
@@ -167,7 +167,7 @@ DOWNLOAD_OTA() {
     rm -rf "$DOWN_DIR"
     mkdir -p "$DOWN_DIR"
 
-    echo -e "${YELLOW}Downloading OTA${RESET}"
+    echo "${YELLOW}Downloading OTA${RESET}"
     if [ -d "FIRMWARE/SM-A346B" ]; then
         aria2c -x 16 -d "$DOWN_DIR" -o "OTA_SM-A346B.zip" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://huggingface.co/buckets/LuminousJD418/LumiROM/resolve/OneUI8.5/OTA/SM-A346BOMB.zip?download=true" || return 1
     elif [ -d "FIRMWARE/SM-A245F" ]; then
@@ -180,7 +180,7 @@ DOWNLOAD_OTA() {
 
 MERGE_OTA() {
     if [ "$#" -lt 3 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <OTA_DIR> <IMG_DIR>"
+        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <OTA_DIR> <IMG_DIR>"
         return 1
     fi
 
@@ -191,7 +191,7 @@ MERGE_OTA() {
     mv "${FW_DIR}/${TARGET_DEVICE}/${TARGET_DEVICE}.zip" ./bin/MergeOTA/
     mv "${OTA_DIR}/OTA_${TARGET_DEVICE}.zip" ./bin/MergeOTA/
     
-    echo -e "${YELLOW}Running MergeAll.sh...${RESET}"
+    echo "${YELLOW}Running MergeAll.sh...${RESET}"
     ./bin/MergeOTA/MergeAll.sh "./bin/MergeOTA/${TARGET_DEVICE}.zip" "./bin/MergeOTA/OTA_${TARGET_DEVICE}.zip" 2>&1 | tee -a "$LOG_FILE"
 
     # Removes the downloaded firmware and update files
@@ -218,7 +218,7 @@ DOWNLOAD_VENDOR() {
 
     local DOWN_DIR="${1}"
 
-    echo -e "${YELLOW}Downloading vendor for${RESET} ${STOCK_DEVICE}"
+    echo "${YELLOW}Downloading vendor for${RESET} ${STOCK_DEVICE}"
     aria2c -x 16 -k 1M -d "$DOWN_DIR" -o "vendor.img" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/VendorsForMTKG80/releases/download/${STOCK_DEVICE}_latest/vendor.img" || return 1
     
     # Cleanup any leftover .aria2 control files
@@ -228,16 +228,16 @@ DOWNLOAD_VENDOR() {
 
 EXTRACT_FIRMWARE() {
     if [ "$#" -ne 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
     local FIRM_DIR="$1"
 
-    echo -e "Extracting downloaded firmware."
+    echo "Extracting downloaded firmware."
 
 	if [ ! -d "$FIRM_DIR" ]; then
-        echo -e "- Directory not found: $FIRM_DIR"
+        echo "- Directory not found: $FIRM_DIR"
         exit
     fi
 
@@ -245,7 +245,7 @@ EXTRACT_FIRMWARE() {
     for file in "$FIRM_DIR"/*.zip; do
         [ -e "$file" ] || continue
 
-        echo -e "Extracting zip: $(basename "$file")"
+        echo "Extracting zip: $(basename "$file")"
         7z x -y -bd -bsp1 -o"$FIRM_DIR" "$file"
 
         rm -f "$file"
@@ -262,7 +262,7 @@ EXTRACT_FIRMWARE() {
     for file in "$FIRM_DIR"/*.xz; do
         [ -e "$file" ] || continue
 
-        echo -e "Extracting xz: $(basename "$file")"
+        echo "Extracting xz: $(basename "$file")"
         7z x -y -bd -bsp1 -o"$FIRM_DIR" "$file"
 
         rm -f "$file"
@@ -279,21 +279,21 @@ EXTRACT_FIRMWARE() {
     for file in "$FIRM_DIR"/*.tar; do
         [ -e "$file" ] || continue
 
-        echo -e "Extracting tar: $(basename "$file")"
+        echo "Extracting tar: $(basename "$file")"
 
         tar -xf "$file" -C "$FIRM_DIR"
     done
 
     # LZ4 Extraction
-    echo -e "Extracting super.img.lz4"
+    echo "Extracting super.img.lz4"
     find "$FIRM_DIR" -type f -name "*.lz4" ! -name "super.img.lz4" -delete
     lz4 -d "$FIRM_DIR/super.img.lz4" "$FIRM_DIR/super.img" 
-    echo -e "Firmware Extraction complete."
+    echo "Firmware Extraction complete."
 }
 
 EXTRACT_SUPER_IMG() {
     if [ "$#" -ne 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
 
@@ -301,8 +301,8 @@ EXTRACT_SUPER_IMG() {
 
     if [ -f "$IMGS_DIR/super.img" ]; then
     
-        echo -e "Extracting super.img"
-		echo -e "Converting to raw super.img"
+        echo "Extracting super.img"
+		echo "Converting to raw super.img"
         simg2img "$IMGS_DIR/super.img" "$IMGS_DIR/super_raw.img"
         rm -f "$IMGS_DIR/super.img"
         mv -f "$IMGS_DIR/super_raw.img" "$IMGS_DIR/super.img"
@@ -314,10 +314,10 @@ EXTRACT_SUPER_IMG() {
         # Delete the vendor as it is from the firmware and not from the stock device
         rm -f "$IMGS_DIR/vendor.img"
 
-        echo -e "- super.img extraction complete"
+        echo "- super.img extraction complete"
 
     else
-        echo -e "- No super.img found."
+        echo "- No super.img found."
     fi
 }
 
@@ -342,7 +342,7 @@ PREPARE_PARTITIONS() {
     done
 
     echo ""
-    echo -e "${YELLOW}Preparing partitions.${RESET}"
+    echo "${YELLOW}Preparing partitions.${RESET}"
 
     shopt -s nullglob dotglob
 
@@ -359,7 +359,7 @@ PREPARE_PARTITIONS() {
         if [[ $keep_this -eq 0 ]]; then
             rm -rf -- "$item"
         else
-            echo -e "${GREEN}- Keeping:${RESET} $item"
+            echo "${GREEN}- Keeping:${RESET} $item"
         fi
     done
 
@@ -377,7 +377,7 @@ EXTRACT_FIRMWARE_IMG() {
     local IMG_DIR="$1"
 	local FIRM_DIR="$2"
 
-	echo -e "${YELLOW}Extracting images from $IMG_DIR${RESET}"
+	echo "${YELLOW}Extracting images from $IMG_DIR${RESET}"
     for imgfile in "$IMG_DIR"/*.img; do
         [ -e "$imgfile" ] || continue
 
@@ -396,16 +396,16 @@ EXTRACT_FIRMWARE_IMG() {
             case "$fstype" in
                 Linux)
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    echo -e "$imgfile Detected ${BLUE}ext4${RESET}. Size: $IMG_SIZE bytes."
-                    echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
-                    echo -e "${YELLOW}You will need sudo for extract ext4 images.${RESET}"
+                    echo "$imgfile Detected ${BLUE}ext4${RESET}. Size: $IMG_SIZE bytes."
+                    echo "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
+                    echo "${YELLOW}You will need sudo for extract ext4 images.${RESET}"
                     sudo python3 $(pwd)/bin/py_scripts/imgextractor.py "$imgfile" "$FIRM_DIR" > /dev/null 2>&1
                     ;;
                 EROFS)
                     echo ""
                     IMG_SIZE=$(stat -c%s -- "$imgfile")
-                    echo -e "$imgfile Detected ${BLUE}$fstype${RESET}. Size: $IMG_SIZE bytes."
-                    echo -e "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
+                    echo "$imgfile Detected ${BLUE}$fstype${RESET}. Size: $IMG_SIZE bytes."
+                    echo "${YELLOW}Extracting $imgfile in $FIRM_DIR/$partition${RESET}"
                     $(pwd)/bin/erofs-utils/extract.erofs -i "$imgfile" -x -f -o "$FIRM_DIR" >/dev/null 2>&1
                     ;;
                 *)

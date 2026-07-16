@@ -5,13 +5,13 @@ source scripts/bash_colors.sh
 REPLACE_SMALI_METHOD() {
     local FILE="$1"
     local METHOD_NAME="$2"
-    local NEW_BODY=$(echo -e "$3" | tail -n +2)
+    local NEW_BODY=$(echo "$3" | tail -n +2)
 
-    echo -e "- Patching: $FILE"
-    echo -e "  Method: $METHOD_NAME"
+    echo "- Patching: $FILE"
+    echo "  Method: $METHOD_NAME"
 
     if ! grep -Fq "$METHOD_NAME" "$FILE"; then
-        echo -e "${RED}- Method not found${RESET}"
+        echo "${RED}- Method not found${RESET}"
         return 0
     fi
 
@@ -32,13 +32,13 @@ REPLACE_SMALI_METHOD() {
 }
 
 PATCH_FLAG_SECURE() {
-	echo -e ""
+	echo ""
 	if [ "$#" -ne 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
         return 1
     fi
 
-	echo -e "${YELLOW}Patching flag secure.${RESET}"
+	echo "${YELLOW}Patching flag secure.${RESET}"
 
 	local FILE_1="${1}/smali_classes2/com/android/server/wm/WindowState.smali"
     local METHOD_NAME_1=".method public final isSecureLocked()Z"
@@ -96,13 +96,13 @@ PATCH_FLAG_SECURE() {
 
 
 PATCH_SECURE_FOLDER() {
-    echo -e ""
+    echo ""
 	if [ "$#" -ne 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
         return 1
     fi
 
-    echo -e "${YELLOW}Patching secure folder.${RESET}"
+    echo "${YELLOW}Patching secure folder.${RESET}"
 
 	local FILE_1="${1}/smali/com/android/server/knox/dar/DarManagerService.smali"
 	local METHOD_NAME_1=".method public final checkDeviceIntegrity([Ljava/security/cert/Certificate;)Z"
@@ -135,13 +135,13 @@ PATCH_SECURE_FOLDER() {
 
 
 PATCH_PRIVATE_SHARE() {
-    echo -e ""
+    echo ""
 	if [ "$#" -ne 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
         return 1
     fi
 
-    echo -e "${YELLOW}Patching private share.${RESET}"
+    echo "${YELLOW}Patching private share.${RESET}"
 	
     local FILE="${1}/smali/com/samsung/android/security/keystore/AttestParameterSpec.smali"
     local METHOD_NAME=".method public isVerifiableIntegrity()Z"
@@ -157,13 +157,13 @@ PATCH_PRIVATE_SHARE() {
 
 
 DISABLE_SIGNATURE_VERIFICATION() {
-    echo -e ""
+    echo ""
 	if [ "$#" -ne 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
         return 1
     fi
 
-    echo -e "${YELLOW}Disabling signature verification.${RESET}"
+    echo "${YELLOW}Disabling signature verification.${RESET}"
 
     local FILE="${1}/smali_classes4/android/util/apk/ApkSignatureVerifier.smali"
     local METHOD_NAME=".method public static blacklist getMinimumSignatureSchemeVersionForTargetSdk(I)I"
@@ -179,13 +179,13 @@ DISABLE_SIGNATURE_VERIFICATION() {
 
 
 PATCH_KNOX_GUARD() {
-    echo -e ""
+    echo ""
 	if [ "$#" -ne 1 ]; then
-        echo -e "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY>"
         return 1
     fi
 
-    echo -e "${YELLOW}Patching knox guard.${RESET}"
+    echo "${YELLOW}Patching knox guard.${RESET}"
     local FILE="${1}/smali_classes2/com/samsung/android/knoxguard/service/KnoxGuardSeService.smali"
     local METHOD_NAME_1=".method public constructor <init>(Landroid/content/Context;)V"
     local REPLACE_BODY_1='
@@ -221,7 +221,7 @@ PATCH_SSRM() {
     local SSRM_DIR="$1"
 	local FILE="$SSRM_DIR/smali/com/android/server/ssrm/Feature.smali"
 
-	echo -e "${YELLOW}Patching ssrm${RESET}"
+	echo "${YELLOW}Patching ssrm${RESET}"
 
     sed -i "s/\(const-string v[0-9]\+,\s*\"\)siop_[^\"]*\"/\1$STOCK_SIOP_FILENAME\"/g" "$FILE"
     sed -i "/dvfs_policy_default/! s/\(const-string v[0-9]\+,\s*\"\)dvfs_policy_[^\"]*\"/\1$STOCK_DVFS_FILENAME\"/g" "$FILE"

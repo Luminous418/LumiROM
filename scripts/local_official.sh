@@ -9,7 +9,7 @@ fi
 IS_LOCAL_OFFICIAL() {
 
     if [ -z "$LUMIROM_BUILD" ] || [ -z "$OFFICIAL_HASH" ]; then
-        echo -e "${BLUE}[!] Missing environment variables. Using default values.${RESET}"
+        echo "${BLUE}[!] Missing environment variables. Using default values.${RESET}"
         export BUILD_STATUS="UNOFFICIAL"
         export ROM_TAG="🛠️ LumiROM Unofficial Build"
         return
@@ -25,5 +25,5 @@ IS_LOCAL_OFFICIAL() {
         export ROM_TAG="🛠️ LumiROM Unofficial Build"
     fi
 
-    echo -e "${BLUE}--- $ROM_TAG detected ---${RESET}"
+    echo "${BLUE}--- $ROM_TAG detected ---${RESET}"
 }

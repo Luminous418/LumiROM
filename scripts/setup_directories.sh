@@ -15,9 +15,9 @@ for DIR in "$@"; do
     # Check if directory exists
     if [ ! -d "$DIR" ]; then
         mkdir -p "$DIR"
-        echo -e "${GREEN}Directory created:${RESET} $DIR"
+        echo "${GREEN}Directory created:${RESET} $DIR"
     else
-        echo -e "${YELLOW}Directory already exists:${RESET} $DIR"
+        echo "${YELLOW}Directory already exists:${RESET} $DIR"
     fi
 done
 

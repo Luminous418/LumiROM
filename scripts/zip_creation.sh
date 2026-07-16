@@ -35,22 +35,22 @@ UPDATE_ZIP_SCRIPT() {
         fi
 
         if [ -z "$FINGERPRINT" ]; then
-            echo -e "${YELLOW}Warning: Fingerprint not found, using generic value.${RESET}"
+            echo "${YELLOW}Warning: Fingerprint not found, using generic value.${RESET}"
             FINGERPRINT="Unknown/Release-Keys"
         fi
 
-        echo -e "${GREEN}Detected Fingerprint:${RESET} $FINGERPRINT"
+        echo "${GREEN}Detected Fingerprint:${RESET} $FINGERPRINT"
         sed -i "s!ui_print(\"Source: .*\");!ui_print(\"Source: $FINGERPRINT\");!" "$UPDATER_PATH"
         
         NEW_CHECK="getprop(\"ro.boot.em.model\") == \"$DEVICE\" || abort(\"E3004: This package is for $DEVICE_CODENAME\");"
 
-        echo -e "${GREEN}Updating device on updater-script for${RESET} $DISPLAY_NAME..."
+        echo "${GREEN}Updating device on updater-script for${RESET} $DISPLAY_NAME..."
       
         sed -i "s!^getprop(\"ro.boot.em.model\").*!$NEW_CHECK!" "$UPDATER_PATH"
 
         sed -i "s!ui_print(\".*for .*\");!ui_print(\"   $LUMIROM_VERSION-$BUILD_DATE $BUILD_STATUS for $DISPLAY_NAME\");!" "$UPDATER_PATH"
 
-        echo -e "${GREEN}Updating One UI version to${RESET} $ONEUI_VERSION ${GREEN}on updater-script...${RESET}"
+        echo "${GREEN}Updating One UI version to${RESET} $ONEUI_VERSION ${GREEN}on updater-script...${RESET}"
 
         sed -i "s!ui_print(\"One UI version: .*\");!ui_print(\"One UI version: $ONEUI_VERSION\");!" "$UPDATER_PATH"
 
@@ -92,35 +92,35 @@ FLASHABLE_ZIP_CREATION() {
         SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$DEVICE/boot.img"
 
         if [ -f "$SPECIFIC_BOOT" ]; then
-            echo -e "${GREEN}-> Copying boot.img from${RESET} $DEVICE..."
+            echo "${GREEN}-> Copying boot.img from${RESET} $DEVICE..."
             cp "$SPECIFIC_BOOT" "$MAKEROM_DIR/boot.img"
         else
-            echo -e "${RED}There is no boot.img for${RESET} $DEVICE"
+            echo "${RED}There is no boot.img for${RESET} $DEVICE"
         fi
 
-        echo -e "${GREEN}Moving compressed DAT files to ROM Folder...${RESET}"
+        echo "${GREEN}Moving compressed DAT files to ROM Folder...${RESET}"
         mv TMP/*.new.dat.br "$MAKEROM_DIR"/
         mv TMP/*.patch.dat "$MAKEROM_DIR"/
         mv TMP/*.transfer.list "$MAKEROM_DIR"/ 2>/dev/null || true
 
-        echo -e "${GREEN}Creating ZIP package...${RESET}"
+        echo "${GREEN}Creating ZIP package...${RESET}"
         ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${BUILD_STATUS}_${DEVICE_CODENAME}.zip"
         [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
 
         cd "$MAKEROM_DIR"
 
         # ZIP the rom with mixed compression levels (Multithreaded 7z)
-        echo -e "${YELLOW}Adding large/compressed files (Store)...${RESET}"
+        echo "${YELLOW}Adding large/compressed files (Store)...${RESET}"
         7z a -mx=0 -mmt=4 "$ZIP_FILE" ./*.new.dat.br ./*.patch.dat 2>/dev/null || true
         
-        echo -e "${YELLOW}Adding scripts and compressible data (Compress)...${RESET}"
+        echo "${YELLOW}Adding scripts and compressible data (Compress)...${RESET}"
         7z a -mx=6 -mmt=4 "$ZIP_FILE" ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list 2>/dev/null || true
         
 
         mkdir -p "../ROM/${BUILD_DATE}-${TIMESTAMP}-${cut_version_stock}_to_${cut_version_target}/"
         mv "$ZIP_FILE" "../ROM/${BUILD_DATE}-${TIMESTAMP}-${cut_version_stock}_to_${cut_version_target}/"
 
-        echo -e "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
+        echo "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
 
         cd ..
         rm -rf "$MAKEROM_DIR"

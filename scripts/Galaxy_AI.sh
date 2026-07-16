@@ -17,7 +17,7 @@ GALAXY_AI() {
     local TARGET_FLOATING_FEATURE="$EXTRACTED_FIRM_DIR/system/system/etc/floating_feature.xml"
 
     if [ "$USE_GALAXY_AI" == "Yes" ]; then
-    	echo -e "${YELLOW}Adding Galaxy AI${RESET}"
+    	echo "${YELLOW}Adding Galaxy AI${RESET}"
 
         sed -i '/SEC_FLOATING_FEATURE_COMMON_DISABLE_NATIVE_AI/d' "$TARGET_FLOATING_FEATURE"
         # Adding the Galaxy AI versioning
@@ -76,7 +76,7 @@ GALAXY_AI() {
 
         # Adding Wallpaper AI
         if [ ! -d "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper" ]; then
-        	echo -e "${YELLOW}Adding Wallpaper AI${RESET}"
+        	echo "${YELLOW}Adding Wallpaper AI${RESET}"
             mkdir -p "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper"
             cp -rfa "$(pwd)/LumiROM/Mods/Apps/AiWallpaper/"* "$EXTRACTED_FIRM_DIR/product/priv-app/AiWallpaper/"
 
@@ -86,7 +86,7 @@ GALAXY_AI() {
 
         # Adding Photo Editor AI Full
         if [ ! -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull" ]; then
-        	echo -e "${YELLOW}Adding Photo Editor AI Full${RESET}"
+        	echo "${YELLOW}Adding Photo Editor AI Full${RESET}"
             rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app"/PhotoEditor_*
             cp -rfa "$(pwd)/LumiROM/Mods/Apps/PhotoEditor_AIFull/"* "$EXTRACTED_FIRM_DIR/system/system/"
             unzip -o "$EXTRACTED_FIRM_DIR/system/system/priv-app/PhotoEditor_AIFull.zip" -d "$EXTRACTED_FIRM_DIR/system/system/priv-app/" >/dev/null 2>&1
@@ -94,7 +94,7 @@ GALAXY_AI() {
         fi
 
         # Adding Now Brief
-        echo -e "${YELLOW}Adding Now Brief${RESET}"
+        echo "${YELLOW}Adding Now Brief${RESET}"
         mkdir -p "$AI_DIR/system/system/priv-app/SamsungSmartSuggestions/"
         mkdir -p "$EXTRACTED_FIRM_DIR/system/system/priv-app/SamsungSmartSuggestions/"
 
@@ -110,7 +110,7 @@ GALAXY_AI() {
         find "$AI_DIR/system/system/priv-app/SamsungSmartSuggestions/" -name "*.aria2" -exec rm -f {} +
     else
     	echo
-        echo -e "${RED}The use of Galaxy AI for this build have been disabled by the user${RESET}"
+        echo "${RED}The use of Galaxy AI for this build have been disabled by the user${RESET}"
         UPDATE_FLOATING_FEATURE "SEC_FLOATING_FEATURE_COMMON_DISABLE_NATIVE_AI" "TRUE"
     fi
 }
