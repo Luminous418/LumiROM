@@ -102,7 +102,7 @@ FLASHABLE_ZIP_CREATION() {
         mv TMP/*.transfer.list "$MAKEROM_DIR"/ 2>/dev/null || true
 
         echo -e "${GREEN}Creating ZIP package...${RESET}"
-        ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${DEVICE_CODENAME}.zip"
+        ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${BUILD_STATUS}_${DEVICE_CODENAME}.zip"
         [ -f "$ZIP_FILE" ] && rm "$ZIP_FILE"
 
         cd "$MAKEROM_DIR"
