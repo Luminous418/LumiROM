@@ -761,7 +761,7 @@ DEBLOAT() {
 	rm -rf "$EXTRACTED_FIRM_DIR/system/system/priv-app/MediaSearch"
 
 
-    if [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-A225M" ]]; then
+    if [[ "$STOCK_DEVICE" == "SM-A225F" ]]; then
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc-sec.so"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib64/libnfc_sec_jni.so"
         rm -rf "$EXTRACTED_FIRM_DIR/system/system/lib/libnfc_sec_jni.so"
@@ -827,7 +827,6 @@ APPLY_PROP_FEATURES() {
 	local EXTRACTED_FIRM_DIR="$1"
 
     # Add build.prop features
-	echo "${BLUE}============ Build Prop Features ============${RESET}"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
