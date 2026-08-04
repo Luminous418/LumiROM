@@ -13,6 +13,7 @@ SAVEDIMGS/
 .local/
 bin/py_scripts/__pycache__/*
 LumiROM/Mods/Galaxy_AI/system/system/priv-app/SamsungSmartSuggestions/*
+LumiROM/Mods/Updater/*
 test.sh
 .env
 

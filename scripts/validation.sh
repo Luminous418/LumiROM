@@ -88,8 +88,7 @@ VALIDATION() {
     # LUMIROM_MAINTAINER
     if [ -z "$LUMIROM_MAINTAINER" ]; then
         echo "${RED}Error:${RESET} LUMIROM_MAINTAINER is not set."
-        echo "${CYAN}Tip:${RESET} Is recommended to put either your GitHub or Telegram username without the @."
+        echo "${CYAN}Tip:${RESET} Is recommended to put either your GitHub or Telegram username without the @. Also don't put spaces in between."
         exit 1
     fi
-
 }
