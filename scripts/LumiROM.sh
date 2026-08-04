@@ -932,13 +932,15 @@ APPLY_PROP_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist2" "com.simplemobiletools.camera,net.sourceforge.opencamera,com.google.android.googlequicksearchbox,com.google.android.apps.translate,com.google.ar.lens,com.google.android.apps.bard"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.show_multiuserui" "1"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.max_users" "5"
-	
 
-    if [ "$BUILD_STATUS" == "OFFICIAL" ]; then
-        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "true"
-    else
-        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.lumirom.official" "false"
+
+    # Related to Updater App
+    if [ "$USE_MODS" == "Yes" ]; then
+        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.cloudy.rom.ver" "$LUMIROM_VERSION"
+        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.cloudy.rom.ver.code" "$LUMIROM_CODE"
+        BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.cloudy.maintainer" "$LUMIROM_MAINTAINER"
     fi
+    
 
 }
 

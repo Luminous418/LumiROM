@@ -49,12 +49,14 @@ initialize_logs() {
     local use_galaxy_ai="$7"
     local use_ui_8_tethering_apex="$8"
     local output_filesystem="$9"
+    local lumirom_maintainer="$10"
     
     {
         echo "${BLUE}======================================${RESET}"
         echo "${HI_BLUE}LumiROM Build Log${RESET}"
         echo "${BLUE}======================================${RESET}"
         echo "Start Time: $(date)"
+        echo "Maintainer: $lumirom_maintainer"
         echo "Stock Device: $stock_device"
         echo "Target Device: $target_device"
         echo "Target CSC: $target_csc"
@@ -73,6 +75,7 @@ initialize_logs() {
         echo "${HI_BLUE}LumiROM Build Log${RESET}"
         echo "${BLUE}======================================${RESET}"
         echo "Start Time: $(date)"
+        echo "Maintainer: $lumirom_maintainer"
         echo "Stock Device: $stock_device"
         echo "Target Device: $target_device"
         echo "Target CSC: $target_csc"

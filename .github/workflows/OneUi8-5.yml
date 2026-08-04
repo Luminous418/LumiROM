@@ -63,6 +63,8 @@ jobs:
     - name: Set build environment
       shell: bash
       run: |
+        VERSION="8.6.3"
+
         echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
         echo "TARGET_DEVICE=${{ github.event.inputs.TARGET_DEVICE }}" >> $GITHUB_ENV
         echo "TARGET_CSC=${{ github.event.inputs.TARGET_CSC }}" >> $GITHUB_ENV
@@ -71,7 +73,10 @@ jobs:
         echo "USE_GALAXY_AI=${{ github.event.inputs.USE_GALAXY_AI }}" >> $GITHUB_ENV
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
-        echo "LUMIROM_VERSION=8.6.3" >> $GITHUB_ENV
+        
+        echo "LUMIROM_VERSION=${VERSION}" >> $GITHUB_ENV
+        echo "LUMIROM_CODE=${VERSION//./0}" >> $GITHUB_ENV
+        echo "LUMIROM_MAINTAINER=${{ github.actor }}" >> $GITHUB_ENV
 
         echo "OUT_DIR=$PWD/OUT" >> $GITHUB_ENV
         echo "WORK_DIR=$PWD/TMP/LumiWORK" >> $GITHUB_ENV

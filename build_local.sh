@@ -10,6 +10,7 @@ TARGET_IMEI="$4"
 USE_MODS="$5"
 USE_GALAXY_AI="$6"
 USE_UI_8_TETHERING_APEX="$7"
+LUMIROM_MAINTAINER="$8"
 
 source scripts/validation.sh
 VALIDATION
@@ -20,6 +21,7 @@ VALIDATION
 # --- System Environment Variables ---
 export OUTPUT_FILESYSTEM="erofs"
 export LUMIROM_VERSION="8.6.3"
+export LUMIROM_CODE="${LUMIROM_VERSION//./0}"
 export OUT_DIR="$PWD/OUT"
 export WORK_DIR="$PWD/TMP/LumiWORK"
 export FIRM_DIR="$PWD/FIRMWARE"
@@ -31,7 +33,7 @@ export BUILD_PARTITIONS="product,vendor,odm,system_ext,system"
 
 # --- Load Logging System ---
 source scripts/logging.sh
-initialize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$LUMIROM_VERSION" "$USE_MODS" "$USE_GALAXY_AI" "$USE_UI_8_TETHERING_APEX" "$OUTPUT_FILESYSTEM"
+initialize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$LUMIROM_VERSION" "$USE_MODS" "$USE_GALAXY_AI" "$USE_UI_8_TETHERING_APEX" "$OUTPUT_FILESYSTEM" "$LUMIROM_MAINTAINER"
 
 # --- Start of Process ---
 
