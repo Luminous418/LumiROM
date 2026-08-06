@@ -101,13 +101,13 @@ APPLY_STOCK_CONFIG "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 DEBLOAT "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 APPLY_PROP_FEATURES "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 
-if [ "$USE_MODS" = "Yes" ]; then
+if [ "$USE_MODS" = "true" ]; then
     log_section "Adding Mods"
     source scripts/Mods.sh
     ADD_MODS "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 
-if [ "$USE_GALAXY_AI" = "Yes" ]; then
+if [ "$USE_GALAXY_AI" = "true" ]; then
     log_section "Adding Galaxy AI"
     source scripts/Galaxy_AI.sh
     GALAXY_AI "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"

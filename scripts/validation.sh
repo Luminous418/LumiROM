@@ -53,35 +53,35 @@ VALIDATION() {
 
     # USE_MODS
     if [ -z "$USE_MODS" ]; then
-        USE_MODS="Yes"
-        echo "${YELLOW}Warning:${RESET} USE_MODS not set. Defaulting to ${GREEN}'Yes'${RESET}."
+        USE_MODS="true"
+        echo "${YELLOW}Warning:${RESET} USE_MODS not set. Defaulting to ${GREEN}'true'${RESET}."
     fi
 
-    if [ "$USE_MODS" != "Yes" ] && [ "$USE_MODS" != "No" ]; then
-        echo "${RED}Error:${RESET} Invalid value for USE_MODS. Please use 'Yes' or 'No'."
+    if [ "$USE_MODS" != "true" ] && [ "$USE_MODS" != "false" ]; then
+        echo "${RED}Error:${RESET} Invalid value for USE_MODS. Please use 'true' or 'false'."
         exit 1
     fi
 
     # USE_GALAXY_AI
     if [ -z "$USE_GALAXY_AI" ]; then
-        USE_GALAXY_AI="Yes"
-        echo "${YELLOW}Warning:${RESET} USE_GALAXY_AI not set. Defaulting to ${GREEN}'Yes'${RESET}."
+        USE_GALAXY_AI="true"
+        echo "${YELLOW}Warning:${RESET} USE_GALAXY_AI not set. Defaulting to ${GREEN}'true'${RESET}."
     fi
 
-    if [ "$USE_GALAXY_AI" != "Yes" ] && [ "$USE_GALAXY_AI" != "No" ]; then
-        echo "${RED}Error:${RESET} Invalid value for USE_GALAXY_AI. Please use 'Yes' or 'No'."
+    if [ "$USE_GALAXY_AI" != "true" ] && [ "$USE_GALAXY_AI" != "false" ]; then
+        echo "${RED}Error:${RESET} Invalid value for USE_GALAXY_AI. Please use 'true' or 'false'."
         exit 1
     fi
 
     # USE_UI_8_TETHERING_APEX
     if [ -z "$USE_UI_8_TETHERING_APEX" ]; then
-        USE_UI_8_TETHERING_APEX="False"
-        echo "${YELLOW}Warning:${RESET} USE_UI_8_TETHERING_APEX not set. Defaulting to ${GREEN}'False'${RESET}."
+        USE_UI_8_TETHERING_APEX="false"
+        echo "${YELLOW}Warning:${RESET} USE_UI_8_TETHERING_APEX not set. Defaulting to ${GREEN}'false'${RESET}."
         sleep 2
     fi
 
-    if [ "$USE_UI_8_TETHERING_APEX" != "True" ] && [ "$USE_UI_8_TETHERING_APEX" != "False" ]; then
-        echo "${RED}Error:${RESET} Invalid value for USE_UI_8_TETHERING_APEX. Please use 'True' or 'False'."
+    if [ "$USE_UI_8_TETHERING_APEX" != "true" ] && [ "$USE_UI_8_TETHERING_APEX" != "false" ]; then
+        echo "${RED}Error:${RESET} Invalid value for USE_UI_8_TETHERING_APEX. Please use 'true' or 'false'."
         exit 1
     fi
 

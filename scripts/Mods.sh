@@ -12,7 +12,7 @@ ADD_MODS() {
 	local EXTRACTED_FIRM_DIR="$1"
     local UPDATER_DIR="./LumiROM/Mods/Updater"
 
-    if [ "$USE_MODS" == "Yes" ]; then
+    if [ "$USE_MODS" = "true" ]; then
         # For every new mod, add it with all route, until I remake the script
         echo "${BLUE}============ Mods Installation ============${RESET}"
         

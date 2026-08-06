@@ -696,7 +696,7 @@ APPLY_STOCK_CONFIG() {
     APPLY_FLOATING_FEATURE
 
     # Fix unsupported BPF error for kernels lower than 5.10.
-    if [ "$USE_UI_8_TETHERING_APEX" = "True" ]; then
+    if [ "$USE_UI_8_TETHERING_APEX" = "true" ]; then
         cp -rfa "$(pwd)/LumiROM/Mods/bpf_patch/." "$EXTRACTED_FIRM_DIR/"
     fi
 
@@ -935,7 +935,7 @@ APPLY_PROP_FEATURES() {
 
 
     # Related to Updater App
-    if [ "$USE_MODS" == "Yes" ]; then
+    if [ "$USE_MODS" = "true" ]; then
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.cloudy.rom.ver" "$LUMIROM_VERSION"
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.cloudy.rom.ver.code" "$LUMIROM_CODE"
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.cloudy.maintainer" "$LUMIROM_MAINTAINER"
