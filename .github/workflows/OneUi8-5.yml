@@ -14,11 +14,10 @@ on:
       TARGET_CSC:
         description: "Put the CSC of the target, remember it is 3 letters"
         required: true
-        default: "EUX"
       TARGET_IMEI:
         description: "Put the IMEI of the target, remember it is 15 digits"
         required: true
-        default: "358212589089183"
+        default: ""
       USE_MODS:
         required: false
         default: true
