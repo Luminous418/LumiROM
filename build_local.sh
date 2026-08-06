@@ -47,8 +47,9 @@ chmod +x bin/lp/*
 log_message "Permissions set successfully"
 
 log_section "Installing required packages"
-bash scripts/install_packages.sh 2>&1 | tee -a "$LOG_FILE"
-clear
+source scripts/install_packages.sh
+UBUNTU_PACKAGES 2>&1 | tee -a "$LOG_FILE"
+PYTHON_PACKAGES 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Setting up directories"
 mkdir -p "$WORK_DIR"
