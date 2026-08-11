@@ -130,6 +130,7 @@ DOWNLOAD_FIRMWARE() {
         echo "Firmware Size: ${file_size} MB"
 
         mv "${DOWN_DIR}"/${MODEL}_*_fac.zip "IMGs/${MODEL}.zip"
+        rm -rf "${DOWN_DIR}/${MODEL}"
 }
 
 DOWNLOAD_FIRMWARE_LUMI() {
