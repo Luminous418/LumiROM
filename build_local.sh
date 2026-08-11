@@ -15,7 +15,7 @@ LUMIROM_MAINTAINER="$8"
 source scripts/validation.sh
 VALIDATION
 
-# A346B imei = 352990180814770
+# A346B imei = 353117555323497
 # A245F imei = 358212589089183
 
 # --- System Environment Variables ---
