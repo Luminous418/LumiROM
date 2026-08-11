@@ -90,7 +90,7 @@ jobs:
             TARGET_IMEI="353117555323497"
         elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
               TARGET_DEVICE="SM-A245F"
-              TARGET_CSC="EUX"
+              TARGET_CSC="XID"
               TARGET_IMEI="358212589089183"
         else
               echo "Error: STOCK_DEVICE is missing."
