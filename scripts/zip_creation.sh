@@ -63,7 +63,9 @@ FLASHABLE_ZIP_CREATION() {
         DEVICE="$STOCK_DEVICE"
         local cut_version_stock="${STOCK_DEVICE:3:3}"
         local cut_version_target="${TARGET_DEVICE:3:3}"
+        FOLDER_NAME="${BUILD_DATE}-${TIMESTAMP}-${cut_version_stock}_to_${cut_version_target}/"
         MAKEROM_DIR="$(pwd)/makerom"
+        export FOLDER_NAME
 
         if [[ "$DEVICE" == "SM-A325F" ]]; then
             DEVICE_CODENAME="a32"
@@ -117,8 +119,8 @@ FLASHABLE_ZIP_CREATION() {
         7z a -mx=6 -mmt=4 "$ZIP_FILE" ./boot.img ./META-INF ./build_info.txt ./dynamic_partitions_op_list ./*.transfer.list 2>/dev/null || true
         
 
-        mkdir -p "../ROM/${BUILD_DATE}-${TIMESTAMP}-${cut_version_stock}_to_${cut_version_target}/"
-        mv "$ZIP_FILE" "../ROM/${BUILD_DATE}-${TIMESTAMP}-${cut_version_stock}_to_${cut_version_target}/"
+        mkdir -p "../ROM/${FOLDER_NAME}"
+        mv "$ZIP_FILE" "../ROM/${FOLDER_NAME}"
 
         echo "${GREEN}ZIP package created: $ZIP_FILE${RESET}"
 

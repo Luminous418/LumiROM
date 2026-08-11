@@ -242,7 +242,7 @@ jobs:
         HF_USER: ${{ vars.HF_USER }}
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-        hf buckets sync ./ROM hf://buckets/$HF_USER/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
+        hf buckets sync ./ROM/$FOLDER_NAME hf://buckets/$HF_USER/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
 
     - name: Cleanup
       run: |
