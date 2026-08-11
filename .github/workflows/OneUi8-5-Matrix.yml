@@ -85,13 +85,16 @@ jobs:
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
 
         if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
-            echo "TARGET_DEVICE=SM-A346B" >> $GITHUB_ENV
-            echo "TARGET_CSC=EUX" >> $GITHUB_ENV
-            echo "TARGET_IMEI=353117555323497" >> $GITHUB_ENV
+            TARGET_DEVICE="SM-A346B"
+            TARGET_CSC="EUX"
+            TARGET_IMEI="353117555323497"
         elif [[ "$STOCK_DEVICE" == "SM-A225F" || "$STOCK_DEVICE" == "SM-E225F" || "$STOCK_DEVICE" == "SM-A226B" ]]; then
-            echo "TARGET_DEVICE=SM-A245F" >> $GITHUB_ENV
-            echo "TARGET_CSC=XID" >> $GITHUB_ENV
-            echo "TARGET_IMEI=358212589089183" >> $GITHUB_ENV
+              TARGET_DEVICE="SM-A245F"
+              TARGET_CSC="EUX"
+              TARGET_IMEI="358212589089183"
+        else
+              echo "Error: STOCK_DEVICE is missing."
+              exit 1
         fi
 
         DOWNLOAD_FIRMWARE "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$FIRM_DIR"
