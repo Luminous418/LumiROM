@@ -45,17 +45,17 @@ UBUNTU_PACKAGES() {
 
     for pkg in "${PACKAGES[@]}"; do
         if dpkg-query -s "$pkg" 2>/dev/null | grep -q "Status: install ok installed"; then
-            IS_UPGRADABLE=$(apt list --upgradable "$pkg" 2>/dev/null | grep "$pkg")
+            IS_UPGRADABLE=$(apt list --upgradable "$pkg" 2>/dev/null | grep "$pkg" || true)
 
             if [ -n "$IS_UPGRADABLE" ]; then
                 echo "${BOLD_YELLOW}[↑] Updating $pkg to the latest version...${RESET}"
-                sudo apt install --only-upgrade -y "$pkg"
+                sudo DEBIAN_FRONTEND=noninteractive apt install --only-upgrade -y "$pkg"
             else
                 echo "${GREEN}[✓] $pkg is updated.${RESET}"
             fi
         else
             echo "${YELLOW}[+] Installing $pkg...${RESET}"
-            sudo apt install -y "$pkg"
+            sudo DEBIAN_FRONTEND=noninteractive apt install -y "$pkg"
         fi
     done
 
