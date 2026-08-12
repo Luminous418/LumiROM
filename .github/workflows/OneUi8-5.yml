@@ -53,12 +53,6 @@ jobs:
     - name: Free disk space (3/3)
       uses: rokibhasansagar/slimhub_actions@main
 
-    - name: Validate inputs
-      shell: bash
-      run: |
-        source scripts/validation.sh
-        VALIDATION
-
     - name: Install required packages
       run: |
         source scripts/install_packages.sh
@@ -100,6 +94,12 @@ jobs:
         echo "APKTOOL=$PWD/bin/apktool/apktool.jar" >> $GITHUB_ENV
         echo "VNDKS_COLLECTION=$PWD/LumiROM/vndks" >> $GITHUB_ENV
         echo "BUILD_PARTITIONS=product,vendor,odm,system_ext,system" >> $GITHUB_ENV
+
+    - name: Validate inputs
+      shell: bash
+      run: |
+        source scripts/validation.sh
+        VALIDATION
 
     - name: Check repo
       shell: bash
