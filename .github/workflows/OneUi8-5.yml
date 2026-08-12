@@ -21,6 +21,7 @@ on:
       DESTINATION:
         description: 'Where to upload the ROM, choose between Hugging Face (if have account) or GoFile'
         required: true
+        default: "gofile"
         type: choice
         options:
           - huggingface
