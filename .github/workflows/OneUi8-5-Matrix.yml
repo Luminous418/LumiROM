@@ -3,6 +3,14 @@ name: LumiROM Tools for all devices
 on:
   workflow_dispatch:
     inputs:
+      DESTINATION:
+        description: 'Where to upload the ROM, choose between Hugging Face (if have account) or GoFile'
+        required: true
+        default: "huggingface"
+        type: choice
+        options:
+          - huggingface
+          - gofile
       USE_MODS:
         required: false
         default: true
@@ -66,6 +74,7 @@ jobs:
         echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
         echo "USE_GALAXY_AI=${{ github.event.inputs.USE_GALAXY_AI }}" >> $GITHUB_ENV
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
+        echo "DESTINATION=${{ github.event.inputs.DESTINATION }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
 
         echo "LUMIROM_VERSION=${VERSION}" >> $GITHUB_ENV
@@ -236,13 +245,13 @@ jobs:
         source scripts/zip_creation.sh
         FLASHABLE_ZIP_CREATION
 
-    - name: Upload ROM to Hugging Face
+    - name: Upload ROM to ${{ github.event.inputs.DESTINATION }}
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
         HF_USER: ${{ vars.HF_USER }}
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-        hf buckets sync ./ROM/$FOLDER_NAME hf://buckets/$HF_USER/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
+        bash scripts/upload.sh "$DESTINATION"
 
     - name: Cleanup
       run: |

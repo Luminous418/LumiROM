@@ -67,6 +67,10 @@ FLASHABLE_ZIP_CREATION() {
         MAKEROM_DIR="$(pwd)/makerom"
         export FOLDER_NAME
 
+        if [ -n "$GITHUB_ENV" ]; then
+            echo "FOLDER_NAME=$FOLDER_NAME" >> "$GITHUB_ENV"
+        fi
+
         if [[ "$DEVICE" == "SM-A325F" ]]; then
             DEVICE_CODENAME="a32"
         elif [[ "$DEVICE" == "SM-A325M" ]]; then
