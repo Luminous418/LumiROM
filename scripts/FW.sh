@@ -232,9 +232,8 @@ EXTRACT_FIRMWARE() {
         echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIRECTORY>"
         return 1
     fi
-    chmod -R 777 "$FIRM_DIR"
     local FIRM_DIR="$1"
-
+    chmod -R 777 "$FIRM_DIR"
     echo "Extracting downloaded firmware."
 
 	if [ ! -d "$FIRM_DIR" ]; then
