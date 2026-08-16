@@ -20,7 +20,7 @@ VALIDATION
 
 # --- System Environment Variables ---
 export OUTPUT_FILESYSTEM="erofs"
-export LUMIROM_VERSION="8.6.3"
+export LUMIROM_VERSION="8.6.4"
 export LUMIROM_CODE="${LUMIROM_VERSION//./0}"
 export OUT_DIR="$PWD/OUT"
 export WORK_DIR="$PWD/TMP/LumiWORK"
@@ -106,6 +106,10 @@ if [ "$USE_MODS" = "true" ]; then
     log_section "Adding Mods"
     source scripts/Mods.sh
     ADD_MODS "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+
+    log_section "Adding Cloudy OTA Helper"
+    source scripts/Cloudy.sh
+    ADD_CLOUDY "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 if [ "$USE_GALAXY_AI" = "true" ]; then

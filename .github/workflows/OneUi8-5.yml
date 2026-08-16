@@ -180,6 +180,16 @@ jobs:
         source scripts/Mods.sh
         ADD_MODS "$FIRM_DIR"
 
+    - name: Adding Cloudy OTA Helper
+      shell: bash
+      run: |
+        source scripts/Cloudy.sh
+        if [ "$USE_MODS" = "true" ]; then
+            ADD_CLOUDY "$FIRM_DIR"
+        else
+            echo "Mods are disabled, skipping Cloudy OTA Helper"
+        fi
+
     - name: Adding Galaxy AI
       shell: bash
       run: |

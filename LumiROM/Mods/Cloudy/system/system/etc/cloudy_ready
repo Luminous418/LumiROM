@@ -1,0 +1,1 @@
+LumiROM bakes Cloudy's SELinux rules and staging dirs. See /system/etc/init/cloudy.rc.

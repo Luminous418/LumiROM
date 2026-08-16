@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Privileged-permission whitelist for the Cloudy OTA app (dev.cloudy.ota).
+
+    Required since Android 9: a priv-app that requests a signature|privileged
+    permission is silently NOT installed unless the permission appears here.
+
+    Place this file in the ROM at:  /system/etc/permissions/privapp-permissions-cloudy.xml
+    (e.g. copy it to the extracted firmware's system/system/etc/permissions/ before building).
+-->
+<permissions>
+    <privapp-permissions package="dev.cloudy.ota">
+        <permission name="android.permission.REBOOT"/>
+        <permission name="android.permission.RECOVERY"/>
+    </privapp-permissions>
+</permissions>

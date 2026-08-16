@@ -1,0 +1,8 @@
+# Cloudy OTA staging: replicates magisk-module/post-fs-data.sh + service.sh
+# so the OTA helper works without a Magisk module on LumiROM builds.
+on post-fs-data
+    mkdir /cache/recovery 0771 root root
+    mkdir /data/media/0/cloudy 0771 root root
+
+on late_start
+    chmod 0771 /data/media/0/cloudy
