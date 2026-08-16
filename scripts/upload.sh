@@ -30,7 +30,7 @@ ZIP_PATH=$(find ./ROM/"$FOLDER_NAME" -type f -name "*.zip" | head -n 1)
 case "$DESTINY" in
     huggingface)
         echo "Uploading ROM to Hugging Face"
-        hf buckets sync ./ROM/$FOLDER_NAME hf://buckets/$HF_USER/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/ --include "*.zip"
+        hf buckets cp "$ZIP_PATH" "hf://buckets/$HF_USER/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/$(basename "$ZIP_PATH")"
         ;;
 
     gofile)
