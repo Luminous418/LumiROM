@@ -246,7 +246,11 @@ EXTRACT_FIRMWARE() {
         [ -e "$file" ] || continue
 
         echo "Extracting zip: $(basename "$file")"
-        7z x -y -bd -bsp1 -o"$FIRM_DIR" "$file"
+
+mkdir -p "$FIRM_DIR"
+chmod -R 777 "$FIRM_DIR"
+
+7z x -y -bd -bsp1 -o"$FIRM_DIR" "$file"
 
         rm -f "$file"
     done
