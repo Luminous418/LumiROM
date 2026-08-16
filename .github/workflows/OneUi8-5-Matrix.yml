@@ -68,7 +68,7 @@ jobs:
     - name: Set build environment
       shell: bash
       run: |
-        VERSION="8.6.3"
+        VERSION="8.6.4"
 
         echo "STOCK_DEVICE=${{ matrix.device }}" >> $GITHUB_ENV
         echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
