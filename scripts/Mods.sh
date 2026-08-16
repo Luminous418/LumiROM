@@ -10,7 +10,6 @@ ADD_MODS() {
     fi
 
 	local EXTRACTED_FIRM_DIR="$1"
-    local UPDATER_DIR="./LumiROM/Mods/Updater"
 
     if [ "$USE_MODS" = "true" ]; then
         # For every new mod, add it with all route, until I remake the script
@@ -32,35 +31,6 @@ ADD_MODS() {
         echo "${YELLOW} - Adding custom wallpapers${RESET}"
         sudo cp -rfa "$(pwd)/LumiROM/Mods/wallpaper/system/system/priv-app/wallpaper-res/"* "$EXTRACTED_FIRM_DIR/system/system/priv-app/wallpaper-res/"
 
-        echo "${YELLOW} - Adding rom updater${RESET}"
-        mkdir -p "$UPDATER_DIR/system/system/priv-app/Cloudy/"
-        mkdir -p "$EXTRACTED_FIRM_DIR/system/system/priv-app/Cloudy/"
-
-        if [ ! -f "$UPDATER_DIR/system/system/priv-app/Cloudy/Cloudy.apk" ]; then
-            aria2c -x 1 -d "$UPDATER_DIR/system/system/priv-app/Cloudy/" -o "Cloudy.apk" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/cloudy-app/releases/download/Cloudy-v2.0/app-release.apk" || return 1
-            wait
-            find "$UPDATER_DIR/system/system/priv-app/Cloudy/" -name "*.aria2" -exec rm -f {} +
-        fi
-
-        if [ ! -f "$UPDATER_DIR/system/system/etc/permissions/privapp-permissions-cloudy.xml" ]; then
-            aria2c -x 1 -d "$UPDATER_DIR/system/system/etc/permissions/" -o "privapp-permissions-cloudy.xml" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://raw.githubusercontent.com/Luminous418/cloudy-app/refs/heads/main/privapp-permissions/privapp-permissions-cloudy.xml" || return 1
-            wait
-            find "$UPDATER_DIR/system/system/etc/permissions/" -name "*.aria2" -exec rm -f {} +
-        fi
-
-        mkdir -p "$UPDATER_DIR/system/system/etc/sysconfig/"
-        mkdir -p "$EXTRACTED_FIRM_DIR/system/system/etc/sysconfig/"
-
-        if [ ! -f "$UPDATER_DIR/system/system/etc/sysconfig/cloudy-allowed-preload.xml" ]; then
-            aria2c -x 1 -d "$UPDATER_DIR/system/system/etc/sysconfig/" -o "cloudy-allowed-preload.xml" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://raw.githubusercontent.com/Luminous418/cloudy-app/refs/heads/main/allowed-preload/cloudy-allowed-preload.xml" || return 1
-            wait
-            find "$UPDATER_DIR/system/system/etc/sysconfig/" -name "*.aria2" -exec rm -f {} +
-        fi
-
-        cp -rfa "$UPDATER_DIR/system/system/priv-app/Cloudy/"* "$EXTRACTED_FIRM_DIR/system/system/priv-app/Cloudy/"
-        cp -rfa "$UPDATER_DIR/system/system/etc/permissions/"* "$EXTRACTED_FIRM_DIR/system/system/etc/permissions/"
-        cp -rfa "$UPDATER_DIR/system/system/etc/sysconfig/"* "$EXTRACTED_FIRM_DIR/system/system/etc/sysconfig/"
-        
         echo "${GREEN} - Mods added${RESET}"
     else
         echo "${RED}The use of mods for this build have been disabled by the user${RESET}"
