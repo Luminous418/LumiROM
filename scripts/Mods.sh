@@ -48,8 +48,18 @@ ADD_MODS() {
             find "$UPDATER_DIR/system/system/etc/permissions/" -name "*.aria2" -exec rm -f {} +
         fi
 
+        mkdir -p "$UPDATER_DIR/system/system/etc/sysconfig/"
+        mkdir -p "$EXTRACTED_FIRM_DIR/system/system/etc/sysconfig/"
+
+        if [ ! -f "$UPDATER_DIR/system/system/etc/sysconfig/cloudy-allowed-preload.xml" ]; then
+            aria2c -x 1 -d "$UPDATER_DIR/system/system/etc/sysconfig/" -o "cloudy-allowed-preload.xml" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://raw.githubusercontent.com/Luminous418/cloudy-app/refs/heads/main/allowed-preload/cloudy-allowed-preload.xml" || return 1
+            wait
+            find "$UPDATER_DIR/system/system/etc/sysconfig/" -name "*.aria2" -exec rm -f {} +
+        fi
+
         cp -rfa "$UPDATER_DIR/system/system/priv-app/Cloudy/"* "$EXTRACTED_FIRM_DIR/system/system/priv-app/Cloudy/"
         cp -rfa "$UPDATER_DIR/system/system/etc/permissions/"* "$EXTRACTED_FIRM_DIR/system/system/etc/permissions/"
+        cp -rfa "$UPDATER_DIR/system/system/etc/sysconfig/"* "$EXTRACTED_FIRM_DIR/system/system/etc/sysconfig/"
         
         echo "${GREEN} - Mods added${RESET}"
     else
