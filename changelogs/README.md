@@ -4,6 +4,7 @@ Here are the ROM versions and their respective changelog documents.
 
 | Version | Link |
 | :--- | :--- |
+| ![LumiROM 8.6.4](https://img.shields.io/badge/LumiROM-8.6.4-blue?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.6.x/LumiROM%208.6.4.md) |
 | ![LumiROM 8.6.3](https://img.shields.io/badge/LumiROM-8.6.3-blue?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.6.x/LumiROM%208.6.3.md) |
 | ![LumiROM 8.6.2](https://img.shields.io/badge/LumiROM-8.6.2-blue?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.6.x/LumiROM%208.6.2.md) |
 | ![LumiROM 8.6.1](https://img.shields.io/badge/LumiROM-8.6.1-blue?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.6.x/LumiROM%208.6.1.md) |

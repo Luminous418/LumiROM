@@ -3,6 +3,10 @@
 on post-fs-data
     mkdir /cache/recovery 0771 root root
     mkdir /data/media/0/cloudy 0771 root root
+    # One-shot safety net: drop any leftover staging automation so a future
+    # reboot into recovery never re-triggers an already-processed update.
+    rm -f /cache/recovery/openrecoveryscript
+    rm -f /cache/recovery/command
 
 on late_start
     chmod 0771 /data/media/0/cloudy

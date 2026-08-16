@@ -79,7 +79,7 @@ jobs:
     - name: Set build environment
       shell: bash
       run: |
-        VERSION="8.6.3"
+        VERSION="8.6.4"
 
         echo "STOCK_DEVICE=${{ github.event.inputs.STOCK_DEVICE }}" >> $GITHUB_ENV
         echo "TARGET_DEVICE=${{ github.event.inputs.TARGET_DEVICE }}" >> $GITHUB_ENV
