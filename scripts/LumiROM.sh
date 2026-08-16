@@ -71,41 +71,72 @@ DISABLE_FBE() {
         fi
     done
 }
-
 # ============================================================
-# FIX: VNDK detection بدون crash لو manifest.xml مو موجود
-# A325F = VNDK 31 / A315F = VNDK 30
+# GET VNDK VERSION
+# Auto detect VNDK from firmware
+# Supports:
+#   system/etc/vintf/manifest.xml
+#   apex/com.android.vndk.vXX
+#   vndk-vXX directories
+# No fixed A31/A32 values
 # ============================================================
 GET_VNDK_VERSION() {
     local FIRMWARE_DIR="$1"
-    local MANIFEST_PATH="$FIRMWARE_DIR/system/system/system_ext/etc/vintf/manifest.xml"
-    local FALLBACK_VERSION="${2:-31}"
 
-    if [ -f "$MANIFEST_PATH" ]; then
-        local DETECTED
-        DETECTED=$(grep -oP '(?<=targetVndkVersion>)[^<]+' "$MANIFEST_PATH" | head -1)
-        if [ -n "$DETECTED" ]; then
-            echo "$DETECTED"
+    if [ -z "$FIRMWARE_DIR" ]; then
+        echo "0"
+        return 1
+    fi
+
+    echo "${YELLOW}[*] Searching VNDK version in $FIRMWARE_DIR${RESET}" >&2
+
+    # 1) Search manifest.xml anywhere
+    local MANIFEST
+    MANIFEST=$(find "$FIRMWARE_DIR" -type f -name "manifest.xml" 2>/dev/null | grep "vintf" | head -1)
+
+    if [ -n "$MANIFEST" ] && [ -f "$MANIFEST" ]; then
+        local VNDK
+        VNDK=$(grep -oP '(?<=targetVndkVersion>)[^<]+' "$MANIFEST" | head -1)
+
+        if [ -n "$VNDK" ]; then
+            echo "${GREEN}[+] Found VNDK $VNDK from $MANIFEST${RESET}" >&2
+            echo "$VNDK"
             return 0
         fi
     fi
 
-    echo "${YELLOW}[!] manifest.xml not found — using fallback VNDK: $FALLBACK_VERSION${RESET}" >&2
-    echo "$FALLBACK_VERSION"
-}
 
-FIX_SEPOLICY_VERS() {
-    local VENDOR_DIR="$1"
-    local TARGET_VERSION="${2:-30.0}"
-    local VERS_FILE="$VENDOR_DIR/etc/selinux/plat_sepolicy_vers.txt"
+    # 2) Search apex VNDK
+    local APEX_VNDK
+    APEX_VNDK=$(find "$FIRMWARE_DIR" \
+        -type d \
+        -name "com.android.vndk.v*" 2>/dev/null \
+        | grep -oP 'v[0-9]+' \
+        | head -1 \
+        | tr -d 'v')
 
-    if [ -f "$VERS_FILE" ]; then
-        local CURRENT
-        CURRENT=$(cat "$VERS_FILE")
-        echo "${YELLOW}[*] plat_sepolicy_vers.txt: $CURRENT → $TARGET_VERSION${RESET}"
-        echo "$TARGET_VERSION" > "$VERS_FILE"
-        echo "${GREEN}[+] Fixed sepolicy version${RESET}"
-    else
-        echo "${RED}[!] plat_sepolicy_vers.txt not found at $VERS_FILE${RESET}"
+    if [ -n "$APEX_VNDK" ]; then
+        echo "${GREEN}[+] Found APEX VNDK $APEX_VNDK${RESET}" >&2
+        echo "$APEX_VNDK"
+        return 0
     fi
+
+
+    # 3) Search normal vndk folders
+    local DIR_VNDK
+    DIR_VNDK=$(find "$FIRMWARE_DIR" \
+        -type d \
+        \( -name "vndk-v*" -o -name "vndk-*" \) 2>/dev/null \
+        | grep -oP 'vndk[-_]v?\K[0-9]+' \
+        | head -1)
+
+    if [ -n "$DIR_VNDK" ]; then
+        echo "${GREEN}[+] Found folder VNDK $DIR_VNDK${RESET}" >&2
+        echo "$DIR_VNDK"
+        return 0
+    fi
+
+
+    echo "${RED}[!] VNDK version not detected${RESET}" >&2
+    echo "0"
 }
