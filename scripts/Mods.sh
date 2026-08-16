@@ -37,14 +37,19 @@ ADD_MODS() {
         mkdir -p "$EXTRACTED_FIRM_DIR/system/system/priv-app/Cloudy/"
 
         if [ ! -f "$UPDATER_DIR/system/system/priv-app/Cloudy/Cloudy.apk" ]; then
-            aria2c -x 1 -d "$UPDATER_DIR/system/system/priv-app/Cloudy/" -o "Cloudy.apk" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/cloudy-app/releases/download/cloudy-1.0/app-release.apk" || return 1
+            aria2c -x 1 -d "$UPDATER_DIR/system/system/priv-app/Cloudy/" -o "Cloudy.apk" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://github.com/Luminous418/cloudy-app/releases/download/Cloudy-v2.0/app-release.apk" || return 1
+            wait
+            find "$UPDATER_DIR/system/system/priv-app/Cloudy/" -name "*.aria2" -exec rm -f {} +
+        fi
+
+        if [ ! -f "$UPDATER_DIR/system/system/etc/permissions/privapp-permissions-cloudy.xml" ]; then
+            aria2c -x 1 -d "$UPDATER_DIR/system/system/etc/permissions/" -o "privapp-permissions-cloudy.xml" --allow-overwrite=true --auto-file-renaming=false --console-log-level=error "https://raw.githubusercontent.com/Luminous418/cloudy-app/refs/heads/main/privapp-permissions/privapp-permissions-cloudy.xml" || return 1
+            wait
+            find "$UPDATER_DIR/system/system/etc/permissions/" -name "*.aria2" -exec rm -f {} +
         fi
 
         cp -rfa "$UPDATER_DIR/system/system/priv-app/Cloudy/"* "$EXTRACTED_FIRM_DIR/system/system/priv-app/Cloudy/"
-        
-        # Cleanup any leftover .aria2 control files
-        wait
-        find "$UPDATER_DIR/system/system/priv-app/Cloudy/" -name "*.aria2" -exec rm -f {} +
+        cp -rfa "$UPDATER_DIR/system/system/etc/permissions/"* "$EXTRACTED_FIRM_DIR/system/system/etc/permissions/"
         
         echo "${GREEN} - Mods added${RESET}"
     else
