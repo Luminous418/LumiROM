@@ -30,7 +30,8 @@ ZIP_PATH=$(find ./ROM/"$FOLDER_NAME" -type f -name "*.zip" | head -n 1)
 case "$DESTINY" in
     huggingface)
         echo "Uploading ROM to Hugging Face"
-        hf buckets cp "$ZIP_PATH" "hf://buckets/$HF_USER/LumiROM/ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/$(basename "$ZIP_PATH")"
+        REMOTE_PATH="ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/$(basename "$ZIP_PATH")"
+        python3 "$(dirname "$0")/upload_hf.py" "$ZIP_PATH" "$REMOTE_PATH"
         ;;
 
     gofile)
