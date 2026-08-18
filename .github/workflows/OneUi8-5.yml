@@ -149,6 +149,8 @@ jobs:
     - name: Apply vendor patches
       shell: bash
       run: |
+        sudo chmod -R u+rwX FIRMWARE
+        sudo chown -R $USER:$USER FIRMWARE
         source scripts/LumiROM.sh
         DISABLE_FBE "$FIRM_DIR"
         DISABLE_FDE "$FIRM_DIR"
