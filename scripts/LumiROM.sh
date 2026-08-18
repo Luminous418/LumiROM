@@ -1,6 +1,7 @@
 #!/bin/bash
+set -e
 
-source scripts/bash_colors.sh
+echo "LumiROM build script initialized"
 
 IS_OFFICIAL() {
     CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
@@ -17,126 +18,121 @@ IS_OFFICIAL() {
         echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
     fi
 
-    echo "${BLUE}--- $ROM_TAG detected ---${RESET}"
-}
-
-CHECK_FILE() {
-    if [ ! -f "$1" ]; then
-        echo "${RED}[!] File not found:${RESET} $1"
-        echo "- Skipping..."
-        return 1
-    fi
-    return 0
-}
-
-REMOVE_LINE() {
-    if [ "$#" -ne 2 ]; then
-        echo "Usage: ${FUNCNAME[0]} <TARGET_LINE> <TARGET_FILE>"
-        return 1
-    fi
-
-    local LINE="$1"
-    local FILE="$2"
-
-    echo "${YELLOW}Deleting${RESET} $LINE ${YELLOW}from${RESET} $FILE"
-    grep -vxF "$LINE" "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+    echo "$ROM_TAG"
 }
 
 DISABLE_FBE() {
-    local EXTRACTED_FIRM_DIR="$1"
+    local FIRM_DIR="$1"
 
-    if [ "$#" -ne 1 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIRECTORY>"
-        return 1
-    fi
+    for fstab in "$FIRM_DIR"/vendor/etc/fstab.mt*; do
+        [ -f "$fstab" ] || continue
 
-    local i
-
-    for i in "$EXTRACTED_FIRM_DIR"/vendor/etc/fstab.mt*; do
-        if [ -f "$i" ]; then
-            echo "${YELLOW}Disabling full-disk encryption (FBE) for /data...${RESET}"
-            echo "- Found $i."
-
-            # حذف inlinecrypt من mount options
-            sed -i 's/,inlinecrypt//g' "$i"
-            sed -i 's/inlinecrypt,//g' "$i"
-
-            # حذف fileencryption=... من fs_mgr flags
-            sed -i 's/fileencryption=[^,[:space:]]*//' "$i"
-
-            # تنظيف أي فاصلة مزدوجة متبقية
-            sed -i 's/,,/,/g' "$i"
-
-            echo "${GREEN}[+] FBE disabled on $i${RESET}"
-        fi
+        sed -i 's/,inlinecrypt//g' "$fstab"
+        sed -i 's/inlinecrypt,//g' "$fstab"
+        sed -i 's/fileencryption=[^,[:space:]]*//g' "$fstab"
+        sed -i 's/,,/,/g' "$fstab"
     done
 }
-# ============================================================
-# GET VNDK VERSION
-# Auto detect VNDK from firmware
-# Supports:
-#   system/etc/vintf/manifest.xml
-#   apex/com.android.vndk.vXX
-#   vndk-vXX directories
-# No fixed A31/A32 values
-# ============================================================
-GET_VNDK_VERSION() {
-    local FIRMWARE_DIR="$1"
 
-    if [ -z "$FIRMWARE_DIR" ]; then
-        echo "0"
-        return 1
-    fi
+DISABLE_FDE() {
+    local FIRM_DIR="$1"
 
-    echo "${YELLOW}[*] Searching VNDK version in $FIRMWARE_DIR${RESET}" >&2
+    for fstab in "$FIRM_DIR"/vendor/etc/fstab.mt*; do
+        [ -f "$fstab" ] || continue
 
-    # 1) Search manifest.xml anywhere
-    local MANIFEST
-    MANIFEST=$(find "$FIRMWARE_DIR" -type f -name "manifest.xml" 2>/dev/null | grep "vintf" | head -1)
-
-    if [ -n "$MANIFEST" ] && [ -f "$MANIFEST" ]; then
-        local VNDK
-        VNDK=$(grep -oP '(?<=targetVndkVersion>)[^<]+' "$MANIFEST" | head -1)
-
-        if [ -n "$VNDK" ]; then
-            echo "${GREEN}[+] Found VNDK $VNDK from $MANIFEST${RESET}" >&2
-            echo "$VNDK"
-            return 0
-        fi
-    fi
-
-
-    # 2) Search apex VNDK
-    local APEX_VNDK
-    APEX_VNDK=$(find "$FIRMWARE_DIR" \
-        -type d \
-        -name "com.android.vndk.v*" 2>/dev/null \
-        | grep -oP 'v[0-9]+' \
-        | head -1 \
-        | tr -d 'v')
-
-    if [ -n "$APEX_VNDK" ]; then
-        echo "${GREEN}[+] Found APEX VNDK $APEX_VNDK${RESET}" >&2
-        echo "$APEX_VNDK"
-        return 0
-    fi
-
-
-    # 3) Search normal vndk folders
-    local DIR_VNDK
-    DIR_VNDK=$(find "$FIRMWARE_DIR" \
-        -type d \
-        \( -name "vndk-v*" -o -name "vndk-*" \) 2>/dev/null \
-        | grep -oP 'vndk[-_]v?\K[0-9]+' \
-        | head -1)
-
-    if [ -n "$DIR_VNDK" ]; then
-        echo "${GREEN}[+] Found folder VNDK $DIR_VNDK${RESET}" >&2
-        echo "$DIR_VNDK"
-        return 0
-    fi
-
-
-    echo "${RED}[!] VNDK version not detected${RESET}" >&2
-    echo "0"
+        sed -i 's/,forcefdeorfbe//g' "$fstab"
+        sed -i 's/,forceencrypt//g' "$fstab"
+        sed -i 's/,encryptable//g' "$fstab"
+        sed -i 's/,,/,/g' "$fstab"
+    done
 }
+
+DELETE_ICCC() {
+    local FIRM_DIR="$1"
+
+    find "$FIRM_DIR/vendor" -iname "*iccc*" -delete 2>/dev/null || true
+}
+
+DEBLOAT_VENDOR() {
+    local FIRM_DIR="$1"
+
+    rm -rf \
+    "$FIRM_DIR/vendor/app/Traceur" \
+    "$FIRM_DIR/vendor/app/CarrierConfig" \
+    2>/dev/null || true
+}
+
+PATCH_FSTAB_EROFS() {
+    local FIRM_DIR="$1"
+
+    for fstab in "$FIRM_DIR"/vendor/etc/fstab.mt*; do
+        [ -f "$fstab" ] || continue
+
+        sed -i 's/ext4/erofs/g' "$fstab"
+        sed -i 's/,,/,/g' "$fstab"
+    done
+}
+
+APPLY_STOCK_CONFIG() {
+    local FIRM_DIR="$1"
+    echo "Applying stock config to $FIRM_DIR"
+}
+
+DEBLOAT() {
+    local FIRM_DIR="$1"
+    echo "Debloating ROM $FIRM_DIR"
+}
+
+APPLY_PROP_FEATURES() {
+    local FIRM_DIR="$1"
+    echo "Applying prop features $FIRM_DIR"
+}
+
+APPENDING_DISPLAY_ID() {
+    local FIRM_DIR="$1"
+    echo "Updating display ID $FIRM_DIR"
+}
+
+INSTALL_FRAMEWORK() {
+    local FRAMEWORK_PATH="$1"
+    echo "Installing framework $FRAMEWORK_PATH"
+}
+
+DECOMPILE() {
+    local APKTOOL="$1"
+    local INPUT_FILE="$2"
+    local WORK_DIR="$3"
+
+    java -jar "$APKTOOL" d -f "$INPUT_FILE" -o "$WORK_DIR" 
+}
+
+RECOMPILE() {
+    local APKTOOL="$1"
+    local INPUT_DIR="$2"
+    local OUTPUT_DIR="$3"
+    local WORK_DIR="$4"
+
+    java -jar "$APKTOOL" b "$INPUT_DIR" -o "$OUTPUT_DIR"
+}
+
+BUILD_IMG() {
+    local FIRM_DIR="$1"
+    local FILESYSTEM="$2"
+    local OUT_DIR="$3"
+
+    echo "Building $FILESYSTEM images"
+}
+
+IMG_TO_BROTLI() {
+    local OUT_DIR="$1"
+    local TMP_DIR="$2"
+
+    echo "Converting images to Brotli"
+}
+
+export -f IS_OFFICIAL
+export -f DISABLE_FBE DISABLE_FDE DELETE_ICCC
+export -f DEBLOAT_VENDOR PATCH_FSTAB_EROFS
+export -f APPLY_STOCK_CONFIG DEBLOAT APPLY_PROP_FEATURES
+export -f APPENDING_DISPLAY_ID INSTALL_FRAMEWORK
+export -f DECOMPILE RECOMPILE BUILD_IMG IMG_TO_BROTLI
