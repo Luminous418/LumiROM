@@ -25,7 +25,7 @@ This custom ROM is created to provide a totally new experience to Low end Mediat
 
 ## What it does?
 
-It downloads the firmware from Samsung servers using [samloader](https://github.com/ananjaser1211/samloader), or custom firmware downloader, merges OTA patches, extracts the partition images and then applies all the features implemented in the repository - Galaxy AI, heavy debloat, Knox patches, performance tweaks and QoL improvements - so the device can be used again with a fresh and modern experience.
+It downloads the firmware from Samsung servers using [samloader](https://github.com/ananjaser1211/samloader), extracts the partition images and then applies all the features implemented in the repository - Galaxy AI, heavy debloat, Knox patches, performance tweaks and QoL improvements - so the device can be used again with a fresh and modern experience.
 
 The whole process can run either on **GitHub Actions** or **locally** on your machine (requires Ubuntu/Debian distro or WSL).
 
@@ -126,7 +126,9 @@ Update your device model in the STOCK_DEVICE_MODEL option.
 
 #### 4. Kernel BPF Version Option:
 Set this option to True if your kernel BPF version is 5.4 (lower than 5.10).
-- Otherwise, set it to False.
+- Otherwise, set it to false.
+
+> All devices from my repo dont need this as BPF supports 5.10.
 
 #### 5. Output Filesystem:
 My tool can only build images in erofs because:
@@ -138,14 +140,18 @@ My tool can only build images in erofs because:
 
 But all of the devices I support got EROFS kernel so there isn't a problem
 
-#### 6. Upload (only on GH Actions)
-The ROM will be auto uploaded to Hugging Face servers, but you need to create an account and generate a token to be able to upload the file. 
+#### 6. Upload
+You can choose between Hugging Face or GoFile:
+
+- If you choose Hugging Face, the ROM will be auto uploaded to Hugging Face servers, but you need to create an account and generate a token to be able to upload the file. 
 
 > [!TIP]
 > - Create a Hugging Face account.
 > - Go to settings and then to Access Tokens. Create a new token with write permissions and copy it.
 > - Create a bucket.
 > - Go back to the repository and go to repository settings and add the token as a secret with the name HF_TOKEN.
+
+- If you choose GoFile, it will generate a link when rom is uploaded ready to be downloaded. No need for any account.
 
 ### Method 2: Local Build
 
@@ -164,17 +170,17 @@ STOCK_DEVICE="$1"               # Your device model
 TARGET_DEVICE="$2"              # The phone you want to port
 TARGET_CSC="$3"                 # The region from the target device
 TARGET_IMEI="$4"                # The IMEI from target device
-USE_MODS="Yes"                  # Include mods (Vulkan fix, VoLTE fix, tweaks, wallpapers)
-USE_GALAXY_AI="Yes"             # Include Galaxy AI features
-USE_UI_8_TETHERING_APEX="False" # Set to True if kernel BPF < 5.10
+USE_MODS="$5"                   # Include mods (OTA app, Vulkan fix, VoLTE fix, tweaks, wallpapers)
+USE_GALAXY_AI="$6"              # Include Galaxy AI features
+USE_UI_8_TETHERING_APEX="$7"    # Set to true if kernel BPF < 5.10
+LUMIROM_MAINTAINER="$8"         # Your GitHub name
 ```
 
 #### 3. Run the build:
 The use for this is: 
 ```bash
-bash build_local.sh <STOCK_MODEL> <TARGET_MODEL> <CSC> <IMEI>
+bash build_local.sh <STOCK_MODEL> <TARGET_MODEL> <CSC> <IMEI> <USE_MODS> <USE_GALAXY_AI> <USE_UI_8_TETHERING_APEX> <LUMIROM_MAINTAINER>
 ```
-Change accordingly to your needs but dont touch the $1, $2 etc.
 <br>
 The script will install dependencies, download firmware (if not cached), apply all patches and build the ROM. The output ZIP will be in the `ROM/` folder.
 
