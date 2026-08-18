@@ -34,19 +34,6 @@ DISABLE_FBE() {
     done
 }
 
-DISABLE_FDE() {
-    local FIRM_DIR="$1"
-
-    for fstab in "$FIRM_DIR"/vendor/etc/fstab.mt*; do
-        [ -f "$fstab" ] || continue
-
-        sed -i 's/,forcefdeorfbe//g' "$fstab"
-        sed -i 's/,forceencrypt//g' "$fstab"
-        sed -i 's/,encryptable//g' "$fstab"
-        sed -i 's/,,/,/g' "$fstab"
-    done
-}
-
 DELETE_ICCC() {
     local FIRM_DIR="$1"
 
@@ -103,7 +90,7 @@ DECOMPILE() {
     local INPUT_FILE="$2"
     local WORK_DIR="$3"
 
-    java -jar "$APKTOOL" d -f "$INPUT_FILE" -o "$WORK_DIR" 
+    java -jar "$APKTOOL" d -f "$INPUT_FILE" -o "$WORK_DIR"
 }
 
 RECOMPILE() {
@@ -131,8 +118,7 @@ IMG_TO_BROTLI() {
 }
 
 export -f IS_OFFICIAL
-export -f DISABLE_FBE DISABLE_FDE DELETE_ICCC
-export -f DEBLOAT_VENDOR PATCH_FSTAB_EROFS
+export -f DISABLE_FBE DELETE_ICCC DEBLOAT_VENDOR PATCH_FSTAB_EROFS
 export -f APPLY_STOCK_CONFIG DEBLOAT APPLY_PROP_FEATURES
 export -f APPENDING_DISPLAY_ID INSTALL_FRAMEWORK
 export -f DECOMPILE RECOMPILE BUILD_IMG IMG_TO_BROTLI
