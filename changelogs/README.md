@@ -19,9 +19,12 @@ Here are the ROM versions and their respective changelog documents.
 | ![LumiROM 8.1.0](https://img.shields.io/badge/LumiROM-8.1.0-EB0C2A?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.1.x/LumiROM%208.1.0.md) |
 | ![LumiROM 8.0.1](https://img.shields.io/badge/LumiROM-8.0.1-EB0C2A?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.0.x/LumiROM%208.0.1.md) |
 | ![LumiROM 8.0.0](https://img.shields.io/badge/LumiROM-8.0.0-EB0C2A?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%208.0.x/LumiROM%208.0.0.md) |
-| ![LumiVENDOR](https://img.shields.io/badge/Lumi-VENDOR-green?logo=Android) | [Download](https://t.me/lumiromgroup/4896) |
+| ![LumiROM 7.0.2](https://img.shields.io/badge/LumiROM-7.0.2-FF7300?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%207.0.x/LumiROM%207.0.2.md) |
+| ![LumiROM 7.0.1](https://img.shields.io/badge/LumiROM-7.0.1-FF7300?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%207.0.x/LumiROM%207.0.1.md) |
+| ![LumiROM 6.0.0](https://img.shields.io/badge/LumiROM-6.0.0-FDFF00?logo=Android) | [Changelog](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/LumiROM%206.0.x/LumiROM%206.0.0.md) |
+| ![LumiVENDOR](https://img.shields.io/badge/Lumi-VENDOR-green?logo=Android) | [Download](https://huggingface.co/buckets/LuminousJD418/LumiROM/tree/ROMs/Vendor) |
 
 ## Note
-LumiVENDOR is only for A325FXXS7DWL1 and A325FXXSCDXL2 for make it able to install and use my roms.
+**LumiVENDOR** is only for **A325FXXS7DWL1** and **A325FXXSCDXL2** for make it able to install and use my roms.
 
 A325FXXSCDYB2 and A325MUBSBDYC2 (that is the latest A325X update) can install normally the rom without flashing LumiVENDOR.
