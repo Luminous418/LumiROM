@@ -122,10 +122,10 @@ Update your device model in the STOCK_DEVICE_MODEL option.
 - If your model is available in /LumiROM/Devices folder of this repository, the tool will work for your device.
 - If your model is not present, it will not work.
 
-> I recommend for forks, to use the Specific Device workflow instead of the All Devices workflow if you building it via GitHub Actions.
+> I recommend for forks, to use the `LumiROM Tools` workflow instead of the `All Devices` workflow if you building it via GitHub Actions.
 
 #### 4. Kernel BPF Version Option:
-Set this option to True if your kernel BPF version is 5.4 (lower than 5.10).
+Tick this option if your kernel BPF version is 5.4 (lower than 5.10).
 - Otherwise, set it to false.
 
 > All devices from my repo dont need this as BPF supports 5.10.
@@ -138,7 +138,7 @@ My tool can only build images in erofs because:
 
 > Only downside is: Your kernel must support EROFS.
 
-But all of the devices I support got EROFS kernel so there isn't a problem
+But all of the devices I support got EROFS kernel so there isn't a problem.
 
 #### 6. Upload
 You can choose between Hugging Face or GoFile:
