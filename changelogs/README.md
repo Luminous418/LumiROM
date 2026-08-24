@@ -25,6 +25,6 @@ Here are the ROM versions and their respective changelog documents.
 | ![LumiVENDOR](https://img.shields.io/badge/Lumi-VENDOR-green?logo=Android) | [Download](https://huggingface.co/buckets/LuminousJD418/LumiROM/tree/ROMs/Vendor) |
 
 ## Note
-**LumiVENDOR** is only for **A325FXXS7DWL1** and **A325FXXSCDXL2** for make it able to install and use my roms.
+**LumiVENDOR** is only needed for **A325FXXS7DWL1** and **A325FXXSCDXL2**, to make them able to install and use my ROMs.
 
-A325FXXSCDYB2 and A325MUBSBDYC2 (that is the latest A325X update) can install normally the rom without flashing LumiVENDOR.
+A325FXXSCDYB2 and A325MUBSBDYC2 (which are the latest A325X updates) can install the ROM normally without flashing LumiVENDOR.

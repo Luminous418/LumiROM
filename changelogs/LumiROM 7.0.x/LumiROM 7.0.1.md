@@ -1,5 +1,5 @@
 # What's changed on LumiROM 7.0.1?
-First port from One Ui 7
+First port from One UI 7
 
 ## Fixes
 - Fixed NFC.
@@ -17,4 +17,5 @@ First port from One Ui 7
 ## Device Specific
 - S23 FE base: S711BXXS8EYEA with 01-06-2025 (June) security patch.
 
+# Download
 [Download LumiROM 7.0.1](https://t.me/LumiROMs)

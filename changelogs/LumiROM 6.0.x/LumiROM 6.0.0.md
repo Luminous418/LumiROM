@@ -1,5 +1,5 @@
 # What's changed on LumiROM 6.0.0?
-Well, I re-made this from zero as a lot of people asked me in th past. So why not?.
+Well, I re-made this from zero as a lot of people asked me in the past. So why not?
 
 ## Fixes
 - I think all works fine.
@@ -42,9 +42,10 @@ If you want to know here is the old changelog I published back in the day:
 - Put One UI 6.1 Home from S24U, enjoy smoothness :)
 - Added S24 and S24U walls
 - And also fixed a bug that phone lose performance and idk why was happening
-- Added some optimizations and fixed some things less importants
+- Added some optimizations and fixed some less important things
 </details>
 
 <br>
 
+# Download
 [Download LumiROM 6.0.0](https://t.me/LumiROMs)

@@ -5,7 +5,7 @@
 
 ## Features
 - Updated the OTA app, including support for the phones I support on the ROM.
-- Also you can now use the ROM if you have it downloaded on the sdcard.
+- Also you can now install the ROM from a ZIP stored on the sdcard.
 
 
 # Screenshots

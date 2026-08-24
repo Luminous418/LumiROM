@@ -14,7 +14,7 @@
 - A22 got a new kernel with spoofed 6.12. (visual)
 
 ## Bugs
-- Yet hotspot doesnt work.
+- Yet hotspot doesn't work.
 - You tell me.
 
 # Download
