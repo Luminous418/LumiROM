@@ -7,6 +7,26 @@ if [ -f "scripts/utils/logging.sh" ]; then
     source scripts/utils/logging.sh
 fi
 
+GET_BASE_DEVICE() {
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <STOCK_DEVICE>"
+        return 1
+    fi
+
+    case "$1" in
+        SM-A325F|SM-A325M|SM-M325F)
+            echo "SM-A346B"
+            ;;
+        SM-A225F|SM-A225M|SM-E225F|SM-M225F|SM-A226B)
+            echo "SM-A245F"
+            ;;
+        *)
+            echo "${RED}Error:${RESET} No base device found for $1." >&2
+            return 1
+            ;;
+    esac
+}
+
 CHECK_FIRMWARE_IMAGES() {
     if [ "$#" -lt 2 ]; then
         echo "Usage: ${FUNCNAME[0]} <FIRMWARE_DIR> <PARTITION_LIST>"

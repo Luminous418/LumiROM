@@ -177,29 +177,33 @@ git clone https://github.com/Luminous418/LumiROM.git
 cd LumiROM
 ```
 
-#### 2. Configure your build:
-You will find these variables on `build_local.sh`:
+#### 2. Choose your options:
+Only the stock model, region and IMEI are required - everything else has a default:
 
-| Argument | Meaning |
-| :--- | :--- |
-| `STOCK_DEVICE` | Your phone model - must be one of the supported models (e.g. `SM-A325F`) |
-| `TARGET_DEVICE` | The base device to port from - see the **Base** column of the Supported Devices table (e.g. `SM-A346B`) |
-| `TARGET_CSC` | Region code of the base firmware (e.g. `DBT`) |
-| `TARGET_IMEI` | A valid 15-digit IMEI of the base device - you can find examples inside `build_local.sh` |
-| `USE_MODS` | `true`/`false` - include mods (Cloudy app, Vulkan fix, VoLTE fix, tweaks, wallpapers) |
-| `USE_GALAXY_AI` | `true`/`false` - include Galaxy AI features |
-| `USE_UI_8_TETHERING_APEX` | `true` only if your kernel BPF is lower than 5.10 |
-| `ZIP_IMG` | `true`/`false` - deliver the partition images (.img) in a ZIP instead of a flashable ROM |
-| `LUMIROM_MAINTAINER` | Your GitHub name |
-
-Example:
 ```bash
-bash build_local.sh SM-A325F SM-A346B DBT 353117555323497 true true false YourGitHubName false
+bash build_local.sh -s SM-A325F -c DBT -i 353117555323497
 ```
 
+| Option | Meaning |
+| :--- | :--- |
+| `-s, --stock` | Your phone model - must be one of the supported models (e.g. `SM-A325F`) |
+| `-c, --csc` | Region code of the base firmware (e.g. `DBT`) |
+| `-i, --imei` | A valid 15-digit IMEI of the base device - you can find examples inside `build_local.sh` |
+| `-t, --target` | Base device to port from - auto-derived from your stock model if omitted (see the **Base** column of the Supported Devices table) |
+| `-m, --maintainer` | Your name - defaults to your git username |
+| `--no-mods` | Exclude mods (Cloudy app, Vulkan fix, VoLTE fix, tweaks, wallpapers) |
+| `--no-ai` | Exclude Galaxy AI features |
+| `--bpf-legacy` | Enable only if your kernel BPF is lower than 5.10 |
+| `--img-zip` | Deliver the partition images (.img) in a ZIP instead of a flashable ROM |
+| `-h, --help` | Show all options and the supported devices |
+
+> [!TIP]
+> If you omit a required option, the script asks for it interactively, so running `bash build_local.sh` alone also works.
+
 #### 3. Run the build:
+Add any extra options you need:
 ```bash
-bash build_local.sh <STOCK_DEVICE> <TARGET_DEVICE> <TARGET_CSC> <TARGET_IMEI> <USE_MODS> <USE_GALAXY_AI> <USE_UI_8_TETHERING_APEX> <LUMIROM_MAINTAINER> <ZIP_IMG>
+bash build_local.sh -s SM-A225F -c DBT -i 358212589089183 --no-mods --img-zip
 ```
 <br>
 The script will install dependencies, download firmware (if not cached), apply all patches and build the ROM. The output ZIP will be in the `ROM/` folder.

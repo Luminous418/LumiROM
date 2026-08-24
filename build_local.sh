@@ -2,22 +2,87 @@
 
 START_TIME=$(date +%s)
 
-# Variables that need an input from the user
-STOCK_DEVICE="$1"
-TARGET_DEVICE="$2"
-TARGET_CSC="$3"
-TARGET_IMEI="$4"
-USE_MODS="$5"
-USE_GALAXY_AI="$6"
-USE_UI_8_TETHERING_APEX="$7"
-LUMIROM_MAINTAINER="$8"
-ZIP_IMG="$9"
+# Defaults
+USE_MODS="true"
+USE_GALAXY_AI="true"
+USE_UI_8_TETHERING_APEX="false"
+ZIP_IMG="false"
+LUMIROM_MAINTAINER="$(git config user.name 2>/dev/null)"
+
+usage() {
+    echo "LumiROM local builder"
+    echo ""
+    echo "Usage: bash build_local.sh -s <STOCK_DEVICE> -c <CSC> -i <IMEI> [options]"
+    echo ""
+    echo "Required:"
+    echo "  -s, --stock <SM-XXXXX>     Your phone model (must be supported)"
+    echo "  -c, --csc <XXX>            Region code of the base firmware (3 letters)"
+    echo "  -i, --imei <15 digits>     Valid IMEI of the base device"
+    echo ""
+    echo "Optional:"
+    echo "  -t, --target <SM-XXXXX>    Base device to port from (auto-derived from stock if omitted)"
+    echo "  -m, --maintainer <name>    Maintainer name (default: git config user.name)"
+    echo "      --no-mods              Exclude mods (Cloudy app, Vulkan fix, VoLTE fix, tweaks, wallpapers)"
+    echo "      --no-ai                Exclude Galaxy AI features"
+    echo "      --bpf-legacy           Enable if your kernel BPF version is lower than 5.10"
+    echo "      --img-zip              Deliver the partition images (.img) in a ZIP instead of a flashable ROM"
+    echo "  -h, --help                 Show this help"
+    echo ""
+    echo "Supported devices:"
+    ls LumiROM/Devices 2>/dev/null || echo "  (run this script from the repository root)"
+    echo ""
+    echo "Examples:"
+    echo "  bash build_local.sh -s SM-A325F -c EUX -i 353117555323497"
+    echo "  bash build_local.sh -s SM-A225F -c INS -i 358212589089183 --no-ai --img-zip"
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -s|--stock) STOCK_DEVICE="${2:?Option $1 requires a value}"; shift 2 ;;
+        -t|--target) TARGET_DEVICE="${2:?Option $1 requires a value}"; shift 2 ;;
+        -c|--csc) TARGET_CSC="${2:?Option $1 requires a value}"; shift 2 ;;
+        -i|--imei) TARGET_IMEI="${2:?Option $1 requires a value}"; shift 2 ;;
+        -m|--maintainer) LUMIROM_MAINTAINER="${2:?Option $1 requires a value}"; shift 2 ;;
+        --no-mods) USE_MODS="false"; shift ;;
+        --no-ai) USE_GALAXY_AI="false"; shift ;;
+        --bpf-legacy) USE_UI_8_TETHERING_APEX="true"; shift ;;
+        --img-zip) ZIP_IMG="true"; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Unknown option: $1"; echo ""; usage; exit 1 ;;
+    esac
+done
+
+# Interactive wizard for missing values
+# A346B imei = 353117555323497
+# A245F imei = 358212589089183
+
+if [ -z "$STOCK_DEVICE" ]; then
+    echo "Supported devices:"
+    ls LumiROM/Devices
+    read -rp "Stock device (SM-XXXXX): " STOCK_DEVICE
+fi
+
+if [ -z "$TARGET_CSC" ]; then
+    read -rp "CSC/Region (3 letters, e.g. DBT): " TARGET_CSC
+fi
+
+if [ -z "$TARGET_IMEI" ]; then
+    echo "Tip: example IMEIs for each base device are listed above."
+    read -rp "IMEI of the base device (15 digits): " TARGET_IMEI
+fi
+
+if [ -z "$LUMIROM_MAINTAINER" ]; then
+    read -rp "Maintainer name (GitHub or Telegram username): " LUMIROM_MAINTAINER
+fi
+
+source scripts/firmware/FW.sh
+
+if [ -z "$TARGET_DEVICE" ]; then
+    TARGET_DEVICE=$(GET_BASE_DEVICE "$STOCK_DEVICE") || exit 1
+fi
 
 source scripts/utils/validation.sh
 VALIDATION
-
-# A346B imei = 353117555323497
-# A245F imei = 358212589089183
 
 # --- System Environment Variables ---
 export OUTPUT_FILESYSTEM="erofs"
@@ -40,7 +105,7 @@ initialize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$
 
 # Give execution permissions
 log_section "Setting up permissions"
-chmod +x scripts/*.sh
+find scripts -name "*.sh" -exec chmod +x {} +
 chmod +x bin/MergeOTA/MergeAll.sh
 chmod +x bin/erofs-utils/extract.erofs
 chmod +x bin/erofs-utils/mkfs.erofs
@@ -61,7 +126,6 @@ source scripts/firmware/local_official.sh
 IS_LOCAL_OFFICIAL >> "$LOG_FILE" 2>&1
 
 log_section "Downloading Firmware"
-source scripts/firmware/FW.sh
 source "$DEVICES_DIR/$STOCK_DEVICE/config"
 
 # Check if firmware images are already cached
