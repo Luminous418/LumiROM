@@ -20,30 +20,36 @@
   </a>
 </p>
 
-This custom ROM is created to provide a totally new experience to Low end Mediatek devices.
-- It is focused on stability while upgrading the android version so we can test new One Ui releases and adding new features such as Galaxy AI✨
+LumiROM is a custom ROM created to provide a totally new experience to low-end MediaTek devices.
+It focuses on stability while upgrading the Android version, so you can test new One UI releases and enjoy new features such as Galaxy AI ✨
 
-## What it does?
+## Quick Start
+- Just want the ROM? Download the latest release from my [Telegram channel](https://t.me/LumiROMs) and head over to [Installing the ROM](#installing-the-rom).
+- Want to build it yourself? Pick one of the methods in [How to Use](#how-to-use).
+
+## What does it do?
 
 It downloads the firmware from Samsung servers using [samloader](https://github.com/ananjaser1211/samloader), extracts the partition images and then applies all the features implemented in the repository - Galaxy AI, heavy debloat, Knox patches, performance tweaks and QoL improvements - so the device can be used again with a fresh and modern experience.
 
 The whole process can run either on **GitHub Actions** or **locally** on your machine (requires Ubuntu/Debian distro or WSL).
 
 ## Changelogs
-Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/README.md) folder to know more about releases and useful information.
+Check the [changelogs folder](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/changelogs/README.md) to learn more about each release and useful information.
 
 ## Supported Devices
 
-| Device | Model |
-| :--- | :--- |
-| Samsung Galaxy A22 | SM-A225F |
-| Samsung Galaxy A22 5G | SM-A226B |
-| Samsung Galaxy A32 | SM-A325F |
-| Samsung Galaxy A32 | SM-A325M |
-| Samsung Galaxy F22 | SM-E225F |
-| Samsung Galaxy M32 | SM-M325F |
+| Device | Model | Fingerprint | Base |
+| :--- | :--- | :--- | :--- |
+| Samsung Galaxy A22 | SM-A225F | Side-FP | SM-A245F (A24) |
+| Samsung Galaxy A22 5G | SM-A226B | Side-FP | SM-A245F (A24) |
+| Samsung Galaxy A32 | SM-A325F | FOD | SM-A346B (A34) |
+| Samsung Galaxy A32 | SM-A325M | FOD | SM-A346B (A34) |
+| Samsung Galaxy F22 | SM-E225F | Side-FP | SM-A245F (A24) |
+| Samsung Galaxy M32 | SM-M325F | FOD | SM-A346B (A34) |
 
-> **Note:** FOD devices will use FOD bases (e.g. A32 → A34 base), and Side-FP devices will use Side-FP bases (e.g. A22 → A24 base).
+Where:
+- **Fingerprint**: **FOD** means fingerprint under display, **Side-FP** means side-mounted fingerprint (power button).
+- **Base**: the newer Samsung device whose firmware LumiROM downloads and uses to build the port for your phone, so it can run a modern One UI build on older hardware.
 
 ## Features
 
@@ -63,8 +69,8 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 - Custom wallpapers included.
 
 ### Galaxy AI ✨
-- **Call assist** - change caller voice, make real time translated calls.
-- **Writing assist** - tools for composing, translating the text, summarize long texts and more.
+- **Call assist** - change the caller's voice and make real-time translated calls.
+- **Writing assist** - compose and translate text, summarize long texts and more.
 - **Note assist** - automatic text organization and summarization.
 - **Transcript assist** - AI-powered voice transcriptions.
 - **Browsing assist** - summarized web browsing.
@@ -79,6 +85,7 @@ Refer to [changelogs](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/chang
 - More floating features enabled.
 - Screen recorder support.
 - Bluetooth recording support.
+- Built-in [Cloudy](https://github.com/Luminous418/cloudy) app - download and install new ROM versions directly from the phone, even from a ZIP stored on the sdcard (available since 8.6.4).
 
 ### Knox Patches (built-in, no root needed)
 Knox functionality is patched directly via smali modifications - no modules or root required:
@@ -101,7 +108,7 @@ Knox functionality is patched directly via smali modifications - no modules or r
 -  [Secure Wi-Fi](https://www.samsung.com/uk/support/mobile-devices/what-is-the-secure-wifi-feature-and-how-do-i-enable-or-use-it/)
 -  [SmartThings](https://www.samsung.com/uk/smartthings/app/)
 
-This apps will work without installing any module or having root on the device.
+These apps will work without installing any module or having root on the device.
 
 ## How to Use
 
@@ -118,44 +125,48 @@ Open your forked repository.
 - Click Run workflow.
 
 #### 3. Set Your Device Model:
-Update your device model in the STOCK_DEVICE_MODEL option.
-- If your model is available in /LumiROM/Devices folder of this repository, the tool will work for your device.
-- If your model is not present, it will not work.
+Fill in the `STOCK_DEVICE` and `TARGET_DEVICE` options:
+- `STOCK_DEVICE`: your phone's model. If it is present in the /LumiROM/Devices folder of this repository (see [Supported Devices](#supported-devices)), the tool will work for your device. If not, it will not work.
+- `TARGET_DEVICE`, `TARGET_CSC` and `TARGET_IMEI`: refer to your device's **Base** from the Supported Devices table - the base model, a region code and a valid 15-digit IMEI of that base device.
 
-> I recommend for forks, to use the `LumiROM Tools` workflow instead of the `All Devices` workflow if you building it via GitHub Actions.
+> [!NOTE]
+> The `All Devices` workflow (Matrix) is only intended for the developer, as it builds LumiROM for every supported device at once in a single run. If you are building from a fork, always use the `LumiROM Tools` workflow instead.
 
-#### 4. Kernel BPF Version Option:
-Tick this option if your kernel BPF version is 5.4 (lower than 5.10).
-- Otherwise, set it to false.
+#### 4. Kernel BPF Version Option (`USE_UI_8_TETHERING_APEX`):
+Tick this option only if your kernel BPF version is lower than 5.10 (e.g. 5.4); otherwise leave it disabled.
+You can check your kernel version under Settings → About phone → Software information → Kernel version.
 
-> All devices from my repo dont need this as BPF supports 5.10.
+> All supported devices in this repository already have BPF 5.10-compatible kernels, so leave it disabled when building for them.
 
 #### 5. Output Filesystem:
-My tool can only build images in erofs because:
-  - It is recommended if your device partition size is small.
-  - Saves storage space.
-  - Can add more things as it gets compressed
+The tool builds the images in EROFS format because:
+- It is recommended for devices with small partitions.
+- It saves storage space.
+- Compression allows fitting more content in the image.
 
-> Only downside is: Your kernel must support EROFS.
-
-But all of the devices I support got EROFS kernel so there isn't a problem.
+> [!NOTE]
+> The only downside is that your kernel must support EROFS, but all supported devices already use EROFS kernels, so there is no problem.
 
 #### 6. Upload
-You can choose between Hugging Face or GoFile:
+Use the `DESTINATION` option to choose where the ROM will be uploaded - Hugging Face or GoFile (**GoFile is the default**, since it doesn't need any account):
 
-- If you choose Hugging Face, the ROM will be auto uploaded to Hugging Face servers, but you need to create an account and generate a token to be able to upload the file. 
+- If you choose Hugging Face, the ROM will be auto uploaded to Hugging Face servers using a custom upload mechanism, but you need to create an account and set up two things on your fork before running the workflow:
 
 > [!TIP]
 > - Create a Hugging Face account.
-> - Go to settings and then to Access Tokens. Create a new token with write permissions and copy it.
-> - Create a bucket.
-> - Go back to the repository and go to repository settings and add the token as a secret with the name HF_TOKEN.
+> - Go to Settings and then to Access Tokens. Create a new token with write permissions and copy it.
+> - Go back to the repository, go to Settings → Secrets and variables → Actions and add the token as a **repository secret** with the name `HF_TOKEN`.
+> - On the same page, in the **Variables** tab, add a **repository variable** with the name `HF_USER` and your Hugging Face username as the value.
 
-- If you choose GoFile, it will generate a link when rom is uploaded ready to be downloaded. No need for any account.
+- If you choose GoFile, it will generate a link once the ROM is uploaded, ready to be downloaded. No need for any account.
 
 ### Method 2: Local Build
 
 You can also build LumiROM directly on your Linux machine using the local build script. This method includes a **firmware cache system** so you only need to download the firmware once.
+
+#### Requirements:
+- A Linux machine with Ubuntu/Debian (or WSL on Windows).
+- Around 15 GB of free disk space for the firmware download and the build.
 
 #### 1. Clone the repository:
 ```bash
@@ -165,24 +176,31 @@ cd LumiROM
 
 #### 2. Configure your build:
 You will find these variables on `build_local.sh`:
+
+| Argument | Meaning |
+| :--- | :--- |
+| `STOCK_DEVICE` | Your phone model - must be one of the supported models (e.g. `SM-A325F`) |
+| `TARGET_DEVICE` | The base device to port from - see the **Base** column of the Supported Devices table (e.g. `SM-A346B`) |
+| `TARGET_CSC` | Region code of the base firmware (e.g. `DBT`) |
+| `TARGET_IMEI` | A valid 15-digit IMEI of the base device - you can find examples inside `build_local.sh` |
+| `USE_MODS` | `true`/`false` - include mods (Cloudy app, Vulkan fix, VoLTE fix, tweaks, wallpapers) |
+| `USE_GALAXY_AI` | `true`/`false` - include Galaxy AI features |
+| `USE_UI_8_TETHERING_APEX` | `true` only if your kernel BPF is lower than 5.10 |
+| `LUMIROM_MAINTAINER` | Your GitHub name |
+
+Example:
 ```bash
-STOCK_DEVICE="$1"               # Your device model
-TARGET_DEVICE="$2"              # The phone you want to port
-TARGET_CSC="$3"                 # The region from the target device
-TARGET_IMEI="$4"                # The IMEI from target device
-USE_MODS="$5"                   # Include mods (OTA app, Vulkan fix, VoLTE fix, tweaks, wallpapers)
-USE_GALAXY_AI="$6"              # Include Galaxy AI features
-USE_UI_8_TETHERING_APEX="$7"    # Set to true if kernel BPF < 5.10
-LUMIROM_MAINTAINER="$8"         # Your GitHub name
+bash build_local.sh SM-A325F SM-A346B DBT 353117555323497 true true false YourGitHubName
 ```
 
 #### 3. Run the build:
-The use for this is: 
 ```bash
-bash build_local.sh <STOCK_MODEL> <TARGET_MODEL> <CSC> <IMEI> <USE_MODS> <USE_GALAXY_AI> <USE_UI_8_TETHERING_APEX> <LUMIROM_MAINTAINER>
+bash build_local.sh <STOCK_DEVICE> <TARGET_DEVICE> <TARGET_CSC> <TARGET_IMEI> <USE_MODS> <USE_GALAXY_AI> <USE_UI_8_TETHERING_APEX> <LUMIROM_MAINTAINER>
 ```
 <br>
 The script will install dependencies, download firmware (if not cached), apply all patches and build the ROM. The output ZIP will be in the `ROM/` folder.
+
+Before building, the script validates all your inputs intensively (models, CSC, IMEI) and detects the One UI version automatically, so you don't need to configure anything else. Builds made locally are tagged as **Unofficial**.
 
 #### 4. Manage firmware cache:
 Use the cache manager to check, list or clear your cached firmware images:
@@ -195,11 +213,38 @@ bash scripts/cache_manager.sh clear     # Clear cached images
 ```
 
 > [!IMPORTANT]
-> If you're building locally, script will log all actions that is happening, if something fails, report the error to me via GitHub issues or on my Telegram channel by uploading the LOGS folder.
+> If you're building locally, the script logs everything it does. If something fails, please report the error to me via GitHub issues or on my [Telegram channel](https://t.me/LumiROMs), attaching the LOGS folder.
 
 > [!NOTE]
-> If you dont wanna mess with the repo or dont know how to do any of this things, I will continue releasing updates of my rom on my Telegram channel, that you can join clicking on the link on the repository bio.
-> Also I accept suggestions aswell as im still learning from it, so if you see a bug, or wanna make the code a bit more easy to understand, you can always create a pull request!
+> If you don't want to mess with the repo or don't know how to do any of this, I will keep releasing updates of my ROM on my [Telegram channel](https://t.me/LumiROMs).
+> Suggestions are welcome too - I'm still learning from this project, so if you find a bug or want to make the code a bit easier to understand, feel free to open a pull request!
+
+## Installing the ROM
+
+> [!WARNING]
+> Flashing a custom ROM will erase all data on your device. Back up everything before continuing. You are doing this at your own risk - I am not responsible for any lost data or damaged devices.
+
+Once you have downloaded or built LumiROM, there are three ways to install it:
+
+### Option 1: Cloudy app (LumiROM 8.6.4+)
+Starting from LumiROM 8.6.4, the ROM includes [Cloudy](https://github.com/Luminous418/cloudy), which handles the whole installation process for you:
+- Open Cloudy and download the ROM directly from inside the app, **or**
+- Tap **Select ROM from internal storage** and pick the ZIP if you already downloaded it.
+
+### Option 2: Recovery
+If you don't have the Cloudy app:
+1. Download the ROM ZIP.
+2. Reboot your phone into recovery mode.
+3. Select the ROM ZIP and flash it.
+
+### Option 3: ADB sideload (from PC)
+1. Install [ADB](https://developer.android.com/tools/adb) on your PC.
+2. Download the ROM ZIP and open a terminal in the folder where it is located.
+3. Reboot your phone into recovery mode and select **Apply update from ADB** (sideload mode).
+4. From the PC, run:
+```bash
+adb sideload <rom>.zip
+```
 
 ## Licensing
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
