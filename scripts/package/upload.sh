@@ -5,7 +5,8 @@ set -e
 DESTINY="$1"
 
 GOFILE_UPLOAD() {
-    FILE="$1"
+    local FILE="$1"
+    local URL_VAR="$2"
 
     if [[ -z "$FILE" || ! -f "$FILE" ]]; then
         echo "ERROR: File hasn't been found."
@@ -23,24 +24,49 @@ GOFILE_UPLOAD() {
     echo -e "\nDownload link for the uploaded file:"
     echo "$LINK"
     echo
+
+    if [ -n "$GITHUB_ENV" ] && [ -n "$URL_VAR" ]; then
+        echo "${URL_VAR}=$LINK" >> "$GITHUB_ENV"
+    fi
 }
 
-ZIP_PATH=$(find ./ROM/"$FOLDER_NAME" -type f -name "*.zip" | head -n 1)
+UPLOAD_FILE() {
+    local FILE="$1"
+    local URL_VAR="$2"
 
-case "$DESTINY" in
-    huggingface)
-        echo "Uploading ROM to Hugging Face"
-        REMOTE_PATH="ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/$(basename "$ZIP_PATH")"
-        python3 "$(dirname "$0")/upload_hf.py" "$ZIP_PATH" "$REMOTE_PATH"
-        ;;
+    case "$DESTINY" in
+        huggingface)
+            echo "Uploading $(basename "$FILE") to Hugging Face"
+            local REMOTE_PATH="ROMs/$LUMIROM_VERSION/$STOCK_DEVICE/$(basename "$FILE")"
+            python3 "$(dirname "$0")/upload_hf.py" "$FILE" "$REMOTE_PATH"
+            if [ -n "$GITHUB_ENV" ] && [ -n "$HF_USER" ]; then
+                echo "${URL_VAR}=https://huggingface.co/buckets/${HF_USER}/LumiROM/resolve/${REMOTE_PATH}?download=true" >> "$GITHUB_ENV"
+            fi
+            ;;
 
-    gofile)
-        echo "Uploading ROM to GoFile"
-        GOFILE_UPLOAD "$ZIP_PATH"
-        ;;
+        gofile)
+            echo "Uploading $(basename "$FILE") to GoFile"
+            GOFILE_UPLOAD "$FILE" "$URL_VAR"
+            ;;
 
-    *)
-        echo "Error: Pick 'huggingface' or 'gofile'."
-        exit 1
-        ;;
-esac
+        *)
+            echo "Error: Pick 'huggingface' or 'gofile'."
+            exit 1
+            ;;
+    esac
+}
+
+FOUND_ZIPS=$(find ./ROM/"$FOLDER_NAME" -type f -name "*.zip" 2>/dev/null)
+
+if [ -z "$FOUND_ZIPS" ]; then
+    echo "ERROR: No zip files found in ROM/$FOLDER_NAME."
+    exit 1
+fi
+
+while IFS= read -r ZIP_PATH; do
+    if [[ "$(basename "$ZIP_PATH")" == *"INCREMENTAL"* ]]; then
+        UPLOAD_FILE "$ZIP_PATH" "DOWNLOAD_URL_INCREMENTAL"
+    else
+        UPLOAD_FILE "$ZIP_PATH" "DOWNLOAD_URL"
+    fi
+done <<< "$FOUND_ZIPS"

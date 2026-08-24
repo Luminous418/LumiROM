@@ -27,6 +27,7 @@ UBUNTU_PACKAGES() {
         build-essential
         zip
         curl
+        jq
         zlib1g-dev
         libncurses-dev
         libssl-dev

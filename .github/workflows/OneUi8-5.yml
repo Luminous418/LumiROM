@@ -44,6 +44,16 @@ on:
         required: false
         default: false
         type: boolean
+      OTA_CHANGELOG:
+        description: "Changelog for the OTA manifest (use ; to separate lines)"
+        required: false
+        default: ""
+        type: string
+      INCREMENTAL_FROM:
+        description: "Previous version to build an incremental OTA from (e.g. 8.6.4). Leave empty for full OTA only"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   build:
@@ -278,6 +288,38 @@ jobs:
         source scripts/package/zip_creation.sh
         IMG_ZIP_CREATION "$OUT_DIR"
 
+    - name: Save target files
+      if: ${{ github.event.inputs.ZIP_IMG != 'true' }}
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_USER: ${{ vars.HF_USER }}
+      run: |
+        source scripts/package/zip_creation.sh
+        TARGET_NAME="LumiROM_TARGET_${LUMIROM_VERSION}_${STOCK_DEVICE}.zip"
+        CREATE_TARGET_FILES "$PWD/$TARGET_NAME"
+        if [ -n "$HF_TOKEN" ] && [ -n "$HF_USER" ]; then
+          python3 scripts/package/upload_hf.py "$PWD/$TARGET_NAME" "target-files/$LUMIROM_VERSION/$STOCK_DEVICE/$TARGET_NAME"
+        else
+          echo "HF credentials not set, target files saved locally only."
+        fi
+
+    - name: Download previous target files
+      if: ${{ github.event.inputs.INCREMENTAL_FROM != '' }}
+      run: |
+        URL="https://huggingface.co/buckets/${{ vars.HF_USER }}/LumiROM/resolve/target-files/${{ github.event.inputs.INCREMENTAL_FROM }}/${{ env.STOCK_DEVICE }}/LumiROM_TARGET_${{ github.event.inputs.INCREMENTAL_FROM }}_${{ env.STOCK_DEVICE }}.zip?download=true"
+        if curl -sfL -o prev-target-files.zip "$URL"; then
+          echo "Previous target files downloaded."
+        else
+          echo "Previous target files not found for ${{ github.event.inputs.INCREMENTAL_FROM }}, skipping incremental OTA."
+          echo "INCREMENTAL_SOURCE_AVAILABLE=false" >> $GITHUB_ENV
+        fi
+
+    - name: Build incremental OTA
+      if: ${{ github.event.inputs.INCREMENTAL_FROM != '' && env.INCREMENTAL_SOURCE_AVAILABLE != 'false' }}
+      run: |
+        source scripts/package/build_incremental_ota.sh
+        BUILD_INCREMENTAL_OTA "$PWD/prev-target-files.zip" "$OUT_DIR"
+
     - name: Upload ROM to ${{ github.event.inputs.DESTINATION }}
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -285,6 +327,50 @@ jobs:
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
         bash scripts/package/upload.sh "$DESTINATION"
+
+    - name: Update OTA manifest
+      env:
+        CLOUDY_TOKEN: ${{ secrets.CLOUDY_TOKEN }}
+        OTA_CHANGELOG: ${{ github.event.inputs.OTA_CHANGELOG }}
+        HF_USER: ${{ vars.HF_USER }}
+      run: |
+        if [ -z "$CLOUDY_TOKEN" ]; then
+          echo "CLOUDY_TOKEN not set, skipping OTA manifest update."
+          exit 0
+        fi
+        if [ "$ZIP_IMG" = "true" ]; then
+          echo "IMG mode, skipping OTA manifest update."
+          exit 0
+        fi
+        ZIP_PATH=$(find ./ROM/"$FOLDER_NAME" -type f -name "*.zip" ! -name "*INCREMENTAL*" | head -n 1)
+        if [ -z "$ZIP_PATH" ]; then
+          echo "No ROM zip found, skipping OTA manifest update."
+          exit 0
+        fi
+        if [ -z "$DOWNLOAD_URL" ]; then
+          echo "No download URL available, skipping OTA manifest update."
+          exit 0
+        fi
+        INCREMENTAL_ZIP=""
+        INC_URL=""
+        if [ -n "$DOWNLOAD_URL_INCREMENTAL" ]; then
+          INCREMENTAL_ZIP=$(find ./ROM/"$FOLDER_NAME" -type f -name "*INCREMENTAL*.zip" | head -n 1)
+          INC_URL="$DOWNLOAD_URL_INCREMENTAL"
+        fi
+        CURRENT_JSON="/tmp/ota_current.json"
+        curl -sf -o "$CURRENT_JSON" "https://raw.githubusercontent.com/Luminous418/cloudy/main/updater/${DEVICE_CODENAME}.json" || CURRENT_JSON=""
+        source scripts/package/generate_ota_manifest.sh
+        GENERATE_OTA_MANIFEST "$ZIP_PATH" "$DOWNLOAD_URL" "$OTA_CHANGELOG" "$CURRENT_JSON" "$INCREMENTAL_ZIP" "$INC_URL" > /tmp/ota_new.json
+        git clone --depth 1 "https://x-access-token:${CLOUDY_TOKEN}@github.com/Luminous418/cloudy.git" /tmp/cloudy
+        mkdir -p /tmp/cloudy/updater
+        cp /tmp/ota_new.json "/tmp/cloudy/updater/${DEVICE_CODENAME}.json"
+        cd /tmp/cloudy
+        git config user.name "LumiROM Bot"
+        git config user.email "noreply@github.com"
+        git add "updater/${DEVICE_CODENAME}.json"
+        git diff --cached --quiet && echo "Manifest unchanged, nothing to push." && exit 0
+        git commit -m "OTA: ${LUMIROM_VERSION} for ${DEVICE_CODENAME}"
+        git push
 
     - name: Cleanup
       run: |

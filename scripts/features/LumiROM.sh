@@ -1143,8 +1143,9 @@ BUILD_IMG() {
 
             if [[ "$FILE_SYSTEM" == "erofs" ]]; then
                 echo "${YELLOW}Building EROFS image: $OUT_IMG${RESET}"
-                sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
+                sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG_FILE" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
                 sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
+                touch "$OUT_DIR/$PARTITION.map"
             else
                 echo "${RED}Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION${RESET}"
             fi
@@ -1195,7 +1196,7 @@ IMG_TO_BROTLI() {
 
         (
             echo "${GREEN}Converting $PARTITION.img...${RESET}"
-            "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$f" > /dev/null 2>&1
+            "$IMG2SDAT_BIN" -o "$TMP_DIR" "$f" > /dev/null 2>&1
             touch "$TMP_DIR/$PARTITION.patch.dat"
             echo "${GREEN}Created patch.dat for $PARTITION${RESET}"
         ) &

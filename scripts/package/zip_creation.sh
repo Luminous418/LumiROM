@@ -88,12 +88,41 @@ FLASHABLE_ZIP_CREATION() {
         fi
 
         echo "Generating build_info.txt..."
+        if [ -n "$GITHUB_ENV" ]; then
+            echo "DEVICE_CODENAME=$DEVICE_CODENAME" >> "$GITHUB_ENV"
+        fi
+
+        source "$DEVICES_DIR/$STOCK_DEVICE/config" 2>/dev/null || true
+
+        BUILD_PROP="$FIRM_DIR/system/system/build.prop"
+        if [ -z "$FINGERPRINT" ]; then
+            FINGERPRINT="$(grep "^ro.system.build.fingerprint=" "$BUILD_PROP" | cut -d "=" -f 2)"
+        fi
+        if [ -z "$ONEUI_VERSION" ]; then
+            ONEUI_VERSION="$(grep "^ro.build.version.oneui=" "$BUILD_PROP" | cut -d "=" -f 2)"
+            ONEUI_VERSION="${ONEUI_VERSION:0:3}"
+            ONEUI_VERSION="${ONEUI_VERSION/0/.}"
+        fi
+        ANDROID_VERSION="$(grep "^ro.build.version.release=" "$BUILD_PROP" | cut -d "=" -f 2)"
+        SECURITY_PATCH="$(grep "^ro.build.version.security_patch=" "$BUILD_PROP" | cut -d "=" -f 2)"
+
         {
             echo "device=$DEVICE_CODENAME"
+            echo "device_model=$STOCK_DEVICE"
             echo "version=$LUMIROM_VERSION-$BUILD_DATE"
+            echo "version_code=$LUMIROM_CODE"
+            echo "build_date=$(date +%F)"
+            echo "android_version=$ANDROID_VERSION"
+            echo "oneui_version=$ONEUI_VERSION"
+            echo "security_patch=$SECURITY_PATCH"
+            echo "build_fingerprint=$FINGERPRINT"
+            echo "kernel_version=$KERNEL_VERSION"
+            echo "partition_layout=a-only"
             echo "timestamp=$TIMESTAMP"
             echo "status=$BUILD_STATUS"
         } > "$MAKEROM_DIR/build_info.txt"
+
+        cp "$MAKEROM_DIR/build_info.txt" "$OUT_DIR/build_info.txt" 2>/dev/null || true
 
         SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$DEVICE/boot.img"
 
@@ -197,4 +226,36 @@ IMG_ZIP_CREATION() {
     local ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${BUILD_STATUS}_${DEVICE_CODENAME}_IMG.zip"
 
     ZIP_IMG "$OUT_DIR" "$(pwd)/ROM/${FOLDER_NAME}${ZIP_FILE}"
+}
+CREATE_TARGET_FILES() {
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <OUTPUT_ZIP>"
+        return 1
+    fi
+
+    local OUTPUT_ZIP="$1"
+
+    if ! ls "$OUT_DIR"/*.img >/dev/null 2>&1; then
+        echo "${RED}Error: No .img files found in $OUT_DIR${RESET}"
+        return 1
+    fi
+
+    if [ ! -f "$OUT_DIR/build_info.txt" ]; then
+        echo "${RED}Error: build_info.txt not found in $OUT_DIR${RESET}"
+        return 1
+    fi
+
+    local WORK_DIR_TF
+    WORK_DIR_TF="$(mktemp -d)"
+
+    cp "$OUT_DIR"/*.img "$WORK_DIR_TF"/
+    cp "$OUT_DIR"/*.map "$WORK_DIR_TF"/ 2>/dev/null || true
+    cp "$OUT_DIR/build_info.txt" "$WORK_DIR_TF"/
+
+    mkdir -p "$(dirname "$OUTPUT_ZIP")"
+    rm -f "$OUTPUT_ZIP"
+    (cd "$WORK_DIR_TF" && zip -q -r "$OUTPUT_ZIP" .)
+    rm -rf "$WORK_DIR_TF"
+
+    echo "${GREEN}Target files created: $OUTPUT_ZIP${RESET}"
 }

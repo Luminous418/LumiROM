@@ -7,6 +7,7 @@ USE_MODS="true"
 USE_GALAXY_AI="true"
 USE_UI_8_TETHERING_APEX="false"
 ZIP_IMG="false"
+INCREMENTAL_FROM=""
 LUMIROM_MAINTAINER="$(git config user.name 2>/dev/null)"
 
 usage() {
@@ -26,6 +27,8 @@ usage() {
     echo "      --no-ai                Exclude Galaxy AI features"
     echo "      --bpf-legacy           Enable if your kernel BPF version is lower than 5.10"
     echo "      --img-zip              Deliver the partition images (.img) in a ZIP instead of a flashable ROM"
+    echo "      --incremental-from <ver>"
+    echo "                             Build an incremental OTA from a previous version saved in SAVEDIMGS/target-files"
     echo "  -h, --help                 Show this help"
     echo ""
     echo "Supported devices:"
@@ -47,6 +50,7 @@ while [ $# -gt 0 ]; do
         --no-ai) USE_GALAXY_AI="false"; shift ;;
         --bpf-legacy) USE_UI_8_TETHERING_APEX="true"; shift ;;
         --img-zip) ZIP_IMG="true"; shift ;;
+        --incremental-from) INCREMENTAL_FROM="${2:?Option $1 requires a value}"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Unknown option: $1"; echo ""; usage; exit 1 ;;
     esac
@@ -222,6 +226,15 @@ else
     log_section "Creating flashable ZIP"
     UPDATE_ZIP_SCRIPT "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
     FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
+
+    log_section "Saving target files"
+    CREATE_TARGET_FILES "$PWD/SAVEDIMGS/target-files/LumiROM_TARGET_${LUMIROM_VERSION}_${STOCK_DEVICE}.zip" 2>&1 | tee -a "$LOG_FILE"
+
+    if [ -n "$INCREMENTAL_FROM" ]; then
+        log_section "Building incremental OTA"
+        source scripts/package/build_incremental_ota.sh
+        BUILD_INCREMENTAL_OTA "$PWD/SAVEDIMGS/target-files/LumiROM_TARGET_${INCREMENTAL_FROM}_${STOCK_DEVICE}.zip" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
+    fi
 fi
 
 log_message "Cleaning up temporary directories..."
