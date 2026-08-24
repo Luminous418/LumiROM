@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source scripts/bash_colors.sh
+source scripts/utils/bash_colors.sh
 
 VALIDATION() {
     SUPPORTED_DEVICES=(LumiROM/Devices/*)

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-source scripts/bash_colors.sh
+source scripts/utils/bash_colors.sh
 
 # Load logging functions if available
-if [ -f "scripts/logging.sh" ]; then
-    source scripts/logging.sh
+if [ -f "scripts/utils/logging.sh" ]; then
+    source scripts/utils/logging.sh
 fi
 
 CHECK_FIRMWARE_IMAGES() {

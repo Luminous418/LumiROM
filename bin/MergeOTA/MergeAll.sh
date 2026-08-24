@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source scripts/bash_colors.sh
+source scripts/utils/bash_colors.sh
 
 START_TIME=$(date +%s)
 if [ "$1" == "cleanup" ]; then

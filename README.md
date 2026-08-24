@@ -205,11 +205,11 @@ Before building, the script validates all your inputs intensively (models, CSC, 
 #### 4. Manage firmware cache:
 Use the cache manager to check, list or clear your cached firmware images:
 ```bash
-bash scripts/cache_manager.sh status    # Show cache status
-bash scripts/cache_manager.sh check     # Verify required images
-bash scripts/cache_manager.sh size      # Show cache size
-bash scripts/cache_manager.sh list      # List all images with sizes
-bash scripts/cache_manager.sh clear     # Clear cached images
+bash scripts/firmware/cache_manager.sh status    # Show cache status
+bash scripts/firmware/cache_manager.sh check     # Verify required images
+bash scripts/firmware/cache_manager.sh size      # Show cache size
+bash scripts/firmware/cache_manager.sh list      # List all images with sizes
+bash scripts/firmware/cache_manager.sh clear     # Clear cached images
 ```
 
 > [!IMPORTANT]

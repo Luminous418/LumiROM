@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source scripts/bash_colors.sh
+source scripts/utils/bash_colors.sh
 
 IS_OFFICIAL() {
     CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)

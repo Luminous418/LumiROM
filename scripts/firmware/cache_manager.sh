@@ -3,7 +3,7 @@
 # Firmware Cache Manager
 # Provides utilities to check and manage the firmware image cache
 
-source scripts/bash_colors.sh
+source scripts/utils/bash_colors.sh
 
 CACHE_DIR="./IMGs"
 BUILD_PARTITIONS_DEFAULT="product,vendor,odm,system_ext,system"
@@ -13,7 +13,7 @@ print_usage() {
     echo "${BLUE}   Firmware Cache Manager${RESET}"
     echo "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo ""
-    echo "Usage: ${GREEN}bash scripts/cache_manager.sh <command>${RESET}"
+    echo "Usage: ${GREEN}bash scripts/firmware/cache_manager.sh <command>${RESET}"
     echo ""
     echo "Commands:"
     echo "  ${YELLOW}status${RESET}          - Show cache status and list images"
@@ -23,9 +23,9 @@ print_usage() {
     echo "  ${YELLOW}list${RESET}            - List all image files with sizes"
     echo ""
     echo "Examples:"
-    echo "  ${CYAN}bash scripts/cache_manager.sh status${RESET}"
-    echo "  ${CYAN}bash scripts/cache_manager.sh check${RESET}"
-    echo "  ${CYAN}bash scripts/cache_manager.sh clear${RESET}"
+    echo "  ${CYAN}bash scripts/firmware/cache_manager.sh status${RESET}"
+    echo "  ${CYAN}bash scripts/firmware/cache_manager.sh check${RESET}"
+    echo "  ${CYAN}bash scripts/firmware/cache_manager.sh clear${RESET}"
     echo ""
 }
 

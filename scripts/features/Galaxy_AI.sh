@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source scripts/bash_colors.sh
+source scripts/utils/bash_colors.sh
 
 GALAXY_AI() {
     echo ""
@@ -9,7 +9,7 @@ GALAXY_AI() {
         return 1
     fi
 
-    source "scripts/LumiROM.sh"
+    source "scripts/features/LumiROM.sh"
 
     local EXTRACTED_FIRM_DIR="$1"
     local AI_DIR="./LumiROM/Mods/Galaxy_AI"

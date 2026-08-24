@@ -12,7 +12,7 @@ USE_GALAXY_AI="$6"
 USE_UI_8_TETHERING_APEX="$7"
 LUMIROM_MAINTAINER="$8"
 
-source scripts/validation.sh
+source scripts/utils/validation.sh
 VALIDATION
 
 # A346B imei = 353117555323497
@@ -32,7 +32,7 @@ export VNDKS_COLLECTION="$PWD/LumiROM/vndks"
 export BUILD_PARTITIONS="product,vendor,odm,system_ext,system"
 
 # --- Load Logging System ---
-source scripts/logging.sh
+source scripts/utils/logging.sh
 initialize_logs "$STOCK_DEVICE" "$TARGET_DEVICE" "$TARGET_CSC" "$TARGET_IMEI" "$LUMIROM_VERSION" "$USE_MODS" "$USE_GALAXY_AI" "$USE_UI_8_TETHERING_APEX" "$OUTPUT_FILESYSTEM" "$LUMIROM_MAINTAINER"
 
 # --- Start of Process ---
@@ -47,20 +47,20 @@ chmod +x bin/lp/*
 log_message "Permissions set successfully"
 
 log_section "Installing required packages"
-source scripts/install_packages.sh
+source scripts/utils/install_packages.sh
 UBUNTU_PACKAGES 2>&1 | tee -a "$LOG_FILE"
 PYTHON_PACKAGES 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Setting up directories"
 mkdir -p "$WORK_DIR"
-bash scripts/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
+bash scripts/utils/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Checking the environment"
-source scripts/local_official.sh 
+source scripts/firmware/local_official.sh 
 IS_LOCAL_OFFICIAL >> "$LOG_FILE" 2>&1
 
 log_section "Downloading Firmware"
-source scripts/FW.sh
+source scripts/firmware/FW.sh
 source "$DEVICES_DIR/$STOCK_DEVICE/config"
 
 # Check if firmware images are already cached
@@ -91,7 +91,7 @@ log_section "Preparing partitions"
 PREPARE_PARTITIONS "$IMGS_DIR" 2>&1 | tee -a "$LOG_FILE"
 EXTRACT_FIRMWARE_IMG "$IMGS_DIR" "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 
-source scripts/LumiROM.sh
+source scripts/features/LumiROM.sh
 log_message "Loading LumiROM functions..."
 DISABLE_FBE "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 DISABLE_FDE "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
@@ -104,17 +104,17 @@ APPLY_PROP_FEATURES "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 
 if [ "$USE_MODS" = "true" ]; then
     log_section "Adding Mods"
-    source scripts/Mods.sh
+    source scripts/features/Mods.sh
     ADD_MODS "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 
     log_section "Adding Cloudy OTA Helper"
-    source scripts/Cloudy.sh
+    source scripts/features/Cloudy.sh
     ADD_CLOUDY "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 
 if [ "$USE_GALAXY_AI" = "true" ]; then
     log_section "Adding Galaxy AI"
-    source scripts/Galaxy_AI.sh
+    source scripts/features/Galaxy_AI.sh
     GALAXY_AI "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 fi
 
@@ -128,7 +128,7 @@ DECOMPILE "$APKTOOL" "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR"
 wait
 
 log_section "Applying Knox and Framework patches"
-source scripts/Knox_script.sh
+source scripts/features/Knox_script.sh
 PATCH_SSRM "$WORK_DIR/ssrm" 2>&1 | tee -a "$LOG_FILE"
 PATCH_KNOX_GUARD "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
 PATCH_FLAG_SECURE "$WORK_DIR/services" 2>&1 | tee -a "$LOG_FILE"
@@ -143,12 +143,12 @@ wait
 cp -fv "$WORK_DIR"/*.jar "FIRMWARE/system/system/framework/" 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Building ROM"
-source scripts/LumiROM.sh 2>&1 | tee -a "$LOG_FILE"
+source scripts/features/LumiROM.sh 2>&1 | tee -a "$LOG_FILE"
 BUILD_IMG "$FIRM_DIR" "$OUTPUT_FILESYSTEM" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
 IMG_TO_BROTLI "$OUT_DIR" "TMP" 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Creating flashable ZIP"
-source scripts/zip_creation.sh
+source scripts/package/zip_creation.sh
 UPDATE_ZIP_SCRIPT "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
 FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
 

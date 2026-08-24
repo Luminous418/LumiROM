@@ -52,14 +52,14 @@ jobs:
 
     - name: Install required packages
       run: |
-        source scripts/install_packages.sh
+        source scripts/utils/install_packages.sh
         UBUNTU_PACKAGES
         PYTHON_PACKAGES
 
     - name: Setup directories
       run: |
-        bash scripts/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs
-        chmod +x scripts/*.sh
+        bash scripts/utils/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs
+        find scripts -name "*.sh" -exec chmod +x {} +
         chmod +x bin/MergeOTA/MergeAll.sh
         chmod +x bin/erofs-utils/extract.erofs
         chmod +x bin/erofs-utils/mkfs.erofs
@@ -96,13 +96,13 @@ jobs:
         LUMIROM_BUILD: ${{ secrets.LUMIROM_BUILD }}
         OFFICIAL_HASH: ${{ secrets.OFFICIAL_HASH }}
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         IS_OFFICIAL
 
     - name: Download firmware
       shell: bash
       run: |
-        source scripts/FW.sh
+        source scripts/firmware/FW.sh
         source "$DEVICES_DIR/$STOCK_DEVICE/config"
 
         if [[ "$STOCK_DEVICE" == "SM-A325F" || "$STOCK_DEVICE" == "SM-A325M" || "$STOCK_DEVICE" == "SM-M325F" ]]; then
@@ -123,27 +123,27 @@ jobs:
     - name: Extract firmware
       shell: bash
       run: |
-        source scripts/FW.sh
+        source scripts/firmware/FW.sh
         EXTRACT_FIRMWARE "$IMGS_DIR"
         EXTRACT_SUPER_IMG "$IMGS_DIR"
 
     - name: Download vendor for ${{ matrix.device }}
       shell: bash
       run: |
-        source scripts/FW.sh
+        source scripts/firmware/FW.sh
         DOWNLOAD_VENDOR "$IMGS_DIR"
 
     - name: Preparing partitions
       shell: bash
       run: |
-        source scripts/FW.sh
+        source scripts/firmware/FW.sh
         PREPARE_PARTITIONS "$IMGS_DIR"
         EXTRACT_FIRMWARE_IMG "$IMGS_DIR" "$FIRM_DIR"
 
     - name: Apply vendor patches
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         DISABLE_FBE "$FIRM_DIR"
         DISABLE_FDE "$FIRM_DIR"
         DELETE_ICCC "$FIRM_DIR"
@@ -153,31 +153,31 @@ jobs:
     - name: Apply stock config
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         APPLY_STOCK_CONFIG "$FIRM_DIR"
 
     - name: Debloat ROM
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         DEBLOAT "$FIRM_DIR"
 
     - name: Apply prop features
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         APPLY_PROP_FEATURES "$FIRM_DIR"
 
     - name: Adding mods
       shell: bash
       run: |
-        source scripts/Mods.sh
+        source scripts/features/Mods.sh
         ADD_MODS "$FIRM_DIR"
 
     - name: Adding Cloudy OTA Helper
       shell: bash
       run: |
-        source scripts/Cloudy.sh
+        source scripts/features/Cloudy.sh
         if [ "$USE_MODS" = "true" ]; then
             ADD_CLOUDY "$FIRM_DIR"
         else
@@ -187,26 +187,26 @@ jobs:
     - name: Adding Galaxy AI
       shell: bash
       run: |
-        source scripts/Galaxy_AI.sh
+        source scripts/features/Galaxy_AI.sh
         GALAXY_AI "$FIRM_DIR"
 
     - name: Update Build ID
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         APPENDING_DISPLAY_ID "$FIRM_DIR"
 
     - name: Install stock framework-res
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         INSTALL_FRAMEWORK \
           "FIRMWARE/system/system/framework/framework-res.apk"
 
     - name: Decompile framework jars
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         DECOMPILE "$APKTOOL" \
           "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
         DECOMPILE "$APKTOOL" \
@@ -216,7 +216,7 @@ jobs:
     - name: Patch Knox
       shell: bash
       run: |
-        source scripts/Knox_script.sh
+        source scripts/features/Knox_script.sh
         PATCH_SSRM "$WORK_DIR/ssrm"
         PATCH_KNOX_GUARD "$WORK_DIR/services"
         PATCH_FLAG_SECURE "$WORK_DIR/services"
@@ -227,7 +227,7 @@ jobs:
     - name: Recompile framework
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
           "FIRMWARE/system/system/framework" "$WORK_DIR" &
         RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
@@ -239,20 +239,20 @@ jobs:
     - name: Build ROM
       shell: bash
       run: |
-        source scripts/LumiROM.sh
+        source scripts/features/LumiROM.sh
         BUILD_IMG "$FIRM_DIR" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
         IMG_TO_BROTLI "$OUT_DIR" "TMP"
 
     - name: Update updater-script
       shell: bash
       run: |
-        source scripts/zip_creation.sh
+        source scripts/package/zip_creation.sh
         UPDATE_ZIP_SCRIPT "$FIRM_DIR"
         
     - name: Prepare flashable zip
       shell: bash
       run: |
-        source scripts/zip_creation.sh
+        source scripts/package/zip_creation.sh
         FLASHABLE_ZIP_CREATION
 
     - name: Upload ROM to ${{ github.event.inputs.DESTINATION }}
@@ -261,7 +261,7 @@ jobs:
         HF_USER: ${{ vars.HF_USER }}
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
-        bash scripts/upload.sh "$DESTINATION"
+        bash scripts/package/upload.sh "$DESTINATION"
 
     - name: Cleanup
       run: |

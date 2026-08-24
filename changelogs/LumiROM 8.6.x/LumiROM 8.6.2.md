@@ -14,7 +14,7 @@
 - Most of the fixes have been added to the script, I have been working hard to add more features and make the scripts a bit more stable and user-friendly.
 - Added color to script, for better understanding.
 - Also added a builder for local use, with cache system, so you download the firmware only once.
-- Added a new script, [cache_manager](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/scripts/cache_manager.sh), with some commands like status, check, clear, size and list, to manage the cache of the imgs.
+- Added a new script, [cache_manager](https://github.com/Luminous418/LumiROM/blob/OneUI8.5/scripts/firmware/cache_manager.sh), with some commands like status, check, clear, size and list, to manage the cache of the imgs.
 
 This update got more focused on making the scripts feel better and more user-friendly. As well as adding new AI to the ROM. <br>
 Next update will try to bring more fixes. Until then, enjoy the update!

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source scripts/bash_colors.sh
+source scripts/utils/bash_colors.sh
 
 ADD_CLOUDY() {
     if [ "$#" -ne 1 ]; then

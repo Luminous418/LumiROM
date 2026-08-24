@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source scripts/bash_colors.sh
+source scripts/utils/bash_colors.sh
 
 REPLACE_SMALI_METHOD() {
     local FILE="$1"
