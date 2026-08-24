@@ -131,3 +131,70 @@ FLASHABLE_ZIP_CREATION() {
         cd ..
         rm -rf "$MAKEROM_DIR"
 }
+
+ZIP_IMG() {
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <IMG_DIR> <OUT_ZIP>"
+        return 1
+    fi
+
+    local IMG_DIR="$1"
+    local OUT_ZIP="$2"
+
+    echo "${BLUE}=== Creating ZIP from IMG files ===${RESET}"
+
+    if ! ls "$IMG_DIR"/*.img >/dev/null 2>&1; then
+        echo "${RED}Error: No .img files found in $IMG_DIR${RESET}"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$OUT_ZIP")"
+
+    if zip -0 -j "$OUT_ZIP" "$IMG_DIR"/*.img; then
+        echo "${GREEN}ZIP created successfully: $OUT_ZIP${RESET}"
+    else
+        echo "${RED}Error: Failed to create ZIP file${RESET}"
+        return 1
+    fi
+}
+
+IMG_ZIP_CREATION() {
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <OUT_DIR>"
+        return 1
+    fi
+
+    local OUT_DIR="$1"
+
+    BUILD_DATE=$(date +'%d%m%Y')
+    TIMESTAMP=$(date +'%s')
+    DEVICE="$STOCK_DEVICE"
+    local cut_version_stock="${STOCK_DEVICE:3:3}"
+    local cut_version_target="${TARGET_DEVICE:3:3}"
+    FOLDER_NAME="${BUILD_DATE}-${TIMESTAMP}-${cut_version_stock}_to_${cut_version_target}/"
+    export FOLDER_NAME
+
+    if [ -n "$GITHUB_ENV" ]; then
+        echo "FOLDER_NAME=$FOLDER_NAME" >> "$GITHUB_ENV"
+    fi
+
+    if [[ "$DEVICE" == "SM-A325F" ]]; then
+        DEVICE_CODENAME="a32"
+    elif [[ "$DEVICE" == "SM-A325M" ]]; then
+        DEVICE_CODENAME="a32m"
+    elif [[ "$DEVICE" == "SM-A225F" ]]; then
+        DEVICE_CODENAME="a22"
+    elif [[ "$DEVICE" == "SM-A226B" ]]; then
+        DEVICE_CODENAME="a22x"
+    elif [[ "$DEVICE" == "SM-M325F" ]]; then
+        DEVICE_CODENAME="m32"
+    elif [[ "$DEVICE" == "SM-E225F" ]]; then
+        DEVICE_CODENAME="f22"
+    else
+        DEVICE_CODENAME="unknown"
+    fi
+
+    local ZIP_FILE="LumiROM_${LUMIROM_VERSION}-${BUILD_DATE}_${BUILD_STATUS}_${DEVICE_CODENAME}_IMG.zip"
+
+    ZIP_IMG "$OUT_DIR" "$(pwd)/ROM/${FOLDER_NAME}${ZIP_FILE}"
+}

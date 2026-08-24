@@ -11,6 +11,7 @@ USE_MODS="$5"
 USE_GALAXY_AI="$6"
 USE_UI_8_TETHERING_APEX="$7"
 LUMIROM_MAINTAINER="$8"
+ZIP_IMG="$9"
 
 source scripts/utils/validation.sh
 VALIDATION
@@ -145,12 +146,19 @@ cp -fv "$WORK_DIR"/*.jar "FIRMWARE/system/system/framework/" 2>&1 | tee -a "$LOG
 log_section "Building ROM"
 source scripts/features/LumiROM.sh 2>&1 | tee -a "$LOG_FILE"
 BUILD_IMG "$FIRM_DIR" "$OUTPUT_FILESYSTEM" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
-IMG_TO_BROTLI "$OUT_DIR" "TMP" 2>&1 | tee -a "$LOG_FILE"
 
-log_section "Creating flashable ZIP"
 source scripts/package/zip_creation.sh
-UPDATE_ZIP_SCRIPT "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
-FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
+
+if [ "$ZIP_IMG" = "true" ]; then
+    log_section "Creating IMG ZIP"
+    IMG_ZIP_CREATION "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
+else
+    IMG_TO_BROTLI "$OUT_DIR" "TMP" 2>&1 | tee -a "$LOG_FILE"
+
+    log_section "Creating flashable ZIP"
+    UPDATE_ZIP_SCRIPT "$FIRM_DIR" 2>&1 | tee -a "$LOG_FILE"
+    FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
+fi
 
 log_message "Cleaning up temporary directories..."
 rm -rf ./OUT/ ./TMP/ ./WORK/ ./FIRMWARE/ 2>&1 | tee -a "$LOG_FILE"

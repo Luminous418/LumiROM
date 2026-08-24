@@ -85,6 +85,17 @@ VALIDATION() {
         exit 1
     fi
 
+    # ZIP_IMG
+    if [ -z "$ZIP_IMG" ]; then
+        ZIP_IMG="false"
+        echo "${YELLOW}Warning:${RESET} ZIP_IMG not set. Defaulting to ${GREEN}'false'${RESET}."
+    fi
+
+    if [ "$ZIP_IMG" != "true" ] && [ "$ZIP_IMG" != "false" ]; then
+        echo "${RED}Error:${RESET} Invalid value for ZIP_IMG. Please use 'true' or 'false'."
+        exit 1
+    fi
+
     # LUMIROM_MAINTAINER
     if [ -z "$LUMIROM_MAINTAINER" ]; then
         echo "${RED}Error:${RESET} LUMIROM_MAINTAINER is not set."

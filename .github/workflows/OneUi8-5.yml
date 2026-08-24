@@ -39,6 +39,11 @@ on:
         required: false
         default: false
         type: boolean
+      ZIP_IMG:
+        description: "Deliver the partition images (.img) in a ZIP instead of a flashable ROM"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -88,6 +93,7 @@ jobs:
         echo "USE_MODS=${{ github.event.inputs.USE_MODS }}" >> $GITHUB_ENV
         echo "USE_GALAXY_AI=${{ github.event.inputs.USE_GALAXY_AI }}" >> $GITHUB_ENV
         echo "USE_UI_8_TETHERING_APEX=${{ github.event.inputs.USE_UI_8_TETHERING_APEX }}" >> $GITHUB_ENV
+        echo "ZIP_IMG=${{ github.event.inputs.ZIP_IMG }}" >> $GITHUB_ENV
         echo "DESTINATION=${{ github.event.inputs.DESTINATION }}" >> $GITHUB_ENV
         echo "OUTPUT_FILESYSTEM=erofs" >> $GITHUB_ENV
         
@@ -247,19 +253,30 @@ jobs:
       run: |
         source scripts/features/LumiROM.sh
         BUILD_IMG "$FIRM_DIR" "$OUTPUT_FILESYSTEM" "$OUT_DIR"
-        IMG_TO_BROTLI "$OUT_DIR" "TMP"
+        if [ "$ZIP_IMG" != "true" ]; then
+          IMG_TO_BROTLI "$OUT_DIR" "TMP"
+        fi
 
     - name: Update updater-script
+      if: ${{ github.event.inputs.ZIP_IMG != 'true' }}
       shell: bash
       run: |
         source scripts/package/zip_creation.sh
         UPDATE_ZIP_SCRIPT "$FIRM_DIR"
         
     - name: Prepare flashable zip
+      if: ${{ github.event.inputs.ZIP_IMG != 'true' }}
       shell: bash
       run: |
         source scripts/package/zip_creation.sh
         FLASHABLE_ZIP_CREATION
+
+    - name: Prepare IMG zip
+      if: ${{ github.event.inputs.ZIP_IMG == 'true' }}
+      shell: bash
+      run: |
+        source scripts/package/zip_creation.sh
+        IMG_ZIP_CREATION "$OUT_DIR"
 
     - name: Upload ROM to ${{ github.event.inputs.DESTINATION }}
       env:

@@ -160,6 +160,9 @@ Use the `DESTINATION` option to choose where the ROM will be uploaded - Hugging 
 
 - If you choose GoFile, it will generate a link once the ROM is uploaded, ready to be downloaded. No need for any account.
 
+#### 7. Images Only (Optional):
+Tick the `ZIP_IMG` option if you want the partition images (.img) inside a ZIP instead of a flashable ROM - useful if you prefer flashing the images yourself. Leave it disabled to get the normal flashable ZIP.
+
 ### Method 2: Local Build
 
 You can also build LumiROM directly on your Linux machine using the local build script. This method includes a **firmware cache system** so you only need to download the firmware once.
@@ -186,16 +189,17 @@ You will find these variables on `build_local.sh`:
 | `USE_MODS` | `true`/`false` - include mods (Cloudy app, Vulkan fix, VoLTE fix, tweaks, wallpapers) |
 | `USE_GALAXY_AI` | `true`/`false` - include Galaxy AI features |
 | `USE_UI_8_TETHERING_APEX` | `true` only if your kernel BPF is lower than 5.10 |
+| `ZIP_IMG` | `true`/`false` - deliver the partition images (.img) in a ZIP instead of a flashable ROM |
 | `LUMIROM_MAINTAINER` | Your GitHub name |
 
 Example:
 ```bash
-bash build_local.sh SM-A325F SM-A346B DBT 353117555323497 true true false YourGitHubName
+bash build_local.sh SM-A325F SM-A346B DBT 353117555323497 true true false YourGitHubName false
 ```
 
 #### 3. Run the build:
 ```bash
-bash build_local.sh <STOCK_DEVICE> <TARGET_DEVICE> <TARGET_CSC> <TARGET_IMEI> <USE_MODS> <USE_GALAXY_AI> <USE_UI_8_TETHERING_APEX> <LUMIROM_MAINTAINER>
+bash build_local.sh <STOCK_DEVICE> <TARGET_DEVICE> <TARGET_CSC> <TARGET_IMEI> <USE_MODS> <USE_GALAXY_AI> <USE_UI_8_TETHERING_APEX> <LUMIROM_MAINTAINER> <ZIP_IMG>
 ```
 <br>
 The script will install dependencies, download firmware (if not cached), apply all patches and build the ROM. The output ZIP will be in the `ROM/` folder.
