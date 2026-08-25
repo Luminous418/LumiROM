@@ -55,8 +55,9 @@ def main(tgt_image, src_image, out_dir, cache_size, tgt_block_map, src_block_map
 
     if src_image:
         (out_dir / f"{tgt_image.stem}.max_stashed_size").write_text(str(b.max_stashed_size))
-        (out_dir / f"{tgt_image.stem}.touched_src_ranges").write_text(b.touched_src_ranges.to_string_raw())
-        (out_dir / f"{tgt_image.stem}.touched_src_sha1").write_text(b.touched_src_sha1)
+        if b.touched_src_ranges.data:
+            (out_dir / f"{tgt_image.stem}.touched_src_ranges").write_text(b.touched_src_ranges.to_string_raw())
+            (out_dir / f"{tgt_image.stem}.touched_src_sha1").write_text(b.touched_src_sha1)
 
     common.Cleanup()
 
