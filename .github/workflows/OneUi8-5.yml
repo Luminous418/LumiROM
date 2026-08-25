@@ -84,7 +84,7 @@ jobs:
 
     - name: Setup directories
       run: |
-        bash scripts/utils/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs
+        bash scripts/utils/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs TARGET_FILES
         find scripts -name "*.sh" -exec chmod +x {} +
         chmod +x bin/MergeOTA/MergeAll.sh
         chmod +x bin/erofs-utils/extract.erofs

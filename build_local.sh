@@ -28,7 +28,7 @@ usage() {
     echo "      --bpf-legacy           Enable if your kernel BPF version is lower than 5.10"
     echo "      --img-zip              Deliver the partition images (.img) in a ZIP instead of a flashable ROM"
     echo "      --incremental-from <ver>"
-    echo "                             Build an incremental OTA from a previous version saved in SAVEDIMGS/target-files"
+    echo "                             Build an incremental OTA from a previous version saved in TARGET_FILES"
     echo "  -h, --help                 Show this help"
     echo ""
     echo "Supported devices:"
@@ -123,7 +123,7 @@ PYTHON_PACKAGES 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Setting up directories"
 mkdir -p "$WORK_DIR"
-bash scripts/utils/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs LOGS 2>&1 | tee -a "$LOG_FILE"
+bash scripts/utils/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs TARGET_FILES LOGS 2>&1 | tee -a "$LOG_FILE"
 
 log_section "Checking the environment"
 source scripts/firmware/local_official.sh 
@@ -228,12 +228,12 @@ else
     FLASHABLE_ZIP_CREATION 2>&1 | tee -a "$LOG_FILE"
 
     log_section "Saving target files"
-    CREATE_TARGET_FILES "$PWD/SAVEDIMGS/target-files/LumiROM_TARGET_${LUMIROM_VERSION}_${STOCK_DEVICE}.zip" 2>&1 | tee -a "$LOG_FILE"
+    CREATE_TARGET_FILES "$PWD/TARGET_FILES/LumiROM_TARGET_${LUMIROM_VERSION}_${STOCK_DEVICE}.zip" 2>&1 | tee -a "$LOG_FILE"
 
     if [ -n "$INCREMENTAL_FROM" ]; then
         log_section "Building incremental OTA"
         source scripts/package/build_incremental_ota.sh
-        BUILD_INCREMENTAL_OTA "$PWD/SAVEDIMGS/target-files/LumiROM_TARGET_${INCREMENTAL_FROM}_${STOCK_DEVICE}.zip" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
+        BUILD_INCREMENTAL_OTA "$PWD/TARGET_FILES/LumiROM_TARGET_${INCREMENTAL_FROM}_${STOCK_DEVICE}.zip" "$OUT_DIR" 2>&1 | tee -a "$LOG_FILE"
     fi
 fi
 
