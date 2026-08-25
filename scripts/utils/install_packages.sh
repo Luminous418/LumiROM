@@ -13,6 +13,7 @@ UBUNTU_PACKAGES() {
         default-jre
         openjdk-17-jdk
         brotli
+        bsdiff
         e2fsprogs
         zstd
         aria2

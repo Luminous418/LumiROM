@@ -246,7 +246,8 @@ CREATE_TARGET_FILES() {
     fi
 
     local WORK_DIR_TF
-    WORK_DIR_TF="$(mktemp -d)"
+    mkdir -p "$(pwd)/TMP"
+    WORK_DIR_TF="$(mktemp -d -p "$(pwd)/TMP")"
 
     cp "$OUT_DIR"/*.img "$WORK_DIR_TF"/
     cp "$OUT_DIR"/*.map "$WORK_DIR_TF"/ 2>/dev/null || true

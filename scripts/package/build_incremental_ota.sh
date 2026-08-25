@@ -77,10 +77,10 @@ BUILD_INCREMENTAL_OTA() {
     chmod +x "$IMG2SDAT_BIN"
 
     local WORK_DIR_INC
-    WORK_DIR_INC="$(mktemp -d)"
+    mkdir -p "$(pwd)/TMP"
+    WORK_DIR_INC="$(mktemp -d -p "$(pwd)/TMP")"
     trap 'rm -rf "$WORK_DIR_INC"' EXIT
 
-    echo "${BLUE}=== Building incremental OTA ===${RESET}"
     echo "${BLUE}Extracting source target files...${RESET}"
     if ! unzip -q "$SOURCE_ZIP" -d "$WORK_DIR_INC/source"; then
         echo "${RED}Error: failed to extract $SOURCE_ZIP${RESET}"
