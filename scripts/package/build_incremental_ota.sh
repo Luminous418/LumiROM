@@ -168,7 +168,11 @@ BUILD_INCREMENTAL_OTA() {
 
         if [ ! -f "$SRC_IMG" ]; then
             echo "${YELLOW}New partition $PARTITION, converting fully...${RESET}"
-            "$IMG2SDAT_BIN" -o "$INCR_DIR" "$f" >/dev/null 2>&1 || exit 1
+            if ! "$IMG2SDAT_BIN" -o "$INCR_DIR" "$f" 2> "$WORK_DIR_INC/$PARTITION.diff.log"; then
+                echo "${RED}Full conversion failed for $PARTITION:${RESET}" >&2
+                tail -n 5 "$WORK_DIR_INC/$PARTITION.diff.log" >&2
+                exit 1
+            fi
             mv "$INCR_DIR/$PARTITION.new.dat" "$STAGE/"
             mv "$INCR_DIR/$PARTITION.transfer.list" "$STAGE/"
             mv "$INCR_DIR/$PARTITION.patch.dat" "$STAGE/" 2>/dev/null || touch "$STAGE/$PARTITION.patch.dat"
@@ -187,17 +191,24 @@ BUILD_INCREMENTAL_OTA() {
             fi
             mkdir -p "$INCR_DIR/$PARTITION"
             img2simg "$SRC_RAW" "$WORK_DIR_INC/source/$PARTITION.sparse"
-            img2simg "$TGT_RAW" "$TGT_RAW.sparse"
-            if "$IMG2SDAT_BIN" -o "$INCR_DIR/$PARTITION" -s "$WORK_DIR_INC/source/$PARTITION.sparse" --src-block-map "$SRC_MAP" -B "$IMG_DIR/$PARTITION.map" -c "$CACHE_PARTITION_SIZE" "$TGT_RAW.sparse" >/dev/null 2>&1; then
+            img2simg "$TGT_RAW" "$WORK_DIR_INC/$PARTITION.sparse"
+            local DIFF_LOG="$WORK_DIR_INC/$PARTITION.diff.log"
+            if "$IMG2SDAT_BIN" -o "$INCR_DIR/$PARTITION" -s "$WORK_DIR_INC/source/$PARTITION.sparse" --src-block-map "$SRC_MAP" -B "$IMG_DIR/$PARTITION.map" -c "$CACHE_PARTITION_SIZE" "$WORK_DIR_INC/$PARTITION.sparse" 2> "$DIFF_LOG"; then
                 mv "$INCR_DIR/$PARTITION/$PARTITION.new.dat" "$STAGE/"
                 mv "$INCR_DIR/$PARTITION/$PARTITION.transfer.list" "$STAGE/"
                 mv "$INCR_DIR/$PARTITION/$PARTITION.patch.dat" "$STAGE/" 2>/dev/null || touch "$STAGE/$PARTITION.patch.dat"
                 mv "$INCR_DIR/$PARTITION/$PARTITION.touched_src_ranges" "$INCR_DIR/" 2>/dev/null || true
                 mv "$INCR_DIR/$PARTITION/$PARTITION.touched_src_sha1" "$INCR_DIR/" 2>/dev/null || true
             else
+                echo "${RED}Block diff failed for $PARTITION:${RESET}" >&2
+                tail -n 5 "$DIFF_LOG" >&2
                 echo "${YELLOW}Block diff not possible for $PARTITION, falling back to full patch...${RESET}"
                 rm -rf "$INCR_DIR/$PARTITION"
-                "$IMG2SDAT_BIN" -o "$INCR_DIR" "$f" >/dev/null 2>&1 || exit 1
+                if ! "$IMG2SDAT_BIN" -o "$INCR_DIR" "$f" 2> "$DIFF_LOG"; then
+                    echo "${RED}Full conversion failed for $PARTITION:${RESET}" >&2
+                    tail -n 5 "$DIFF_LOG" >&2
+                    exit 1
+                fi
                 mv "$INCR_DIR/$PARTITION.new.dat" "$STAGE/"
                 mv "$INCR_DIR/$PARTITION.transfer.list" "$STAGE/"
                 mv "$INCR_DIR/$PARTITION.patch.dat" "$STAGE/" 2>/dev/null || touch "$STAGE/$PARTITION.patch.dat"
