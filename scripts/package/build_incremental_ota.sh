@@ -311,12 +311,18 @@ BUILD_INCREMENTAL_OTA() {
     fi
 
     local SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$STOCK_DEVICE/boot.img"
-    if [ -f "$SPECIFIC_BOOT" ]; then
+    local SOURCE_BOOT="$WORK_DIR_INC/source/boot.img"
+
+    if [ -f "$SPECIFIC_BOOT" ] && [ -f "$SOURCE_BOOT" ] && \
+       [ "$(sha1sum "$SPECIFIC_BOOT" | cut -d " " -f 1)" = "$(sha1sum "$SOURCE_BOOT" | cut -d " " -f 1)" ]; then
+        echo "${GREEN}Boot image unchanged, skipping it...${RESET}"
+        sed -i "/^ui_print(\"Installing boot image...\");\$/,+1c ui_print(\"Boot image unchanged, skipping...\");" "$UPDATER_SCRIPT"
+    elif [ -f "$SPECIFIC_BOOT" ]; then
         echo "${GREEN}Copying boot.img from $STOCK_DEVICE...${RESET}"
         cp "$SPECIFIC_BOOT" "$STAGE/boot.img"
     else
         echo "${YELLOW}Warning: no boot.img found for $STOCK_DEVICE, it will not be included${RESET}"
-        sed -i "/^ui_print(\"Installing boot image...\");$/,+1d" "$UPDATER_SCRIPT"
+        sed -i "/^ui_print(\"Installing boot image...\");\$/,+1d" "$UPDATER_SCRIPT"
     fi
 
     cp "$IMG_DIR/build_info.txt" "$STAGE/build_info.txt"

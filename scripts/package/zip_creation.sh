@@ -253,6 +253,9 @@ CREATE_TARGET_FILES() {
     cp "$OUT_DIR"/*.map "$WORK_DIR_TF"/ 2>/dev/null || true
     cp "$OUT_DIR/build_info.txt" "$WORK_DIR_TF"/
 
+    local SPECIFIC_BOOT="$(pwd)/LumiROM/Devices/$STOCK_DEVICE/boot.img"
+    [ -f "$SPECIFIC_BOOT" ] && cp "$SPECIFIC_BOOT" "$WORK_DIR_TF"/
+
     mkdir -p "$(dirname "$OUTPUT_ZIP")"
     rm -f "$OUTPUT_ZIP"
     (cd "$WORK_DIR_TF" && zip -q -r "$OUTPUT_ZIP" .)
