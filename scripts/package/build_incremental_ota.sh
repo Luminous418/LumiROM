@@ -276,6 +276,8 @@ BUILD_INCREMENTAL_OTA() {
         echo "ui_print(\" \");"
     } >> "$UPDATER_SCRIPT"
 
+    echo 'show_progress(0.400000, 45);' >> "$UPDATER_SCRIPT"
+
     local RANGES_FILE SHA1_FILE RANGES SHA1
     for PARTITION in "${CHANGED_PARTITIONS[@]}"; do
         RANGES_FILE="$INCR_DIR/$PARTITION.touched_src_ranges"
