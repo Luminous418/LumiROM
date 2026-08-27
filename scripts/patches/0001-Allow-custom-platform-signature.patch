@@ -90,7 +90,7 @@
      .line 179
      :cond_c
 +
-+    invoke-interface {v3}, Lcom/android/internal/pm/parsing/pkg/ParsedPackage;->getSigningDetails()Landroid/content/pm/SigningDetails;
++    invoke-interface {p0}, Lcom/android/internal/pm/parsing/pkg/ParsedPackage;->getSigningDetails()Landroid/content/pm/SigningDetails;
 +
 +    move-result-object v3
 +
