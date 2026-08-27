@@ -29,6 +29,11 @@ on:
         required: false
         default: false
         type: boolean
+      TARGET_FILES:
+        description: "Save and upload target files (TARGET_FILES zip) for future incremental OTAs"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -280,6 +285,21 @@ jobs:
       run: |
         source scripts/package/zip_creation.sh
         IMG_ZIP_CREATION "$OUT_DIR"
+
+    - name: Save target files
+      if: ${{ github.event.inputs.ZIP_IMG != 'true' && github.event.inputs.TARGET_FILES == 'true' }}
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_USER: ${{ vars.HF_USER }}
+      run: |
+        source scripts/package/zip_creation.sh
+        TARGET_NAME="LumiROM_TARGET_${LUMIROM_VERSION}_${STOCK_DEVICE}.zip"
+        CREATE_TARGET_FILES "$PWD/$TARGET_NAME"
+        if [ -n "$HF_TOKEN" ] && [ -n "$HF_USER" ]; then
+          python3 scripts/package/upload_hf.py "$PWD/$TARGET_NAME" "target-files/$LUMIROM_VERSION/$STOCK_DEVICE/$TARGET_NAME"
+        else
+          echo "HF credentials not set, target files saved locally only."
+        fi
 
     - name: Upload ROM to ${{ github.event.inputs.DESTINATION }}
       env:

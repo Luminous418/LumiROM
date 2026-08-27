@@ -44,6 +44,11 @@ on:
         required: false
         default: false
         type: boolean
+      TARGET_FILES:
+        description: "Save and upload target files (TARGET_FILES zip) for future incremental OTAs"
+        required: false
+        default: false
+        type: boolean
       OTA_CHANGELOG:
         description: "Changelog for the OTA manifest (use ; to separate lines)"
         required: false
@@ -298,7 +303,7 @@ jobs:
         IMG_ZIP_CREATION "$OUT_DIR"
 
     - name: Save target files
-      if: ${{ github.event.inputs.ZIP_IMG != 'true' }}
+      if: ${{ github.event.inputs.ZIP_IMG != 'true' && github.event.inputs.TARGET_FILES == 'true' }}
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
         HF_USER: ${{ vars.HF_USER }}
