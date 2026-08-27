@@ -243,6 +243,8 @@ jobs:
           "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
         DECOMPILE "$APKTOOL" \
           "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+        DECOMPILE "$APKTOOL" \
+          "FIRMWARE/system/system/priv-app/SecSettings/SecSettings.apk" "$WORK_DIR" &
         wait
 
     - name: Patch Knox
@@ -253,24 +255,35 @@ jobs:
       run: |
         source scripts/features/Knox_script.sh
         source scripts/utils/platform_key.sh
+        source scripts/features/LumiROM.sh
         PATCH_SSRM "$WORK_DIR/ssrm"
         PATCH_KNOX_GUARD "$WORK_DIR/services"
         PATCH_FLAG_SECURE "$WORK_DIR/services"
         PATCH_SECURE_FOLDER "$WORK_DIR/services"
         PATCH_PRIVATE_SHARE "$WORK_DIR/services"
         CUSTOM_PLATFORM_SIGNATURE "$WORK_DIR/services" "$(GET_ACTIVE_CERT_HEX)"
+        PATCH_SECSETTINGS "$WORK_DIR/SecSettings"
 
     - name: Recompile framework
       shell: bash
+      env:
+        PLATFORM_PK8: ${{ secrets.PLATFORM_PK8 }}
+        PLATFORM_CERT: ${{ secrets.PLATFORM_CERT }}
       run: |
         source scripts/features/LumiROM.sh
         RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
           "FIRMWARE/system/system/framework" "$WORK_DIR" &
         RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
           "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        REBUILD_AND_SIGN_APK "$APKTOOL" "$WORK_DIR/SecSettings" \
+          "$HOME/.local/share/apktool/framework" "$WORK_DIR/SecSettings_rebuilt.apk" &
         wait
         cp -fv "$WORK_DIR"/*.jar \
           "FIRMWARE/system/system/framework/"
+        if [ -f "$WORK_DIR/SecSettings_rebuilt.apk" ]; then
+          cp -fv "$WORK_DIR/SecSettings_rebuilt.apk" \
+            "FIRMWARE/system/system/priv-app/SecSettings/SecSettings.apk"
+        fi
 
     - name: Build ROM
       shell: bash

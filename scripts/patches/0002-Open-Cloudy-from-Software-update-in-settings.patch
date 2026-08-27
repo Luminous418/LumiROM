@@ -1,0 +1,81 @@
+--- a/res/xml/sec_top_level_settings.xml
++++ b/res/xml/sec_top_level_settings.xml
+@@ -85,7 +85,11 @@
+     <com.android.settings.widget.HomepagePreference android:icon="@drawable/sec_ic_settings_general_device_management" android:title="@string/general_device_management_title" android:key="top_level_general" android:summary="@string/summary_placeholder" android:order="240000" android:fragment="com.samsung.android.settings.general.GeneralDeviceSettings" settings:controller="com.samsung.android.settings.homepage.TopLevelGeneralManagementPreferenceController" settings:highlightableMenuKey="@string/menu_key_general" settings:keywords="@string/keywords_general_device_management_settings" />
+     <com.android.settings.widget.HomepagePreference android:icon="@drawable/sec_ic_settings_accessibility" android:title="@string/accessibility_settings" android:key="top_level_accessibility" android:order="260000" android:fragment="com.samsung.android.settings.accessibility.home.SecAccessibilitySettings" settings:controller="com.samsung.android.settings.homepage.TopLevelAccessibilityPreferenceController" settings:highlightableMenuKey="@string/menu_key_accessibility" settings:keywords="@string/keywords_accessibility_main" />
+     <com.samsung.android.settings.widget.SecInsetCategoryPreference android:order="300000" />
+-    <com.android.settings.widget.HomepagePreference android:icon="@drawable/sec_ic_settings_software_update" android:layout="@layout/sec_homepage_software_update_preference" android:title="@string/sec_software_update_title" android:key="top_level_software_update" android:summary="@string/summary_placeholder" android:order="320000" android:fragment="com.samsung.android.settings.softwareupdate.SoftwareUpdateSettings" settings:controller="com.samsung.android.settings.homepage.TopLevelSoftwareUpdatePreferenceController" settings:highlightableMenuKey="@string/menu_key_software_update" settings:keywords="@string/keywords_software_update_settings" />
++    <com.android.settings.widget.HomepagePreference android:icon="@drawable/sec_ic_settings_software_update" android:layout="@layout/sec_homepage_software_update_preference" android:title="@string/sec_software_update_title" android:key="top_level_software_update" android:summary="@string/summary_placeholder" android:order="320000" settings:controller="com.samsung.android.settings.homepage.TopLevelSoftwareUpdatePreferenceController" settings:highlightableMenuKey="@string/menu_key_software_update" settings:keywords="@string/keywords_software_update_settings">
++        <intent android:targetPackage="dev.cloudy.ota" android:targetClass="dev.cloudy.ota.ui.MainActivity">
++            <extra android:name="from_settings" android:value="true" />
++        </intent>
++    </com.android.settings.widget.HomepagePreference>
+     <com.android.settings.widget.HomepagePreference android:icon="@drawable/sec_ic_settings_user_manual" android:title="@string/user_manual" android:key="top_level_user_manual" android:summary="@string/summary_placeholder" android:order="340000" settings:controller="com.samsung.android.settings.homepage.TopLevelUserManualPreferenceController" settings:highlightableMenuKey="@string/menu_key_user_manual" />
+     <com.android.settings.widget.HomepagePreference android:icon="@drawable/sec_ic_settings_tips" android:title="@string/sec_tips_title" android:key="top_level_tips" android:summary="@string/summary_placeholder" android:order="340000" settings:controller="com.samsung.android.settings.homepage.TopLevelTipsPreferenceController" settings:highlightableMenuKey="@string/menu_key_tips">
+         <intent android:targetPackage="@string/config_sec_toplevel_tips_package" android:targetClass="@string/config_sec_toplevel_tips_class">
+--- a/smali_classes5/com/samsung/android/settings/homepage/TopLevelSoftwareUpdatePreferenceController.smali
++++ b/smali_classes5/com/samsung/android/settings/homepage/TopLevelSoftwareUpdatePreferenceController.smali
+@@ -29,62 +29,10 @@
+ .end method
+ 
+ .method public getAvailabilityStatus()I
+-    .locals 2
++    .locals 0
+ 
+-    .line 1
+-    iget-object v0, p0, Lcom/android/settingslib/core/AbstractPreferenceController;->mContext:Landroid/content/Context;
+-
+-    .line 2
+-    .line 3
+-    const-string v1, "com.wssyncmldm"
+-
+-    .line 4
+-    .line 5
+-    invoke-static {v0, v1}, Lcom/android/settings/Utils;->isPackageEnabled(Landroid/content/Context;Ljava/lang/String;)Z
+-
+-    .line 6
+-    .line 7
+-    .line 8
+-    move-result v0
+-
+-    .line 9
+-    if-nez v0, :cond_0
+-
+-    .line 10
+-    .line 11
+-    const/4 p0, 0x3
+-
+-    .line 12
+-    return p0
+-
+-    .line 13
+-    :cond_0
+-    iget-object p0, p0, Lcom/android/settingslib/core/AbstractPreferenceController;->mContext:Landroid/content/Context;
+-
+-    .line 14
+-    .line 15
+-    invoke-static {p0}, Lcom/samsung/android/settings/softwareupdate/SoftwareUpdateUtils;->needSoftwareUpdateBlockonDexMode(Landroid/content/Context;)Z
+-
+-    .line 16
+-    .line 17
+-    .line 18
+-    move-result p0
+-
+-    .line 19
+-    if-eqz p0, :cond_1
+-
+-    .line 20
+-    .line 21
+-    const/4 p0, 0x5
+-
+-    .line 22
+-    return p0
+-
+-    .line 23
+-    :cond_1
+     const/4 p0, 0x0
+ 
+-    .line 24
+     return p0
+ .end method
+ 

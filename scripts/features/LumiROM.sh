@@ -1231,3 +1231,72 @@ IMG_TO_BROTLI() {
     echo ""
     echo "${GREEN}All partitions converted and compressed successfully.${RESET}"
 }
+
+PATCH_SECSETTINGS() {
+    echo ""
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <DECOMPILED_SECSETTINGS_DIR>"
+        echo "  Points the Software update entry in SecSettings to Cloudy."
+        return 1
+    fi
+
+    local SECSETTINGS_DIR="$1"
+    local PATCH_FILE="$(pwd)/scripts/patches/0002-Open-Cloudy-from-Software-update-in-settings.patch"
+
+    if [ ! -d "$SECSETTINGS_DIR" ]; then
+        echo "${RED}SecSettings decompiled directory not found: $SECSETTINGS_DIR${RESET}"
+        return 1
+    fi
+
+    if [ ! -f "$PATCH_FILE" ]; then
+        echo "${RED}Patch not found: $PATCH_FILE${RESET}"
+        return 1
+    fi
+
+    echo "${YELLOW}Patching SecSettings to open Cloudy from Software update.${RESET}"
+    if ! patch -p1 -d "$SECSETTINGS_DIR" < "$PATCH_FILE" >/dev/null 2>&1; then
+        echo "${RED}Failed to apply SecSettings patch.${RESET}"
+        return 1
+    fi
+
+    echo "${GREEN}SecSettings patched.${RESET}"
+}
+
+REBUILD_AND_SIGN_APK() {
+    echo ""
+    if [ "$#" -ne 4 ]; then
+        echo "Usage: ${FUNCNAME[0]} <APKTOOL> <DECOMPILED_DIR> <FRAMEWORK_DIR> <OUT_APK>"
+        echo "  Recompiles a decompiled APK, zipaligns and re-signs it with"
+        echo "  the active platform key."
+        return 1
+    fi
+
+    local APKTOOL="$1"
+    local DECOMPILED_DIR="$2"
+    local FRAMEWORK_DIR="$3"
+    local OUT_APK="$4"
+
+    if [ ! -d "$DECOMPILED_DIR" ]; then
+        echo "${RED}Decompiled directory not found: $DECOMPILED_DIR${RESET}"
+        return 1
+    fi
+
+    echo "${YELLOW}Recompiling:${RESET} $DECOMPILED_DIR"
+    java -jar "$APKTOOL" b "$DECOMPILED_DIR" --copy-original -p "$FRAMEWORK_DIR" -o "$OUT_APK" || {
+        echo "${RED}Failed to recompile $DECOMPILED_DIR${RESET}"
+        return 1
+    }
+
+    local ALIGNED="${OUT_APK%.apk}.aligned.apk"
+    zipalign -f 4 "$OUT_APK" "$ALIGNED" || return 1
+    rm -f "$OUT_APK"
+
+    local KEY_DIR
+    KEY_DIR="$(GET_ACTIVE_KEY_FILES)"
+    echo "${YELLOW}Re-signing with platform key from $KEY_DIR${RESET}"
+    apksigner sign --key "$KEY_DIR/platform.pk8" --cert "$KEY_DIR/platform.x509.pem" \
+        --out "$OUT_APK" "$ALIGNED" || return 1
+    rm -f "$ALIGNED"
+
+    echo "${GREEN}Rebuilt and signed: $OUT_APK${RESET}"
+}
