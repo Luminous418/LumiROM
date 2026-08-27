@@ -182,6 +182,10 @@ jobs:
 
     - name: Adding Cloudy OTA Helper
       shell: bash
+      env:
+        BUILD_STATUS: ${{ env.BUILD_STATUS }}
+        PLATFORM_PK8: ${{ secrets.PLATFORM_PK8 }}
+        PLATFORM_CERT: ${{ secrets.PLATFORM_CERT }}
       run: |
         source scripts/features/Cloudy.sh
         if [ "$USE_MODS" = "true" ]; then
@@ -221,6 +225,9 @@ jobs:
 
     - name: Patch Knox
       shell: bash
+      env:
+        BUILD_STATUS: ${{ env.BUILD_STATUS }}
+        PLATFORM_CERT: ${{ secrets.PLATFORM_CERT }}
       run: |
         source scripts/features/Knox_script.sh
         PATCH_SSRM "$WORK_DIR/ssrm"
@@ -228,7 +235,12 @@ jobs:
         PATCH_FLAG_SECURE "$WORK_DIR/services"
         PATCH_SECURE_FOLDER "$WORK_DIR/services"
         PATCH_PRIVATE_SHARE "$WORK_DIR/services"
-        DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
+        if [ "$BUILD_STATUS" = "OFFICIAL" ] && [ -n "$PLATFORM_CERT" ]; then
+          CERT_HEX="$(printf '%s' "$PLATFORM_CERT" | sed "/CERTIFICATE/d" | tr -d "\n" | base64 -d | xxd -p -c 0)"
+        else
+          CERT_HEX="$(sed "/CERTIFICATE/d" "$PWD/scripts/keys/testkey.x509.pem" | tr -d "\n" | base64 -d | xxd -p -c 0)"
+        fi
+        CUSTOM_PLATFORM_SIGNATURE "$WORK_DIR/services" "$CERT_HEX"
 
     - name: Recompile framework
       shell: bash

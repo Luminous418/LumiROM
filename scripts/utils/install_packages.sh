@@ -14,6 +14,9 @@ UBUNTU_PACKAGES() {
         openjdk-17-jdk
         brotli
         bsdiff
+        xxd
+        android-sdk-build-tools
+        patch
         e2fsprogs
         zstd
         aria2
