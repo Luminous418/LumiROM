@@ -2,6 +2,8 @@
 
 source scripts/utils/bash_colors.sh
 
+source scripts/utils/platform_key.sh
+
 SIGN_WITH_PLATFORM_KEY() {
     echo "" >&2
     if [ "$#" -ne 1 ]; then
@@ -19,18 +21,7 @@ SIGN_WITH_PLATFORM_KEY() {
         return 1
     fi
 
-    # Prefer the actual LumiROM platform key when building official or when a
-    # local ~/.lumi/keys exists; fall back to the AOSP testkey otherwise.
-    if [ -f "$HOME/.lumi/keys/platform.pk8" ] && [ -f "$HOME/.lumi/keys/platform.x509.pem" ]; then
-        KEY_DIR="$HOME/.lumi/keys"
-    elif [ "$BUILD_STATUS" = "OFFICIAL" ] && [ -n "$PLATFORM_PK8" ] && [ -n "$PLATFORM_CERT" ]; then
-        KEY_DIR="$(mktemp -d)"
-        printf '%s' "$PLATFORM_PK8" | base64 -d > "$KEY_DIR/platform.pk8"
-        printf '%s' "$PLATFORM_CERT" > "$KEY_DIR/platform.x509.pem"
-    else
-        KEY_DIR="$(pwd)/scripts/keys"
-    fi
-
+    KEY_DIR="$(GET_ACTIVE_KEY_FILES)"
     PK8="$KEY_DIR/platform.pk8"
     CERT="$KEY_DIR/platform.x509.pem"
 

@@ -2,21 +2,22 @@
 
 source scripts/utils/bash_colors.sh
 
-IS_OFFICIAL() {
-    CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
+source scripts/utils/platform_key.sh
 
-    if [ "$CURRENT_SIGNATURE" == "$OFFICIAL_HASH" ]; then
+IS_OFFICIAL() {
+    export BUILD_STATUS="UNOFFICIAL"
+    export ROM_TAG="🛠️ LumiROM Unofficial Build"
+
+    # A build is official only when it is signed with LumiROM's own platform
+    # key (not the AOSP testkey).
+    if IS_CUSTOM_PLATFORM_KEY; then
         export BUILD_STATUS="OFFICIAL"
         export ROM_TAG="✨ LumiROM Official Build"
-        
-        echo "BUILD_STATUS=OFFICIAL" >> "$GITHUB_ENV"
-        echo "ROM_TAG=✨ LumiROM Official Build" >> "$GITHUB_ENV"
-    else
-        export BUILD_STATUS="UNOFFICIAL"
-        export ROM_TAG="🛠️ LumiROM Unofficial Build"
-        
-        echo "BUILD_STATUS=UNOFFICIAL" >> "$GITHUB_ENV"
-        echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
+    fi
+
+    if [ -n "$GITHUB_ENV" ]; then
+        echo "BUILD_STATUS=$BUILD_STATUS" >> "$GITHUB_ENV"
+        echo "ROM_TAG=$ROM_TAG" >> "$GITHUB_ENV"
     fi
 
     echo "${BLUE}--- $ROM_TAG detected ---${RESET}"
