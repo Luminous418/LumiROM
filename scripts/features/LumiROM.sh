@@ -1236,26 +1236,43 @@ PATCH_SECSETTINGS() {
     echo ""
     if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <DECOMPILED_SECSETTINGS_DIR>"
-        echo "  Points the Software update entry in SecSettings to Cloudy."
+        echo "  Applies the SecSettings patches (Cloudy entry + ROM logo)."
         return 1
     fi
 
     local SECSETTINGS_DIR="$1"
-    local PATCH_FILE="$(pwd)/scripts/patches/0002-Open-Cloudy-from-Software-update-in-settings.patch"
 
     if [ ! -d "$SECSETTINGS_DIR" ]; then
         echo "${RED}SecSettings decompiled directory not found: $SECSETTINGS_DIR${RESET}"
         return 1
     fi
 
-    if [ ! -f "$PATCH_FILE" ]; then
-        echo "${RED}Patch not found: $PATCH_FILE${RESET}"
-        return 1
-    fi
+    local PATCHES=(
+        "0002-Open-Cloudy-from-Software-update-in-settings.patch"
+        "0003-Add-LumiROM-Logo.patch"
+    )
 
-    echo "${YELLOW}Patching SecSettings to open Cloudy from Software update.${RESET}"
-    if ! patch -p1 -d "$SECSETTINGS_DIR" < "$PATCH_FILE" >/dev/null 2>&1; then
-        echo "${RED}Failed to apply SecSettings patch.${RESET}"
+    for PATCH in "${PATCHES[@]}"; do
+        local PATCH_FILE="$(pwd)/scripts/patches/$PATCH"
+        if [ ! -f "$PATCH_FILE" ]; then
+            echo "${RED}Patch not found: $PATCH_FILE${RESET}"
+            return 1
+        fi
+        echo "${YELLOW}Applying SecSettings patch: $PATCH${RESET}"
+        if ! patch -p1 -d "$SECSETTINGS_DIR" < "$PATCH_FILE" >/dev/null 2>&1; then
+            echo "${RED}Failed to apply $PATCH${RESET}"
+            return 1
+        fi
+    done
+
+    # Copy the ROM logo into the decompiled SecSettings tree.
+    local LOGO_SRC="$(pwd)/LumiROM/Mods/SecSettings/res/drawable/logo.png"
+    if [ -f "$LOGO_SRC" ]; then
+        mkdir -p "$SECSETTINGS_DIR/res/drawable"
+        cp -f "$LOGO_SRC" "$SECSETTINGS_DIR/res/drawable/logo.png"
+        echo "${GREEN}ROM logo copied into SecSettings.${RESET}"
+    else
+        echo "${RED}ROM logo not found: $LOGO_SRC${RESET}"
         return 1
     fi
 
