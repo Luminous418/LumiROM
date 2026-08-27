@@ -52,7 +52,57 @@
  .method public static hasLauncherEntry(Lcom/android/internal/pm/parsing/pkg/ParsedPackage;)Z
      .locals 6
  
-@@ -42427,7 +42458,9 @@
+@@ -29993,10 +30024,20 @@
+     :goto_18
+     invoke-interface {v3, v4}, Lcom/android/internal/pm/parsing/pkg/ParsedPackage;->setSigningDetails(Landroid/content/pm/SigningDetails;)Lcom/android/internal/pm/parsing/pkg/ParsedPackage;
+ 
+-    .line 595
+-    .line 596
+-    .line 597
+-    goto :goto_19
++    iget-object v8, v1, Lcom/android/server/pm/InstallPackageHelper;->mPm:Lcom/android/server/pm/PackageManagerService;
++
++    iget-object v8, v8, Lcom/android/server/pm/PackageManagerService;->mPlatformPackage:Lcom/android/server/pm/pkg/AndroidPackage;
++
++    iget-object v5, v1, Lcom/android/server/pm/InstallPackageHelper;->mCustomPlatformSignatures:[Landroid/content/pm/Signature;
++
++    invoke-virtual {v4}, Landroid/content/pm/SigningDetails;->getSignatures()[Landroid/content/pm/Signature;
++
++    move-result-object v7
++
++    invoke-static {v3, v8, v5, v7}, Lcom/android/server/pm/ScanPackageUtils;->setCustomSignatures(Lcom/android/internal/pm/parsing/pkg/ParsedPackage;Lcom/android/server/pm/pkg/AndroidPackage;[Landroid/content/pm/Signature;[Landroid/content/pm/Signature;)V
++
++
++
+ 
+     .line 598
+     :cond_25
+@@ -30042,10 +30083,20 @@
+     .line 618
+     invoke-interface {v3, v0}, Lcom/android/internal/pm/parsing/pkg/ParsedPackage;->setSigningDetails(Landroid/content/pm/SigningDetails;)Lcom/android/internal/pm/parsing/pkg/ParsedPackage;
+ 
+-    .line 619
+-    .line 620
+-    .line 621
+-    :goto_19
++    iget-object v8, v1, Lcom/android/server/pm/InstallPackageHelper;->mPm:Lcom/android/server/pm/PackageManagerService;
++
++    iget-object v8, v8, Lcom/android/server/pm/PackageManagerService;->mPlatformPackage:Lcom/android/server/pm/pkg/AndroidPackage;
++
++    iget-object v5, v1, Lcom/android/server/pm/InstallPackageHelper;->mCustomPlatformSignatures:[Landroid/content/pm/Signature;
++
++    invoke-virtual {v0}, Landroid/content/pm/SigningDetails;->getSignatures()[Landroid/content/pm/Signature;
++
++    move-result-object v7
++
++    invoke-static {v3, v8, v5, v7}, Lcom/android/server/pm/ScanPackageUtils;->setCustomSignatures(Lcom/android/internal/pm/parsing/pkg/ParsedPackage;Lcom/android/server/pm/pkg/AndroidPackage;[Landroid/content/pm/Signature;[Landroid/content/pm/Signature;)V
++
++
++
+     const-string/jumbo v0, "PackageManager"
+ 
+     .line 622
+@@ -42427,7 +42478,9 @@
      const/4 v9, 0x1
  
      .line 268
@@ -63,7 +113,7 @@
  
      .line 269
      .line 270
-@@ -45179,7 +45212,9 @@
+@@ -45179,7 +45232,9 @@
  
      .line 254
      .line 255
@@ -106,7 +156,7 @@
      invoke-interface {p0, v1}, Lcom/android/internal/pm/parsing/pkg/ParsedPackage;->setSignedWithPlatformKey(Z)Lcom/android/internal/pm/parsing/pkg/ParsedPackage;
  
      .line 180
-@@ -6645,3 +6659,16 @@
+@@ -6645,3 +6659,41 @@
      :goto_2
      return-void
  .end method
@@ -122,6 +172,31 @@
 +    const/4 p0, 0x0
 +    :goto_0
 +    return p0
++.end method
++
++.method public static setCustomSignatures(Lcom/android/internal/pm/parsing/pkg/ParsedPackage;Lcom/android/server/pm/pkg/AndroidPackage;[Landroid/content/pm/Signature;[Landroid/content/pm/Signature;)V
++    .locals 0
++
++    invoke-static {p2, p3}, Lcom/android/server/pm/ScanPackageUtils;->signedWithCustomSignatures([Landroid/content/pm/Signature;[Landroid/content/pm/Signature;)Z
++
++    move-result p2
++
++    if-eqz p2, :cond_1
++
++    if-nez p1, :cond_0
++
++    goto :goto_0
++
++    :cond_0
++    invoke-interface {p1}, Lcom/android/server/pm/pkg/AndroidPackage;->getSigningDetails()Landroid/content/pm/SigningDetails;
++
++    move-result-object p1
++
++    invoke-interface {p0, p1}, Lcom/android/internal/pm/parsing/pkg/ParsedPackage;->setSigningDetails(Landroid/content/pm/SigningDetails;)Lcom/android/internal/pm/parsing/pkg/ParsedPackage;
++
++    :cond_1
++    :goto_0
++    return-void
 +.end method
 --- a/smali_classes2/com/android/server/pm/PackageManagerServiceUtils.smali
 +++ b/smali_classes2/com/android/server/pm/PackageManagerServiceUtils.smali
