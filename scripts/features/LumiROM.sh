@@ -2,21 +2,22 @@
 
 source scripts/utils/bash_colors.sh
 
-IS_OFFICIAL() {
-    CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
+source scripts/utils/platform_key.sh
 
-    if [ "$CURRENT_SIGNATURE" == "$OFFICIAL_HASH" ]; then
+IS_OFFICIAL() {
+    export BUILD_STATUS="UNOFFICIAL"
+    export ROM_TAG="🛠️ LumiROM Unofficial Build"
+
+    # A build is official only when it is signed with LumiROM's own platform
+    # key (not the AOSP testkey).
+    if IS_CUSTOM_PLATFORM_KEY; then
         export BUILD_STATUS="OFFICIAL"
         export ROM_TAG="✨ LumiROM Official Build"
-        
-        echo "BUILD_STATUS=OFFICIAL" >> "$GITHUB_ENV"
-        echo "ROM_TAG=✨ LumiROM Official Build" >> "$GITHUB_ENV"
-    else
-        export BUILD_STATUS="UNOFFICIAL"
-        export ROM_TAG="🛠️ LumiROM Unofficial Build"
-        
-        echo "BUILD_STATUS=UNOFFICIAL" >> "$GITHUB_ENV"
-        echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
+    fi
+
+    if [ -n "$GITHUB_ENV" ]; then
+        echo "BUILD_STATUS=$BUILD_STATUS" >> "$GITHUB_ENV"
+        echo "ROM_TAG=$ROM_TAG" >> "$GITHUB_ENV"
     fi
 
     echo "${BLUE}--- $ROM_TAG detected ---${RESET}"
@@ -706,7 +707,7 @@ APPLY_STOCK_CONFIG() {
 }
 
 
-DEBLOAT_APPS=("FactoryCameraFB" "HybridRadio" "CIDManager" "SBrowser" "Facebook_stub_TFN" "FBAppManager_TFN" "SamsungTTSVoice_es_US_l01 " "SamsungCalendar" "KTAuth_Stub" "GameTools_Dream" "Gmail2" "Maps" "Duo" "Velvet" "CarrierDefaultApp" "ccinfo" "Chrome" "ChromeCustomizations" "GameHome" "GameOptimizingService" "WlanTest" "AssistantShell" "HotwordEnrollmentOKGoogleEx4CORTEXM55" "HotwordEnrollmentXGoogleEx4CORTEXM55" "BardShell" "DuoStub" "GoogleCalendarSyncAdapter" "AndroidDeveloperVerifier" "AndroidGlassesCore" "SOAgent77" "YourPhone_Stub" "AndroidAutoStub" "SingleTakeService" "SamsungBilling" "AndroidSystemIntelligence" "GoogleRestore" "SamsungMessages" "SamsungPositioning" "YouTube"  "SearchSelector" "AirGlance" "AirReadingGlass" "SamsungTTS" "WlanTest" "ARCore" "ARDrawing" "ARZone" "BGMProvider" "BixbyWakeup" "BlockchainBasicKit" "Cameralyzer" "DictDiotekForSec" "EasymodeContactsWidget81" "Fast" "FBAppManager_NS" "FunModeSDK" "GearManagerStub" "KidsHome_Installer" "LinkSharing_v11" "LiveDrawing" "MAPSAgent" "MdecService" "MinusOnePage" "MoccaMobile" "Netflix_stub" "Notes40" "ParentalCare" "PhotoTable" "PlayAutoInstallConfig" "SamsungPassAutofill_v1" "SamsungTTSVoice_de_DE_f00" "SamsungTTSVoice_el_GR_f00" "SamsungTTSVoice_en_GB_f00" "SamsungTTSVoice_en_US_f00" "SamsungTTSVoice_en_US_l03" "SamsungTTSVoice_es_ES_f00" "SamsungTTSVoice_es_MX_f00" "SamsungTTSVoice_es_US_f00" "SamsungTTSVoice_fr_FR_f00" "SamsungTTSVoice_hi_IN_f00" "SamsungTTSVoice_it_IT_f00" "SamsungTTSVoice_pl_PL_f00" "SamsungTTSVoice_pt_BR_f00" "SamsungTTSVoice_ru_RU_f00" "SamsungTTSVoice_th_TH_f00" "SamsungTTSVoice_vi_VN_f00" "SamsungTTSVoice_en_IN_f00" "SmartReminder" "SmartSwitchStub" "UnifiedWFC" "UniversalMDMClient" "VideoEditorLite_Dream_N" "VisionIntelligence3.7" "VoiceAccess" "VTCameraSetting" "WebManual" "WifiGuider" "KTAuth" "KTCustomerService" "KTUsimManager" "LGUMiniCustomerCenter" "LGUplusTsmProxy" "SamsungTTSVoice_ko_KR_r00" "SketchBook" "SKTMemberShip_new" "SktUsimService" "TWorld" "AirCommand" "AppUpdateCenter" "AREmoji" "AREmojiEditor" "AuthFramework" "AutoDoodle" "AvatarEmojiSticker" "AvatarEmojiSticker_S" "Bixby" "BixbyInterpreter" "BixbyVisionFramework3.5" "DevGPUDriver-EX2200" "DigitalKey" "Discover" "DiscoverSEP" "EarphoneTypeC" "EasySetup" "FBInstaller_NS" "FBServices" "FotaAgent" "GalleryWidget" "GameDriver-EX2100" "GameDriver-EX2200" "GameDriver-SM8150" "HashTagService" "MultiControlVP6" "LedCoverService" "LinkToWindowsService" "LiveStickers" "MemorySaver_O_Refresh" "MultiControl" "OMCAgent5" "OneDrive_Samsung_v3" "OneStoreService" "SamsungCarKeyFw" "SamsungPass" "SettingsBixby" "SetupIndiaServicesTnC" "SKTFindLostPhone" "SKTHiddenMenu" "SKTMemberShip" "SKTOneStore" "SktUsimService" "SmartEye" "SmartPush" "SmartThingsKit" "SmartTouchCall" "SOAgent7" "SOAgent75" "SolarAudio-service" "SPPPushClient" "sticker" "StickerFaceARAvatar" "StoryService" "SumeNNService" "SVoiceIME" "SwiftkeyIme" "SwiftkeySetting" "SystemUpdate" "TADownloader" "TalkbackSE" "TaPackAuthFw" "TPhoneOnePackage" "TPhoneSetup" "TWorld" "UltraDataSaving_O" "Upday" "UsimRegistrationKOR" "YourPhone_P1_5" "AvatarPicker" "KT114Provider2" "KTHiddenMenu" "KTOneStore" "KTServiceAgent" "KTServiceMenu" "LGUGPSnWPS" "LGUHiddenMenu" "LGUOZStore" "SKTFindLostPhoneApp" "SmartPush_64" "SOAgent76" "TService" "vexfwk_service" "VexScanner" "LiveEffectService" "YourPhone_P1_5" "vexfwk_service" "AutoHotspotMDE")
+DEBLOAT_APPS=("FactoryCameraFB" "HybridRadio" "CIDManager" "SBrowser" "Facebook_stub_TFN" "FBAppManager_TFN" "SamsungTTSVoice_es_US_l01 " "SamsungCalendar" "KTAuth_Stub" "GameTools_Dream" "Gmail2" "Maps" "Duo" "Velvet" "CarrierDefaultApp" "ccinfo" "Chrome" "ChromeCustomizations" "GameHome" "GameOptimizingService" "WlanTest" "AssistantShell" "HotwordEnrollmentOKGoogleEx4CORTEXM55" "HotwordEnrollmentXGoogleEx4CORTEXM55" "BardShell" "DuoStub" "GoogleCalendarSyncAdapter" "AndroidDeveloperVerifier" "AndroidGlassesCore" "SOAgent77" "YourPhone_Stub" "AndroidAutoStub" "SingleTakeService" "SamsungBilling" "AndroidSystemIntelligence" "GoogleRestore" "SamsungMessages" "SamsungPositioning" "YouTube"  "SearchSelector" "AirGlance" "AirReadingGlass" "SamsungTTS" "WlanTest" "ARCore" "ARDrawing" "ARZone" "BGMProvider" "BixbyWakeup" "BlockchainBasicKit" "Cameralyzer" "DictDiotekForSec" "EasymodeContactsWidget81" "Fast" "FBAppManager_NS" "FunModeSDK" "GearManagerStub" "KidsHome_Installer" "LinkSharing_v11" "LiveDrawing" "MAPSAgent" "MdecService" "MoccaMobile" "Netflix_stub" "Notes40" "ParentalCare" "PhotoTable" "PlayAutoInstallConfig" "SamsungPassAutofill_v1" "SamsungTTSVoice_de_DE_f00" "SamsungTTSVoice_el_GR_f00" "SamsungTTSVoice_en_GB_f00" "SamsungTTSVoice_en_US_f00" "SamsungTTSVoice_en_US_l03" "SamsungTTSVoice_es_ES_f00" "SamsungTTSVoice_es_MX_f00" "SamsungTTSVoice_es_US_f00" "SamsungTTSVoice_fr_FR_f00" "SamsungTTSVoice_hi_IN_f00" "SamsungTTSVoice_it_IT_f00" "SamsungTTSVoice_pl_PL_f00" "SamsungTTSVoice_pt_BR_f00" "SamsungTTSVoice_ru_RU_f00" "SamsungTTSVoice_th_TH_f00" "SamsungTTSVoice_vi_VN_f00" "SamsungTTSVoice_en_IN_f00" "SmartReminder" "SmartSwitchStub" "UnifiedWFC" "UniversalMDMClient" "VideoEditorLite_Dream_N" "VisionIntelligence3.7" "VoiceAccess" "VTCameraSetting" "WebManual" "WifiGuider" "KTAuth" "KTCustomerService" "KTUsimManager" "LGUMiniCustomerCenter" "LGUplusTsmProxy" "SamsungTTSVoice_ko_KR_r00" "SketchBook" "SKTMemberShip_new" "SktUsimService" "TWorld" "AirCommand" "AppUpdateCenter" "AREmoji" "AREmojiEditor" "AuthFramework" "AutoDoodle" "AvatarEmojiSticker" "AvatarEmojiSticker_S" "Bixby" "BixbyInterpreter" "BixbyVisionFramework3.5" "DevGPUDriver-EX2200" "DigitalKey" "Discover" "DiscoverSEP" "EarphoneTypeC" "EasySetup" "FBInstaller_NS" "FBServices" "FotaAgent" "GalleryWidget" "GameDriver-EX2100" "GameDriver-EX2200" "GameDriver-SM8150" "HashTagService" "MultiControlVP6" "LedCoverService" "LinkToWindowsService" "LiveStickers" "MemorySaver_O_Refresh" "MultiControl" "OMCAgent5" "OneDrive_Samsung_v3" "OneStoreService" "SamsungCarKeyFw" "SamsungPass" "SettingsBixby" "SetupIndiaServicesTnC" "SKTFindLostPhone" "SKTHiddenMenu" "SKTMemberShip" "SKTOneStore" "SktUsimService" "SmartEye" "SmartPush" "SmartThingsKit" "SmartTouchCall" "SOAgent7" "SOAgent75" "SolarAudio-service" "SPPPushClient" "sticker" "StickerFaceARAvatar" "StoryService" "SumeNNService" "SVoiceIME" "SwiftkeyIme" "SwiftkeySetting" "SystemUpdate" "TADownloader" "TalkbackSE" "TaPackAuthFw" "TPhoneOnePackage" "TPhoneSetup" "TWorld" "UltraDataSaving_O" "Upday" "UsimRegistrationKOR" "YourPhone_P1_5" "AvatarPicker" "KT114Provider2" "KTHiddenMenu" "KTOneStore" "KTServiceAgent" "KTServiceMenu" "LGUGPSnWPS" "LGUHiddenMenu" "LGUOZStore" "SKTFindLostPhoneApp" "SmartPush_64" "SOAgent76" "TService" "vexfwk_service" "VexScanner" "LiveEffectService" "YourPhone_P1_5" "vexfwk_service" "AutoHotspotMDE")
 
 KICK() {
     if [ "$#" -ne 1 ]; then
@@ -1145,6 +1146,7 @@ BUILD_IMG() {
                 echo "${YELLOW}Building EROFS image: $OUT_IMG${RESET}"
                 sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
                 sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
+                touch "$OUT_DIR/$PARTITION.map"
             else
                 echo "${RED}Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION${RESET}"
             fi
@@ -1195,7 +1197,7 @@ IMG_TO_BROTLI() {
 
         (
             echo "${GREEN}Converting $PARTITION.img...${RESET}"
-            "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$f" > /dev/null 2>&1
+            "$IMG2SDAT_BIN" -o "$TMP_DIR" "$f" > /dev/null 2>&1
             touch "$TMP_DIR/$PARTITION.patch.dat"
             echo "${GREEN}Created patch.dat for $PARTITION${RESET}"
         ) &
@@ -1228,4 +1230,90 @@ IMG_TO_BROTLI() {
     wait
     echo ""
     echo "${GREEN}All partitions converted and compressed successfully.${RESET}"
+}
+
+PATCH_SECSETTINGS() {
+    echo ""
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <DECOMPILED_SECSETTINGS_DIR>"
+        echo "  Applies the SecSettings patches (Cloudy entry + ROM logo)."
+        return 1
+    fi
+
+    local SECSETTINGS_DIR="$1"
+
+    if [ ! -d "$SECSETTINGS_DIR" ]; then
+        echo "${RED}SecSettings decompiled directory not found: $SECSETTINGS_DIR${RESET}"
+        return 1
+    fi
+
+    local PATCHES=(
+        "0002-Open-Cloudy-from-Software-update-in-settings.patch"
+        "0003-Add-LumiROM-Logo.patch"
+    )
+
+    for PATCH in "${PATCHES[@]}"; do
+        local PATCH_FILE="$(pwd)/scripts/patches/$PATCH"
+        if [ ! -f "$PATCH_FILE" ]; then
+            echo "${RED}Patch not found: $PATCH_FILE${RESET}"
+            return 1
+        fi
+        echo "${YELLOW}Applying SecSettings patch: $PATCH${RESET}"
+        if ! patch -p1 -d "$SECSETTINGS_DIR" < "$PATCH_FILE" >/dev/null 2>&1; then
+            echo "${RED}Failed to apply $PATCH${RESET}"
+            return 1
+        fi
+    done
+
+    # Copy the ROM logo into the decompiled SecSettings tree.
+    local LOGO_SRC="$(pwd)/LumiROM/Mods/SecSettings/res/drawable/logo.png"
+    if [ -f "$LOGO_SRC" ]; then
+        mkdir -p "$SECSETTINGS_DIR/res/drawable"
+        cp -f "$LOGO_SRC" "$SECSETTINGS_DIR/res/drawable/logo.png"
+        echo "${GREEN}ROM logo copied into SecSettings.${RESET}"
+    else
+        echo "${RED}ROM logo not found: $LOGO_SRC${RESET}"
+        return 1
+    fi
+
+    echo "${GREEN}SecSettings patched.${RESET}"
+}
+
+REBUILD_AND_SIGN_APK() {
+    echo ""
+    if [ "$#" -ne 4 ]; then
+        echo "Usage: ${FUNCNAME[0]} <APKTOOL> <DECOMPILED_DIR> <FRAMEWORK_DIR> <OUT_APK>"
+        echo "  Recompiles a decompiled APK, zipaligns and re-signs it with"
+        echo "  the active platform key."
+        return 1
+    fi
+
+    local APKTOOL="$1"
+    local DECOMPILED_DIR="$2"
+    local FRAMEWORK_DIR="$3"
+    local OUT_APK="$4"
+
+    if [ ! -d "$DECOMPILED_DIR" ]; then
+        echo "${RED}Decompiled directory not found: $DECOMPILED_DIR${RESET}"
+        return 1
+    fi
+
+    echo "${YELLOW}Recompiling:${RESET} $DECOMPILED_DIR"
+    java -jar "$APKTOOL" b "$DECOMPILED_DIR" --copy-original -p "$FRAMEWORK_DIR" -o "$OUT_APK" || {
+        echo "${RED}Failed to recompile $DECOMPILED_DIR${RESET}"
+        return 1
+    }
+
+    local ALIGNED="${OUT_APK%.apk}.aligned.apk"
+    zipalign -f 4 "$OUT_APK" "$ALIGNED" || return 1
+    rm -f "$OUT_APK"
+
+    local KEY_DIR
+    KEY_DIR="$(GET_ACTIVE_KEY_FILES)"
+    echo "${YELLOW}Re-signing with platform key from $KEY_DIR${RESET}"
+    apksigner sign --key "$KEY_DIR/platform.pk8" --cert "$KEY_DIR/platform.x509.pem" \
+        --out "$OUT_APK" "$ALIGNED" || return 1
+    rm -f "$ALIGNED"
+
+    echo "${GREEN}Rebuilt and signed: $OUT_APK${RESET}"
 }

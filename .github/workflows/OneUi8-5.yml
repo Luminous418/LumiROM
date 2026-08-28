@@ -44,6 +44,21 @@ on:
         required: false
         default: false
         type: boolean
+      TARGET_FILES:
+        description: "Save and upload target files (TARGET_FILES zip) for future incremental OTAs"
+        required: false
+        default: false
+        type: boolean
+      OTA_CHANGELOG:
+        description: "Changelog for the OTA manifest (use ; to separate lines)"
+        required: false
+        default: ""
+        type: string
+      INCREMENTAL_FROM:
+        description: "Previous version to build an incremental OTA from (e.g. 8.6.4). Leave empty for full OTA only"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   build:
@@ -74,7 +89,7 @@ jobs:
 
     - name: Setup directories
       run: |
-        bash scripts/utils/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs
+        bash scripts/utils/setup_directories.sh FIRMWARE WORK OUT ROM TMP IMGs TARGET_FILES
         find scripts -name "*.sh" -exec chmod +x {} +
         chmod +x bin/MergeOTA/MergeAll.sh
         chmod +x bin/erofs-utils/extract.erofs
@@ -121,6 +136,7 @@ jobs:
       env:
         LUMIROM_BUILD: ${{ secrets.LUMIROM_BUILD }}
         OFFICIAL_HASH: ${{ secrets.OFFICIAL_HASH }}
+        PLATFORM_CERT: ${{ secrets.PLATFORM_CERT }}
       run: |
         source scripts/features/LumiROM.sh
         IS_OFFICIAL
@@ -188,6 +204,10 @@ jobs:
 
     - name: Adding Cloudy OTA Helper
       shell: bash
+      env:
+        BUILD_STATUS: ${{ env.BUILD_STATUS }}
+        PLATFORM_PK8: ${{ secrets.PLATFORM_PK8 }}
+        PLATFORM_CERT: ${{ secrets.PLATFORM_CERT }}
       run: |
         source scripts/features/Cloudy.sh
         if [ "$USE_MODS" = "true" ]; then
@@ -223,30 +243,47 @@ jobs:
           "FIRMWARE/system/system/framework/ssrm.jar" "$WORK_DIR" &
         DECOMPILE "$APKTOOL" \
           "FIRMWARE/system/system/framework/services.jar" "$WORK_DIR" &
+        DECOMPILE "$APKTOOL" \
+          "FIRMWARE/system/system/priv-app/SecSettings/SecSettings.apk" "$WORK_DIR" &
         wait
 
     - name: Patch Knox
       shell: bash
+      env:
+        BUILD_STATUS: ${{ env.BUILD_STATUS }}
+        PLATFORM_CERT: ${{ secrets.PLATFORM_CERT }}
       run: |
         source scripts/features/Knox_script.sh
+        source scripts/utils/platform_key.sh
+        source scripts/features/LumiROM.sh
         PATCH_SSRM "$WORK_DIR/ssrm"
         PATCH_KNOX_GUARD "$WORK_DIR/services"
         PATCH_FLAG_SECURE "$WORK_DIR/services"
         PATCH_SECURE_FOLDER "$WORK_DIR/services"
         PATCH_PRIVATE_SHARE "$WORK_DIR/services"
-        DISABLE_SIGNATURE_VERIFICATION "$WORK_DIR/services"
+        CUSTOM_PLATFORM_SIGNATURE "$WORK_DIR/services" "$(GET_ACTIVE_CERT_HEX)"
+        PATCH_SECSETTINGS "$WORK_DIR/SecSettings"
 
     - name: Recompile framework
       shell: bash
+      env:
+        PLATFORM_PK8: ${{ secrets.PLATFORM_PK8 }}
+        PLATFORM_CERT: ${{ secrets.PLATFORM_CERT }}
       run: |
         source scripts/features/LumiROM.sh
         RECOMPILE "$APKTOOL" "$WORK_DIR/ssrm" \
           "FIRMWARE/system/system/framework" "$WORK_DIR" &
         RECOMPILE "$APKTOOL" "$WORK_DIR/services" \
           "FIRMWARE/system/system/framework" "$WORK_DIR" &
+        REBUILD_AND_SIGN_APK "$APKTOOL" "$WORK_DIR/SecSettings" \
+          "$HOME/.local/share/apktool/framework" "$WORK_DIR/SecSettings_rebuilt.apk" &
         wait
         cp -fv "$WORK_DIR"/*.jar \
           "FIRMWARE/system/system/framework/"
+        if [ -f "$WORK_DIR/SecSettings_rebuilt.apk" ]; then
+          cp -fv "$WORK_DIR/SecSettings_rebuilt.apk" \
+            "FIRMWARE/system/system/priv-app/SecSettings/SecSettings.apk"
+        fi
 
     - name: Build ROM
       shell: bash
@@ -278,6 +315,38 @@ jobs:
         source scripts/package/zip_creation.sh
         IMG_ZIP_CREATION "$OUT_DIR"
 
+    - name: Save target files
+      if: ${{ github.event.inputs.ZIP_IMG != 'true' && github.event.inputs.TARGET_FILES == 'true' }}
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_USER: ${{ vars.HF_USER }}
+      run: |
+        source scripts/package/zip_creation.sh
+        TARGET_NAME="LumiROM_TARGET_${LUMIROM_VERSION}_${STOCK_DEVICE}.zip"
+        CREATE_TARGET_FILES "$PWD/$TARGET_NAME"
+        if [ -n "$HF_TOKEN" ] && [ -n "$HF_USER" ]; then
+          python3 scripts/package/upload_hf.py "$PWD/$TARGET_NAME" "target-files/$LUMIROM_VERSION/$STOCK_DEVICE/$TARGET_NAME"
+        else
+          echo "HF credentials not set, target files saved locally only."
+        fi
+
+    - name: Download previous target files
+      if: ${{ github.event.inputs.INCREMENTAL_FROM != '' }}
+      run: |
+        URL="https://huggingface.co/buckets/${{ vars.HF_USER }}/LumiROM/resolve/target-files/${{ github.event.inputs.INCREMENTAL_FROM }}/${{ env.STOCK_DEVICE }}/LumiROM_TARGET_${{ github.event.inputs.INCREMENTAL_FROM }}_${{ env.STOCK_DEVICE }}.zip?download=true"
+        if curl -sfL -o prev-target-files.zip "$URL"; then
+          echo "Previous target files downloaded."
+        else
+          echo "Previous target files not found for ${{ github.event.inputs.INCREMENTAL_FROM }}, skipping incremental OTA."
+          echo "INCREMENTAL_SOURCE_AVAILABLE=false" >> $GITHUB_ENV
+        fi
+
+    - name: Build incremental OTA
+      if: ${{ github.event.inputs.INCREMENTAL_FROM != '' && env.INCREMENTAL_SOURCE_AVAILABLE != 'false' }}
+      run: |
+        source scripts/package/build_incremental_ota.sh
+        BUILD_INCREMENTAL_OTA "$PWD/prev-target-files.zip" "$OUT_DIR"
+
     - name: Upload ROM to ${{ github.event.inputs.DESTINATION }}
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -285,6 +354,50 @@ jobs:
         HF_XET_HIGH_PERFORMANCE: "1"
       run: |
         bash scripts/package/upload.sh "$DESTINATION"
+
+    - name: Update OTA manifest
+      env:
+        CLOUDY_TOKEN: ${{ secrets.CLOUDY_TOKEN }}
+        OTA_CHANGELOG: ${{ github.event.inputs.OTA_CHANGELOG }}
+        HF_USER: ${{ vars.HF_USER }}
+      run: |
+        if [ -z "$CLOUDY_TOKEN" ]; then
+          echo "CLOUDY_TOKEN not set, skipping OTA manifest update."
+          exit 0
+        fi
+        if [ "$ZIP_IMG" = "true" ]; then
+          echo "IMG mode, skipping OTA manifest update."
+          exit 0
+        fi
+        ZIP_PATH=$(find ./ROM/"$FOLDER_NAME" -type f -name "*.zip" ! -name "*INCREMENTAL*" | head -n 1)
+        if [ -z "$ZIP_PATH" ]; then
+          echo "No ROM zip found, skipping OTA manifest update."
+          exit 0
+        fi
+        if [ -z "$DOWNLOAD_URL" ]; then
+          echo "No download URL available, skipping OTA manifest update."
+          exit 0
+        fi
+        INCREMENTAL_ZIP=""
+        INC_URL=""
+        if [ -n "$DOWNLOAD_URL_INCREMENTAL" ]; then
+          INCREMENTAL_ZIP=$(find ./ROM/"$FOLDER_NAME" -type f -name "*INCREMENTAL*.zip" | head -n 1)
+          INC_URL="$DOWNLOAD_URL_INCREMENTAL"
+        fi
+        CURRENT_JSON="/tmp/ota_current.json"
+        curl -sf -o "$CURRENT_JSON" "https://raw.githubusercontent.com/Luminous418/cloudy/main/updater/${DEVICE_CODENAME}.json" || CURRENT_JSON=""
+        source scripts/package/generate_ota_manifest.sh
+        GENERATE_OTA_MANIFEST "$ZIP_PATH" "$DOWNLOAD_URL" "$OTA_CHANGELOG" "$CURRENT_JSON" "$INCREMENTAL_ZIP" "$INC_URL" > /tmp/ota_new.json
+        git clone --depth 1 "https://x-access-token:${CLOUDY_TOKEN}@github.com/Luminous418/cloudy.git" /tmp/cloudy
+        mkdir -p /tmp/cloudy/updater
+        cp /tmp/ota_new.json "/tmp/cloudy/updater/${DEVICE_CODENAME}.json"
+        cd /tmp/cloudy
+        git config user.name "LumiROM Bot"
+        git config user.email "noreply@github.com"
+        git add "updater/${DEVICE_CODENAME}.json"
+        git diff --cached --quiet && echo "Manifest unchanged, nothing to push." && exit 0
+        git commit -m "OTA: ${LUMIROM_VERSION} for ${DEVICE_CODENAME}"
+        git push
 
     - name: Cleanup
       run: |
