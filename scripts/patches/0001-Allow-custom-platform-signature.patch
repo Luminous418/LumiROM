@@ -108,18 +108,21 @@
      .line 257
 --- a/smali_classes2/com/android/server/pm/ScanPackageUtils.smali
 +++ b/smali_classes2/com/android/server/pm/ScanPackageUtils.smali
-@@ -263,8 +263,8 @@
+@@ -263,9 +263,11 @@
      return-void
  .end method
  
 -.method public static applyPolicy(Lcom/android/internal/pm/parsing/pkg/ParsedPackage;ILcom/android/server/pm/pkg/AndroidPackage;Z)V
 -    .locals 5
 +.method public static applyPolicy(Lcom/android/internal/pm/parsing/pkg/ParsedPackage;ILcom/android/server/pm/pkg/AndroidPackage;Z[Landroid/content/pm/Signature;)V
-+    .locals 6
++    .locals 7
  
++
++    move-object v6, p2
      .line 1
      const/high16 v0, 0x10000
-@@ -672,8 +672,30 @@
+ 
+@@ -672,8 +674,30 @@
  
      .line 179
      :cond_c
@@ -143,14 +146,14 @@
  
 +    if-eqz v3, :cond_custom_sig
 +
-+    invoke-static {p0, p2, p4, v5}, Lcom/android/server/pm/ScanPackageUtils;->setCustomSignatures(Lcom/android/internal/pm/parsing/pkg/ParsedPackage;Lcom/android/server/pm/pkg/AndroidPackage;[Landroid/content/pm/Signature;[Landroid/content/pm/Signature;)V
++    invoke-static {p0, v6, p4, v5}, Lcom/android/server/pm/ScanPackageUtils;->setCustomSignatures(Lcom/android/internal/pm/parsing/pkg/ParsedPackage;Lcom/android/server/pm/pkg/AndroidPackage;[Landroid/content/pm/Signature;[Landroid/content/pm/Signature;)V
 +
 +    :cond_custom_sig
 +
      .line 180
      .line 181
      .line 182
-@@ -6645,3 +6667,41 @@
+@@ -6645,3 +6669,41 @@
      :goto_2
      return-void
  .end method
