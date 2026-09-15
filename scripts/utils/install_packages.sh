@@ -13,12 +13,18 @@ UBUNTU_PACKAGES() {
         default-jre
         openjdk-17-jdk
         brotli
+        bsdiff
+        xxd
+        android-sdk-build-tools
+        patch
+        signapk
         e2fsprogs
         zstd
         aria2
         unzip
         tar
         lz4
+        secilc
         tree
         git
         gnupg
@@ -27,6 +33,7 @@ UBUNTU_PACKAGES() {
         build-essential
         zip
         curl
+        jq
         zlib1g-dev
         libncurses-dev
         libssl-dev

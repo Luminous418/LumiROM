@@ -2,6 +2,47 @@
 
 source scripts/utils/bash_colors.sh
 
+source scripts/utils/platform_key.sh
+
+SIGN_WITH_PLATFORM_KEY() {
+    echo "" >&2
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <APK>" >&2
+        return 1
+    fi
+
+    local APK="$1"
+    local KEY_DIR
+    local PK8
+    local CERT
+
+    if [ ! -f "$APK" ]; then
+        echo "${RED}APK not found: $APK${RESET}" >&2
+        return 1
+    fi
+
+    KEY_DIR="$(GET_ACTIVE_KEY_FILES)"
+    PK8="$KEY_DIR/platform.pk8"
+    CERT="$KEY_DIR/platform.x509.pem"
+
+    if [ ! -f "$PK8" ] || [ ! -f "$CERT" ]; then
+        echo "${RED}Platform key not found in $KEY_DIR${RESET}" >&2
+        return 1
+    fi
+
+    local OUT="${TMPDIR:-/tmp}/cloudy_signed_$$.apk"
+
+    echo "${YELLOW} - Re-signing $APK with platform key${RESET}" >&2
+    if ! apksigner sign --key "$PK8" --cert "$CERT" --out "$OUT" "$APK" 2>/dev/null; then
+        echo "${RED} - Failed to sign $APK${RESET}" >&2
+        rm -f "$OUT"
+        return 1
+    fi
+
+    echo "${GREEN} - Signed with platform key${RESET}" >&2
+    echo "$OUT"
+}
+
 ADD_CLOUDY() {
     if [ "$#" -ne 1 ]; then
         echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
@@ -17,6 +58,14 @@ ADD_CLOUDY() {
 
     echo "${YELLOW} - Adding Cloudy${RESET}"
     sudo cp -rfa "$UPDATER_DIR/system/system/." "$EXTRACTED_FIRM_DIR/system/system/"
+    local SIGNED_APK
+    SIGNED_APK="$(SIGN_WITH_PLATFORM_KEY "$UPDATER_DIR/system/system/priv-app/Cloudy/Cloudy.apk")" || return 1
+    if [ -n "$SIGNED_APK" ] && [ -f "$SIGNED_APK" ]; then
+        sudo cp -f "$SIGNED_APK" "$EXTRACTED_FIRM_DIR/system/system/priv-app/Cloudy/Cloudy.apk"
+        rm -f "$SIGNED_APK"
+    else
+        echo "${RED} - Cloudy not re-signed, keeping stock signature${RESET}"
+    fi
 
     echo "${YELLOW} - Baking Cloudy SELinux rules (system_ext_sepolicy.cil)${RESET}"
     local SELINUX_CIL="$EXTRACTED_FIRM_DIR/system/system_ext/etc/selinux/system_ext_sepolicy.cil"

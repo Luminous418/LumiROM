@@ -156,6 +156,49 @@ PATCH_PRIVATE_SHARE() {
 }
 
 
+CUSTOM_PLATFORM_SIGNATURE() {
+    echo ""
+	if [ "$#" -ne 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_SERVICES_DIRECTORY> <PLATFORM_CERT_HEX>"
+        echo "  Applies the custom platform signature patch and injects the"
+        echo "  DER hex of the platform certificate into services.jar."
+        return 1
+    fi
+
+    echo "${YELLOW}Enabling custom platform signature.${RESET}"
+
+    local SERVICES_DIR="$1"
+    local CERT_HEX="$2"
+    local PATCH_FILE="$(pwd)/scripts/patches/0001-Allow-custom-platform-signature.patch"
+
+    if [ ! -f "$PATCH_FILE" ]; then
+        echo "${RED}Patch not found: $PATCH_FILE${RESET}"
+        return 1
+    fi
+
+    if [ -z "$CERT_HEX" ]; then
+        echo "${RED}Empty platform certificate hex.${RESET}"
+        return 1
+    fi
+
+    if ! patch -p1 -d "$SERVICES_DIR" < "$PATCH_FILE" >/dev/null 2>&1; then
+        echo "${RED}Failed to apply custom platform signature patch.${RESET}"
+        return 1
+    fi
+
+    local TARGET_FILE="$SERVICES_DIR/smali_classes2/com/android/server/pm/InstallPackageHelper.smali"
+
+    if ! grep -q "CONFIG_CUSTOM_PLATFORM_SIGNATURE" "$TARGET_FILE"; then
+        echo "${RED}Placeholder CONFIG_CUSTOM_PLATFORM_SIGNATURE not found.${RESET}"
+        return 1
+    fi
+
+    sed -i "s/CONFIG_CUSTOM_PLATFORM_SIGNATURE/$CERT_HEX/g" "$TARGET_FILE"
+
+    echo "${GREEN}Custom platform signature enabled.${RESET}"
+}
+
+
 DISABLE_SIGNATURE_VERIFICATION() {
     echo ""
 	if [ "$#" -ne 1 ]; then

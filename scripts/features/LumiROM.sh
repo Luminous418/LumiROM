@@ -1,22 +1,27 @@
 #!/bin/bash
 
+export LC_ALL=C
+
 source scripts/utils/bash_colors.sh
 
-IS_OFFICIAL() {
-    CURRENT_SIGNATURE=$(printf "%s" "$LUMIROM_BUILD" | sha256sum | cut -d ' ' -f 1)
+source scripts/utils/platform_key.sh
 
-    if [ "$CURRENT_SIGNATURE" == "$OFFICIAL_HASH" ]; then
+source scripts/features/AppPatches.sh
+
+IS_OFFICIAL() {
+    export BUILD_STATUS="UNOFFICIAL"
+    export ROM_TAG="🛠️ LumiROM Unofficial Build"
+
+    # A build is official only when it is signed with LumiROM's own platform
+    # key (not the AOSP testkey).
+    if IS_CUSTOM_PLATFORM_KEY; then
         export BUILD_STATUS="OFFICIAL"
         export ROM_TAG="✨ LumiROM Official Build"
-        
-        echo "BUILD_STATUS=OFFICIAL" >> "$GITHUB_ENV"
-        echo "ROM_TAG=✨ LumiROM Official Build" >> "$GITHUB_ENV"
-    else
-        export BUILD_STATUS="UNOFFICIAL"
-        export ROM_TAG="🛠️ LumiROM Unofficial Build"
-        
-        echo "BUILD_STATUS=UNOFFICIAL" >> "$GITHUB_ENV"
-        echo "ROM_TAG=🛠️ LumiROM Unofficial Build" >> "$GITHUB_ENV"
+    fi
+
+    if [ -n "$GITHUB_ENV" ]; then
+        echo "BUILD_STATUS=$BUILD_STATUS" >> "$GITHUB_ENV"
+        echo "ROM_TAG=$ROM_TAG" >> "$GITHUB_ENV"
     fi
 
     echo "${BLUE}--- $ROM_TAG detected ---${RESET}"
@@ -31,19 +36,6 @@ CHECK_FILE() {
     return 0
 }
 
-
-REMOVE_LINE() {
-    if [ "$#" -ne 2 ]; then
-        echo "Usage: ${FUNCNAME[0]} <TARGET_LINE> <TARGET_FILE>"
-        return 1
-    fi
-
-    local LINE="$1"
-    local FILE="$2"
-
-    echo "${YELLOW}Deleting${RESET} $LINE ${YELLOW}from${RESET} $FILE"
-    grep -vxF "$LINE" "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
-}
 
 DISABLE_FBE() {
     local EXTRACTED_FIRM_DIR="$1"
@@ -191,12 +183,6 @@ INSTALL_FRAMEWORK() {
     fi
 
     local framework_res_apk="$1"
-
-    # echo "Checking framework-res.apk integrity..."
-    # if ! unzip -t "$framework_res_apk" >/dev/null 2>&1; then
-    #     echo "Warning: $framework_res_apk failed integrity check, using fallback from bin/framework-res.apk"
-    #     cp -f "$(pwd)/bin/framework-res.apk" "$framework_res_apk"
-    # fi
 
     # Installing stock overlay
     echo "${YELLOW}Installing Framework...${RESET}"
@@ -456,29 +442,220 @@ FIX_SYSTEM_EXT() {
 }
 
 
-FIX_SELINUX() {
-    echo ""
-    local SELINUX_FILE="$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/mapping/${STOCK_VNDK_VERSION}.0.cil"
-
-    # Self explanatory, fixes selinux that prevents booting
-    if [ ! -f "$SELINUX_FILE" ]; then
-        echo "${RED}Error: SELinux file not found at${RESET} $SELINUX_FILE"
+AUTO_FIX_SELINUX() {
+    if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR> [TARGET_VER]"
         return 1
     fi
 
-    echo "${YELLOW}Fixing selinux for${RESET} $STOCK_DEVICE."
+    local EXTRACTED_FIRM_DIR="${1%/}"
+    local TARGET_VER="${2:-${SELINUX_TARGET_VER:-${STOCK_VNDK_VERSION:-31}}}"
 
-    UNSUPPORTED_SELINUX=("audiomirroring" "fabriccrypto" "hal_dsms_default" "qb_id_prop" "hal_dsms_service" "proc_compaction_proactiveness" "sbauth" "ker_app" "kpp_app" "kpp_data" "attiqi_app" "kpoc_charger")
+    echo "${YELLOW}--- AUTO_FIX_SELINUX (target v${TARGET_VER}) ---${RESET}"
 
-    for keyword in "${UNSUPPORTED_SELINUX[@]}"; do
-        if grep -q "$keyword" "$SELINUX_FILE"; then
-            sed -i "/$keyword/d" "$SELINUX_FILE"
+    # secilc in the host PATH?
+    if command -v secilc &>/dev/null; then
+        local SECILC_RUNNER="secilc"
+    else
+        echo "${YELLOW}  [!] secilc not available. Skipping AUTO_FIX_SELINUX.${RESET}"
+        return 0
+    fi
+
+    local SYSTEM_EXT_DIR
+    if [ -d "$EXTRACTED_FIRM_DIR/system/system_ext/etc/selinux" ]; then
+        SYSTEM_EXT_DIR="$EXTRACTED_FIRM_DIR/system/system_ext"
+    elif [ -d "$EXTRACTED_FIRM_DIR/system/system/system_ext/etc/selinux" ]; then
+        SYSTEM_EXT_DIR="$EXTRACTED_FIRM_DIR/system/system/system_ext"
+    else
+        SYSTEM_EXT_DIR="${TARGET_ROM_SYSTEM_EXT_DIR:-$EXTRACTED_FIRM_DIR/system/system/system_ext}"
+    fi
+    local CIL_SET=(
+        "$EXTRACTED_FIRM_DIR/system/system/etc/selinux/plat_sepolicy.cil"
+        "$EXTRACTED_FIRM_DIR/system/system/etc/selinux/mapping/${TARGET_VER}.0.cil"
+        "$SYSTEM_EXT_DIR/etc/selinux/mapping/${TARGET_VER}.0.compat.cil"
+        "$SYSTEM_EXT_DIR/etc/selinux/system_ext_sepolicy.cil"
+        "$SYSTEM_EXT_DIR/etc/selinux/mapping/${TARGET_VER}.0.cil"
+        "$SYSTEM_EXT_DIR/etc/selinux/mapping/${TARGET_VER}.0.compat.cil"
+        "$EXTRACTED_FIRM_DIR/product/etc/selinux/product_sepolicy.cil"
+        "$EXTRACTED_FIRM_DIR/product/etc/selinux/mapping/${TARGET_VER}.0.cil"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/selinux/plat_pub_versioned.cil"
+        "$EXTRACTED_FIRM_DIR/vendor/etc/selinux/vendor_sepolicy.cil"
+    )
+
+    # If any required CIL is missing, warn and skip (build continues)
+    local MISSING_CIL=()
+    for c in "${CIL_SET[@]}"; do
+        [ ! -f "$c" ] && MISSING_CIL+=("${c#$EXTRACTED_FIRM_DIR/}")
+    done
+    if [ "${#MISSING_CIL[@]}" -gt 0 ]; then
+        echo "${YELLOW}  [!] Required CILs missing, skipping AUTO_FIX_SELINUX:${RESET}"
+        printf '      - %s\n' "${MISSING_CIL[@]}"
+        return 0
+    fi
+
+    local OUTPUT_TMP
+    OUTPUT_TMP=$(mktemp)
+    local MAX_ITER=500
+    local iteration=0 total=0
+
+    while [ "$iteration" -lt "$MAX_ITER" ]; do
+        iteration=$((iteration + 1))
+
+        local secilc_exit=0
+        local secilc_output
+        secilc_output=$("$SECILC_RUNNER" -m -M true -G -N -v -c "$TARGET_VER" \
+            "${CIL_SET[@]}" -o "$OUTPUT_TMP" -f /dev/null 2>&1) || secilc_exit=$?
+
+        # Only consider the compile successful when secilc really exits 0. Relying on
+        # a text match alone can mask errors like "Found conflicting genfscon rules"
+        # that don't contain "Failed to resolve".
+        if [ "$secilc_exit" -eq 0 ]; then
+            echo "${GREEN}  [+] Policy compiled successfully (iteration $iteration).${RESET}"
+            break
+        fi
+
+        local fixed=0
+        while IFS= read -r err_line; do
+            [ -z "$err_line" ] && continue
+
+            local loc
+            loc=$(echo "$err_line" | grep -oP 'at\s+\K\S+:\d+' | head -1 || true)
+            [ -z "$loc" ] && continue
+
+            local file="${loc%%:*}"
+            local line_num="${loc##*:}"
+            [ ! -f "$file" ] && continue
+
+            # Skip if it is already a comment (idempotent)
+            if sed -n "${line_num}p" "$file" | grep -qP '^\s*;;'; then
+                continue
+            fi
+
+            sed -i "${line_num}s/^\(\s*\)/\1;; [auto-fixed] /" "$file"
+            echo "  ${RED}[x] Commented:${RESET} ${file#$EXTRACTED_FIRM_DIR/}:$line_num"
+            fixed=$((fixed + 1))
+            total=$((total + 1))
+        done <<< "$secilc_output"
+
+        if [ "$fixed" -eq 0 ]; then
+            echo "${YELLOW}  [!] Could not fix any more errors.${RESET}"
+            echo "$secilc_output" | head -15
+            break
         fi
     done
 
-	REMOVE_LINE '(genfscon proc "/sys/kernel/firmware_config" (u object_r proc_fmw ((s0) (s0))))' "$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/system_ext_sepolicy.cil"
-	REMOVE_LINE '(genfscon proc "/sys/vm/compaction_proactiveness" (u object_r proc_compaction_proactiveness ((s0) (s0))))' "$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/system_ext_sepolicy.cil"
-    REMOVE_LINE 'init.svc.vendor.wvkprov_server_hal                           u:object_r:wvkprov_prop:s0' "$TARGET_ROM_SYSTEM_EXT_DIR/etc/selinux/system_ext_property_contexts"
+    rm -f "$OUTPUT_TMP"
+    echo "${GREEN}  [+] AUTO_FIX_SELINUX: $total lines commented in $iteration iterations.${RESET}"
+}
+
+
+REMOVE_LINE() {
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: ${FUNCNAME[0]} <TARGET_LINE> <TARGET_FILE>"
+        return 1
+    fi
+
+    local LINE="$1"
+    local FILE="$2"
+
+    echo "${YELLOW}Deleting${RESET} $LINE ${YELLOW}from${RESET} $FILE"
+    grep -vxF "$LINE" "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+}
+
+
+FIX_PROPERTY_CONTEXTS() {
+    local EXTRACTED_FIRM_DIR="${1%/}"
+
+    local WIFIX_WHITELIST=(
+        "init.svc.vendor.wvkprov_server_hal"
+    )
+
+    local PLAT="$EXTRACTED_FIRM_DIR/system/system/etc/selinux/plat_property_contexts"
+
+    local SYSTEM_EXT_DIR
+    if [ -d "$EXTRACTED_FIRM_DIR/system/system_ext/etc/selinux" ]; then
+        SYSTEM_EXT_DIR="$EXTRACTED_FIRM_DIR/system/system_ext"
+    elif [ -d "$EXTRACTED_FIRM_DIR/system/system/system_ext/etc/selinux" ]; then
+        SYSTEM_EXT_DIR="$EXTRACTED_FIRM_DIR/system/system/system_ext"
+    else
+        SYSTEM_EXT_DIR="${TARGET_ROM_SYSTEM_EXT_DIR:-$EXTRACTED_FIRM_DIR/system/system/system_ext}"
+    fi
+    local SYSTEM_EXT="$SYSTEM_EXT_DIR/etc/selinux/system_ext_property_contexts"
+
+    local PRODUCT="$EXTRACTED_FIRM_DIR/product/etc/selinux/product_property_contexts"
+    local VENDOR="$EXTRACTED_FIRM_DIR/vendor/etc/selinux/vendor_property_contexts"
+
+    echo "${YELLOW}Fixing duplicate property-context prefixes${RESET}"
+
+    local FILES=("$PLAT" "$SYSTEM_EXT" "$PRODUCT" "$VENDOR")
+    local NAMES=("plat" "system_ext" "product" "vendor")
+
+    # Collect active lines: prefix<TAB>priority<TAB>name<TAB>line_number<TAB>field_count
+    local TMP_ALL=$(mktemp)
+    local i
+    for ((i=0; i<4; i++)); do
+        local f="${FILES[$i]}"
+        [ -f "$f" ] || continue
+        awk -v prio="$((i+1))" -v name="${NAMES[$i]}" \
+            '!/^#/ && $1 != "" {print $1 "\t" prio "\t" name "\t" NR "\t" NF}' "$f" >> "$TMP_ALL"
+    done
+
+    # Duplicate prefixes = prefixes appearing more than once
+    local TMP_DUPES=$(mktemp)
+    awk -F'\t' '
+        { n=$1; if (!(n in c)) { order[++o]=n } c[n]++ }
+        END { for (i=1;i<=o;i++) if (c[order[i]]>1) print order[i] }
+    ' "$TMP_ALL" | grep -Fx -e "${WIFIX_WHITELIST[@]}" > "$TMP_DUPES"
+
+    local COUNT
+    COUNT=$(wc -l < "$TMP_DUPES" | tr -d ' ')
+    if [ "$COUNT" -eq 0 ]; then
+        echo "${GREEN}  [+] No whitelisted duplicate property-context prefixes.${RESET}"
+        rm -f "$TMP_ALL" "$TMP_DUPES"
+        return 0
+    fi
+
+    echo "  [!] $COUNT whitelisted duplicate prefix(es):"
+    sed 's/^/    - /' "$TMP_DUPES"
+
+    local removed=0
+    while IFS= read -r prefix; do
+        [ -z "$prefix" ] && continue
+
+        # File to keep = the one with the highest priority
+        local keep_name
+        keep_name=$(awk -F'\t' -v p="$prefix" '$1==p {print $3 "\t" $2}' "$TMP_ALL" | sort -k2,2nr | head -1 | cut -f1)
+        [ -z "$keep_name" ] && continue
+
+        for ((i=0; i<4; i++)); do
+            local f="${FILES[$i]}"
+            [ -f "$f" ] || continue
+            local name="${NAMES[$i]}"
+
+            if [ "$name" == "$keep_name" ]; then
+                # In the kept file keep only the most specific (max field count) entry
+                local best
+                best=$(awk -F'\t' -v p="$prefix" -v n="$name" '$1==p && $3==n {print $5 "\t" $4}' "$TMP_ALL" | sort -k1,1nr -k2,2n | head -1 | cut -f2)
+                local TMP_OUT=$(mktemp)
+                awk -v p="$prefix" -v b="$best" '!/^#/ && $1==p && NR!=b {next} {print}' "$f" > "$TMP_OUT"
+                cp "$TMP_OUT" "$f" 2>/dev/null || echo "    [!] could not rewrite $name (permission)"
+                rm -f "$TMP_OUT"
+            else
+                # Remove the prefix entirely from lower-priority files
+                if awk -v p="$prefix" '!/^#/ && $1==p {found=1; exit} END {exit !found}' "$f"; then
+                    local TMP_OUT2=$(mktemp)
+                    awk -v p="$prefix" '!/^#/ && $1==p {next} {print}' "$f" > "$TMP_OUT2"
+                    cp "$TMP_OUT2" "$f" 2>/dev/null || echo "    [!] could not rewrite $name (permission)"
+                    rm -f "$TMP_OUT2"
+                    echo "    - removed '$prefix' from $name (kept in $keep_name)"
+                    removed=$((removed + 1))
+                fi
+            fi
+        done
+    done < "$TMP_DUPES"
+
+    rm -f "$TMP_ALL" "$TMP_DUPES"
+    echo "${GREEN}  [+] $removed duplicate property-context lines removed.${RESET}"
 }
 
 
@@ -689,9 +866,6 @@ APPLY_STOCK_CONFIG() {
 	# FIX VNDK.
 	FIX_VNDK
 
-	# FIX SELINUX.
-	FIX_SELINUX
-
     # Floating Feature.
     APPLY_FLOATING_FEATURE
 
@@ -703,10 +877,14 @@ APPLY_STOCK_CONFIG() {
 	# Replace Stock Files.
 	rm -rf $EXTRACTED_FIRM_DIR/product/overlay/framework-res*auto_generated_rro_product.apk
     cp -af "$DEVICES_DIR/$STOCK_DEVICE/Stock/." "$EXTRACTED_FIRM_DIR/"
+
+    # Fix duplicate property-context prefixes (prevents init fatal bootloop).
+    FIX_PROPERTY_CONTEXTS "$EXTRACTED_FIRM_DIR"
+
 }
 
 
-DEBLOAT_APPS=("FactoryCameraFB" "HybridRadio" "CIDManager" "SBrowser" "Facebook_stub_TFN" "FBAppManager_TFN" "SamsungTTSVoice_es_US_l01 " "SamsungCalendar" "KTAuth_Stub" "GameTools_Dream" "Gmail2" "Maps" "Duo" "Velvet" "CarrierDefaultApp" "ccinfo" "Chrome" "ChromeCustomizations" "GameHome" "GameOptimizingService" "WlanTest" "AssistantShell" "HotwordEnrollmentOKGoogleEx4CORTEXM55" "HotwordEnrollmentXGoogleEx4CORTEXM55" "BardShell" "DuoStub" "GoogleCalendarSyncAdapter" "AndroidDeveloperVerifier" "AndroidGlassesCore" "SOAgent77" "YourPhone_Stub" "AndroidAutoStub" "SingleTakeService" "SamsungBilling" "AndroidSystemIntelligence" "GoogleRestore" "SamsungMessages" "SamsungPositioning" "YouTube"  "SearchSelector" "AirGlance" "AirReadingGlass" "SamsungTTS" "WlanTest" "ARCore" "ARDrawing" "ARZone" "BGMProvider" "BixbyWakeup" "BlockchainBasicKit" "Cameralyzer" "DictDiotekForSec" "EasymodeContactsWidget81" "Fast" "FBAppManager_NS" "FunModeSDK" "GearManagerStub" "KidsHome_Installer" "LinkSharing_v11" "LiveDrawing" "MAPSAgent" "MdecService" "MinusOnePage" "MoccaMobile" "Netflix_stub" "Notes40" "ParentalCare" "PhotoTable" "PlayAutoInstallConfig" "SamsungPassAutofill_v1" "SamsungTTSVoice_de_DE_f00" "SamsungTTSVoice_el_GR_f00" "SamsungTTSVoice_en_GB_f00" "SamsungTTSVoice_en_US_f00" "SamsungTTSVoice_en_US_l03" "SamsungTTSVoice_es_ES_f00" "SamsungTTSVoice_es_MX_f00" "SamsungTTSVoice_es_US_f00" "SamsungTTSVoice_fr_FR_f00" "SamsungTTSVoice_hi_IN_f00" "SamsungTTSVoice_it_IT_f00" "SamsungTTSVoice_pl_PL_f00" "SamsungTTSVoice_pt_BR_f00" "SamsungTTSVoice_ru_RU_f00" "SamsungTTSVoice_th_TH_f00" "SamsungTTSVoice_vi_VN_f00" "SamsungTTSVoice_en_IN_f00" "SmartReminder" "SmartSwitchStub" "UnifiedWFC" "UniversalMDMClient" "VideoEditorLite_Dream_N" "VisionIntelligence3.7" "VoiceAccess" "VTCameraSetting" "WebManual" "WifiGuider" "KTAuth" "KTCustomerService" "KTUsimManager" "LGUMiniCustomerCenter" "LGUplusTsmProxy" "SamsungTTSVoice_ko_KR_r00" "SketchBook" "SKTMemberShip_new" "SktUsimService" "TWorld" "AirCommand" "AppUpdateCenter" "AREmoji" "AREmojiEditor" "AuthFramework" "AutoDoodle" "AvatarEmojiSticker" "AvatarEmojiSticker_S" "Bixby" "BixbyInterpreter" "BixbyVisionFramework3.5" "DevGPUDriver-EX2200" "DigitalKey" "Discover" "DiscoverSEP" "EarphoneTypeC" "EasySetup" "FBInstaller_NS" "FBServices" "FotaAgent" "GalleryWidget" "GameDriver-EX2100" "GameDriver-EX2200" "GameDriver-SM8150" "HashTagService" "MultiControlVP6" "LedCoverService" "LinkToWindowsService" "LiveStickers" "MemorySaver_O_Refresh" "MultiControl" "OMCAgent5" "OneDrive_Samsung_v3" "OneStoreService" "SamsungCarKeyFw" "SamsungPass" "SettingsBixby" "SetupIndiaServicesTnC" "SKTFindLostPhone" "SKTHiddenMenu" "SKTMemberShip" "SKTOneStore" "SktUsimService" "SmartEye" "SmartPush" "SmartThingsKit" "SmartTouchCall" "SOAgent7" "SOAgent75" "SolarAudio-service" "SPPPushClient" "sticker" "StickerFaceARAvatar" "StoryService" "SumeNNService" "SVoiceIME" "SwiftkeyIme" "SwiftkeySetting" "SystemUpdate" "TADownloader" "TalkbackSE" "TaPackAuthFw" "TPhoneOnePackage" "TPhoneSetup" "TWorld" "UltraDataSaving_O" "Upday" "UsimRegistrationKOR" "YourPhone_P1_5" "AvatarPicker" "KT114Provider2" "KTHiddenMenu" "KTOneStore" "KTServiceAgent" "KTServiceMenu" "LGUGPSnWPS" "LGUHiddenMenu" "LGUOZStore" "SKTFindLostPhoneApp" "SmartPush_64" "SOAgent76" "TService" "vexfwk_service" "VexScanner" "LiveEffectService" "YourPhone_P1_5" "vexfwk_service" "AutoHotspotMDE")
+DEBLOAT_APPS=("FactoryCameraFB" "HybridRadio" "CIDManager" "SBrowser" "Facebook_stub_TFN" "FBAppManager_TFN" "SamsungTTSVoice_es_US_l01 " "SamsungCalendar" "KTAuth_Stub" "GameTools_Dream" "Gmail2" "Maps" "Duo" "Velvet" "CarrierDefaultApp" "ccinfo" "Chrome" "ChromeCustomizations" "GameHome" "GameOptimizingService" "WlanTest" "AssistantShell" "HotwordEnrollmentOKGoogleEx4CORTEXM55" "HotwordEnrollmentXGoogleEx4CORTEXM55" "BardShell" "DuoStub" "GoogleCalendarSyncAdapter" "AndroidDeveloperVerifier" "AndroidGlassesCore" "SOAgent77" "YourPhone_Stub" "AndroidAutoStub" "SingleTakeService" "SamsungBilling" "AndroidSystemIntelligence" "GoogleRestore" "SamsungMessages" "SamsungPositioning" "YouTube"  "SearchSelector" "AirGlance" "AirReadingGlass" "SamsungTTS" "WlanTest" "ARCore" "ARDrawing" "ARZone" "BGMProvider" "BixbyWakeup" "BlockchainBasicKit" "Cameralyzer" "DictDiotekForSec" "EasymodeContactsWidget81" "Fast" "FBAppManager_NS" "FunModeSDK" "GearManagerStub" "KidsHome_Installer" "LinkSharing_v11" "LiveDrawing" "MAPSAgent" "MdecService" "MoccaMobile" "Netflix_stub" "Notes40" "ParentalCare" "PhotoTable" "PlayAutoInstallConfig" "SamsungPassAutofill_v1" "SamsungTTSVoice_de_DE_f00" "SamsungTTSVoice_el_GR_f00" "SamsungTTSVoice_en_GB_f00" "SamsungTTSVoice_en_US_f00" "SamsungTTSVoice_en_US_l03" "SamsungTTSVoice_es_ES_f00" "SamsungTTSVoice_es_MX_f00" "SamsungTTSVoice_es_US_f00" "SamsungTTSVoice_fr_FR_f00" "SamsungTTSVoice_hi_IN_f00" "SamsungTTSVoice_it_IT_f00" "SamsungTTSVoice_pl_PL_f00" "SamsungTTSVoice_pt_BR_f00" "SamsungTTSVoice_ru_RU_f00" "SamsungTTSVoice_th_TH_f00" "SamsungTTSVoice_vi_VN_f00" "SamsungTTSVoice_en_IN_f00" "SmartReminder" "SmartSwitchStub" "UnifiedWFC" "UniversalMDMClient" "VideoEditorLite_Dream_N" "VisionIntelligence3.7" "VoiceAccess" "VTCameraSetting" "WebManual" "WifiGuider" "KTAuth" "KTCustomerService" "KTUsimManager" "LGUMiniCustomerCenter" "LGUplusTsmProxy" "SamsungTTSVoice_ko_KR_r00" "SketchBook" "SKTMemberShip_new" "SktUsimService" "TWorld" "AirCommand" "AppUpdateCenter" "AREmoji" "AREmojiEditor" "AuthFramework" "AutoDoodle" "AvatarEmojiSticker" "AvatarEmojiSticker_S" "Bixby" "BixbyInterpreter" "BixbyVisionFramework3.5" "DevGPUDriver-EX2200" "DigitalKey" "Discover" "DiscoverSEP" "EarphoneTypeC" "EasySetup" "FBInstaller_NS" "FBServices" "FotaAgent" "GalleryWidget" "GameDriver-EX2100" "GameDriver-EX2200" "GameDriver-SM8150" "HashTagService" "MultiControlVP6" "LedCoverService" "LinkToWindowsService" "LiveStickers" "MemorySaver_O_Refresh" "MultiControl" "OMCAgent5" "OneDrive_Samsung_v3" "OneStoreService" "SamsungCarKeyFw" "SamsungPass" "SettingsBixby" "SetupIndiaServicesTnC" "SKTFindLostPhone" "SKTHiddenMenu" "SKTMemberShip" "SKTOneStore" "SktUsimService" "SmartEye" "SmartPush" "SmartThingsKit" "SmartTouchCall" "SOAgent7" "SOAgent75" "SolarAudio-service" "SPPPushClient" "sticker" "StickerFaceARAvatar" "StoryService" "SumeNNService" "SVoiceIME" "SwiftkeyIme" "SwiftkeySetting" "SystemUpdate" "TADownloader" "TalkbackSE" "TaPackAuthFw" "TPhoneOnePackage" "TPhoneSetup" "TWorld" "UltraDataSaving_O" "Upday" "UsimRegistrationKOR" "YourPhone_P1_5" "AvatarPicker" "KT114Provider2" "KTHiddenMenu" "KTOneStore" "KTServiceAgent" "KTServiceMenu" "LGUGPSnWPS" "LGUHiddenMenu" "LGUOZStore" "SKTFindLostPhoneApp" "SmartPush_64" "SOAgent76" "TService" "vexfwk_service" "VexScanner" "LiveEffectService" "YourPhone_P1_5" "vexfwk_service" "AutoHotspotMDE")
 
 KICK() {
     if [ "$#" -ne 1 ]; then
@@ -773,14 +951,22 @@ DEBLOAT() {
 DEODEX() {
     echo "${YELLOW}- Deodexing ROM (removing oat folders)...${RESET}"
     echo "${YELLOW}- OAT folders to remove:${RESET}"
-    find "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
-    sudo find "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app" -type d -name "oat" -exec rm -rf {} +
-    find "$EXTRACTED_FIRM_DIR/system/system_ext/app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
-    sudo find "$EXTRACTED_FIRM_DIR/system/system_ext/app" -type d -name "oat" -exec rm -rf {} +
-    find "$EXTRACTED_FIRM_DIR/system/system/priv-app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
-    sudo find "$EXTRACTED_FIRM_DIR/system/system/priv-app" -type d -name "oat" -exec rm -rf {} +
-    find "$EXTRACTED_FIRM_DIR/system/system/app" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
-    sudo find "$EXTRACTED_FIRM_DIR/system/system/app" -type d -name "oat" -exec rm -rf {} +
+
+    local SEARCH_DIRS=(
+        "$EXTRACTED_FIRM_DIR/system/system_ext/priv-app"
+        "$EXTRACTED_FIRM_DIR/system/system_ext/app"
+        "$EXTRACTED_FIRM_DIR/system/system/priv-app"
+        "$EXTRACTED_FIRM_DIR/system/system/app"
+    )
+
+    for dir in "${SEARCH_DIRS[@]}"; do
+        if [ -d "$dir" ]; then
+            find "$dir" -type d -name "oat" | sed "s|$EXTRACTED_FIRM_DIR/|    - |"
+            sudo find "$dir" -type d -name "oat" -exec rm -rf {} +
+        else
+            echo "${RED}[Omitted]${RESET} $dir ${RED}not found, skipping.${RESET}"
+        fi
+    done
 
     echo "${GREEN}Deodex complete${RESET}"
 }
@@ -830,9 +1016,11 @@ APPLY_PROP_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.product.locale" "en-US"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wifi.interface" "wlan0"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "wlan.wfd.hdcp" "disabled"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "skiavk"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.renderer" "opengl"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.hwui.skia_atrace_enabled" "false"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "debug.renderengine.backend" "skiaglthreaded"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.telephony.sim_slots.count" "2"
-    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.protected_contents" "true"
+    BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.surface_flinger.protected_contents" "false"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.voip.enabled" "true"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.vendor.audio.voip" "true"
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "persist.audio.recording.voip" "true"
@@ -932,7 +1120,7 @@ APPLY_PROP_FEATURES() {
     BUILD_PROP "$EXTRACTED_FIRM_DIR" "vendor.camera.aux.packagelist2" "com.simplemobiletools.camera,net.sourceforge.opencamera,com.google.android.googlequicksearchbox,com.google.android.apps.translate,com.google.ar.lens,com.google.android.apps.bard"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.show_multiuserui" "1"
 	BUILD_PROP "$EXTRACTED_FIRM_DIR" "fw.max_users" "5"
-
+    
 
     # Related to Updater App
     if [ "$USE_MODS" = "true" ]; then
@@ -940,8 +1128,14 @@ APPLY_PROP_FEATURES() {
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.cloudy.rom.ver.code" "$LUMIROM_CODE"
         BUILD_PROP "$EXTRACTED_FIRM_DIR" "ro.cloudy.maintainer" "$LUMIROM_MAINTAINER"
     fi
-    
 
+    # The vendor build.prop overrides the system one at boot, so patch it here
+    # to ensure the threaded Skia renderengine backend is actually used.
+    local VENDOR_BUILD_PROP="$EXTRACTED_FIRM_DIR/vendor/build.prop"
+    if [ -f "$VENDOR_BUILD_PROP" ]; then
+        sudo sed -i 's|^debug.renderengine.backend=.*|debug.renderengine.backend=skiaglthreaded|' "$VENDOR_BUILD_PROP"
+        echo "${GREEN}Patched ${RESET}vendor/build.prop debug.renderengine.backend => skiaglthreaded${RESET}"
+    fi
 }
 
 APPEND_DISPLAY_ID() {
@@ -986,246 +1180,40 @@ APPENDING_DISPLAY_ID() {
     APPEND_DISPLAY_ID "$1" "LumiROM $LUMIROM_VERSION $BUILD_STATUS Stable"
 }
 
-GEN_FS_CONFIG() {
-    local EXTRACTED_FIRM_DIR="${1%/}"
 
-    for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
-        [[ -d "$ROOT" ]] || continue
-        PARTITION=$(basename "$ROOT")
-        [[ "$PARTITION" == "config" ]] && continue
-
-        local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-
-        echo "${YELLOW}--- Synchronizing $PARTITION ---${RESET}"
-
-        if [[ "$PARTITION" == "vendor" ]]; then
-            echo "${YELLOW}  [*] Fixing vendor_fs_config...${RESET}"
-            
-            local TMP_CLEAN=$(mktemp)
-            
-            sudo awk '{
-                gsub(/^\//, "", $1);
-                if (length($4) == 4 && substr($4, 1, 1) == "0") $4 = substr($4, 2);
-                if ($1 ~ /^(vendor|lost)/ && NF >= 4) {
-                    print $1, $2, $3, $4
-                }
-            }' "$FS_CONFIG" > "$TMP_CLEAN"
-            
-            # Script removes it, so hardcoded to be added again
-            echo "/ 0 2000 755" >> "$TMP_CLEAN"
-            echo "vendor/lost+found 0 0 700" >> "$TMP_CLEAN"
-            echo "vendor/bin/toolbox 0 2000 755" >> "$TMP_CLEAN"
-            
-            sort -k1,1 -u "$TMP_CLEAN" | sudo tee "$FS_CONFIG" > /dev/null
-            
-            rm "$TMP_CLEAN"
-            echo "${GREEN}  [+] vendor_fs_config fixed.${RESET}"
-        fi
-        
-        if [[ ! -f "$FS_CONFIG" ]]; then
-            echo "${YELLOW}  --- Creating new fs_config for $PARTITION ---${RESET}"
-            echo "$PARTITION 0 0 0755" | sudo tee "$FS_CONFIG" > /dev/null
-        fi
-
-        sudo find "$ROOT" -mindepth 1 -printf "$PARTITION/%P\n" | while read -r ENTRY; do
-            [[ -z "$ENTRY" ]] && continue
-            
-            if ! grep -qF "$ENTRY " "$FS_CONFIG"; then
-                local REL_PATH="${ENTRY#$PARTITION/}"
-                if [[ -d "$ROOT/$REL_PATH" ]]; then
-                    echo "  ${GREEN}[+]${RESET} Adding DIR: $ENTRY"
-                    echo "$ENTRY 0 0 0755" | sudo tee -a "$FS_CONFIG" > /dev/null
-                else
-                    echo "  ${GREEN}[+]${RESET} Adding FILE: $ENTRY"
-                    echo "$ENTRY 0 0 0644" | sudo tee -a "$FS_CONFIG" > /dev/null
-                fi
-            fi
-        done
-    done
-}
-
-GEN_FILE_CONTEXTS() {
-    local EXTRACTED_FIRM_DIR="${1%/}"
-
-    for ROOT in "$EXTRACTED_FIRM_DIR"/*; do
-        [[ -d "$ROOT" ]] || continue
-        PARTITION=$(basename "$ROOT")
-        [[ "$PARTITION" == "config" ]] && continue
-
-        local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-        [[ ! -f "$FILE_CONTEXTS" ]] && touch "$FILE_CONTEXTS"
-
-        echo "${YELLOW}--- Syncing contexts for: $PARTITION ---${RESET}"
-        
-        local TMP_EXISTING=$(mktemp)
-        sed 's/\\//g' "$FILE_CONTEXTS" | awk '{print $1}' > "$TMP_EXISTING"
-
-        sudo find "$ROOT" -mindepth 1 \( -type f -o -type d \) -printf "/$PARTITION/%P\n" | while read -r PATH_ENTRY; do
-            
-            if ! grep -qxFe "$PATH_ENTRY" "$TMP_EXISTING" 2>/dev/null; then
-                echo "  ${GREEN}[+]${RESET} Context for: $PATH_ENTRY"
-                
-                local CONTEXT="u:object_r:system_file:s0"
-
-                if [[ "$PARTITION" == "vendor" ]]; then
-                    CONTEXT="u:object_r:vendor_file:s0"
-                
-                elif [[ "$PARTITION" == "system" || "$PARTITION" == "product" ]]; then
-                    if [[ "$PATH_ENTRY" == *.so ]]; then
-                        CONTEXT="u:object_r:system_lib_file:s0"
-                    else
-                        CONTEXT="u:object_r:system_file:s0"
-                    fi
-                fi
-
-                local ESCAPED_PATH=$(echo "$PATH_ENTRY" | sed -e 's/[.+]/\\&/g')
-                
-                if ! echo "$ESCAPED_PATH $CONTEXT" >> "$FILE_CONTEXTS" 2>/dev/null; then
-                    echo "$ESCAPED_PATH $CONTEXT" | sudo tee -a "$FILE_CONTEXTS" > /dev/null
-                fi
-                
-                echo "$PATH_ENTRY" >> "$TMP_EXISTING"
-            fi
-        done
-        rm "$TMP_EXISTING"
-    done
-}
-
-BUILD_IMG() {
-    if [ "$#" -ne 3 ]; then
-        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR> <FILE_SYSTEM> <OUT_DIR>"
+REPLACE_OTACERTS() {
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: ${FUNCNAME[0]} <EXTRACTED_FIRM_DIR>"
         return 1
     fi
 
     local EXTRACTED_FIRM_DIR="$1"
-    local FILE_SYSTEM="$2"
-	local OUT_DIR="$3"
-    local DEVICE_CONFIG="$(pwd)/LumiROM/Devices/${STOCK_DEVICE}/config"
-    local OP_LIST="$(pwd)/makerom/dynamic_partitions_op_list"
 
-    if [[ -f "$DEVICE_CONFIG" ]]; then
-        local SUPER_SIZE=$(grep "STOCK_SUPER_SIZE" "$DEVICE_CONFIG" | cut -d'=' -f2 | tr -d '[:space:]')
-        
-        # Update the super size on the list according to the device
-        if [[ -n "$SUPER_SIZE" && -f "$OP_LIST" ]]; then
-            echo "${GREEN}Updating super size on op_list: $SUPER_SIZE bytes${RESET}"
-            sed -i "s/^add_group samsung_dynamic_partitions .*/add_group samsung_dynamic_partitions $SUPER_SIZE/" "$OP_LIST"
-        else
-            echo "${RED}Warning: STOCK_SUPER_SIZE hasn't been found on $DEVICE_CONFIG${RESET}"
-        fi
-    else
-        echo "${RED}Error: config file not found${RESET}"
+    local CERT
+    CERT="$(GET_ACTIVE_OTA_CERT)"
+    if [ -z "$CERT" ]; then
+        echo "${YELLOW}No OTA certificate available, keeping stock otacerts.zip.${RESET}"
+        return 0
     fi
 
+    local TMP_DIR
+    TMP_DIR="$(mktemp -d)"
 
-    GEN_FS_CONFIG "$EXTRACTED_FIRM_DIR"
-	GEN_FILE_CONTEXTS "$EXTRACTED_FIRM_DIR"
+    local CERT_NAME
+    CERT_NAME="$(printf '%s' "$CERT" | sed "/CERTIFICATE/d" | tr -d "\n" | base64 -d | sha256sum | cut -d ' ' -f 1)"
+    CERT_NAME="lumirom_ota_${CERT_NAME:0:16}.x509.pem"
 
-    for PART in "$EXTRACTED_FIRM_DIR"/*; do
-        [[ -d "$PART" ]] || continue    
-        PARTITION="$(basename "$PART")"
-        [[ "$PARTITION" == "config" ]] && continue 
+    printf '%s\n' "$CERT" > "$TMP_DIR/$CERT_NAME"
 
-        (
-            local SRC_DIR="$EXTRACTED_FIRM_DIR/$PARTITION"
-            local OUT_IMG="$OUT_DIR/${PARTITION}.img"
-            local FS_CONFIG="$EXTRACTED_FIRM_DIR/config/${PARTITION}_fs_config"
-            local FILE_CONTEXTS="$EXTRACTED_FIRM_DIR/config/${PARTITION}_file_contexts"
-            local MOUNT_POINT="/$PARTITION"
+    local OUT_OTACERTS="$EXTRACTED_FIRM_DIR/system/system/etc/security/otacerts.zip"
+    mkdir -p "$(dirname "$OUT_OTACERTS")"
 
-            echo ""
-            [[ -f "$FS_CONFIG" ]] || { echo "Warning: $FS_CONFIG missing, skipping $PARTITION"; exit 0; }
-            [[ -f "$FILE_CONTEXTS" ]] || { echo "Warning: $FILE_CONTEXTS missing, skipping $PARTITION"; exit 0; }
+    echo "${YELLOW}Building otacerts.zip with LumiROM OTA certificate only...${RESET}"
+    rm -f "$OUT_OTACERTS"
+    (cd "$TMP_DIR" && zip -q "$OUT_OTACERTS" "$CERT_NAME")
 
-            sudo sort -u "$FILE_CONTEXTS" -o "$FILE_CONTEXTS"
-            sudo sort -u "$FS_CONFIG" -o "$FS_CONFIG"
-            sudo chown -R $(whoami):$(whoami) "${EXTRACTED_FIRM_DIR}"/vendor/
+    rm -rf "$TMP_DIR"
 
-            if [[ "$FILE_SYSTEM" == "erofs" ]]; then
-                echo "${YELLOW}Building EROFS image: $OUT_IMG${RESET}"
-                sudo $(pwd)/bin/erofs-utils/mkfs.erofs --mount-point="$MOUNT_POINT" --fs-config-file="$FS_CONFIG" --file-contexts="$FILE_CONTEXTS" -z lz4hc -b 4096 -T 1640995200 "$OUT_IMG" "$SRC_DIR" >/dev/null 2>&1
-                sudo chown -R $(whoami):$(whoami) "$OUT_IMG"
-            else
-                echo "${RED}Unknown filesystem: $FILE_SYSTEM, skipping $PARTITION${RESET}"
-            fi
-        ) &
-    done
-
-    wait
-
-    # Updates the list sequentially to avoid race conditions
-    for PART in "$EXTRACTED_FIRM_DIR"/*; do
-        [[ -d "$PART" ]] || continue    
-        PARTITION="$(basename "$PART")"
-        local OUT_IMG="$OUT_DIR/${PARTITION}.img"
-        if [[ -f "$OUT_IMG" && -f "$OP_LIST" ]]; then
-            local ACTUAL_SIZE=$(stat -c%s "$OUT_IMG")
-            echo "${GREEN}Updating size of $PARTITION in op_list: $ACTUAL_SIZE bytes${RESET}"
-            sed -i "s/^resize $PARTITION .*/resize $PARTITION $ACTUAL_SIZE/" "$OP_LIST"
-        fi
-    done
-}
-
-IMG_TO_BROTLI() {
-    if [ "$#" -ne 2 ]; then
-        echo "Usage: ${FUNCNAME[0]} <IMG_DIR> <TMP_DIR>"
-        return 1
-    fi
-
-    local IMG_DIR="$1"
-    local TMP_DIR="$2"
-    local IMG2SDAT_BIN="$(pwd)/bin/img2sdat/img2sdat"
-
-    mkdir -p "$TMP_DIR"
-
-    # Check if img2sdat binary exists
-    if [[ ! -f "$IMG2SDAT_BIN" ]]; then
-        echo "${RED}Error: img2sdat binary not found at $IMG2SDAT_BIN${RESET}"
-        return 1
-    fi
-
-    chmod +x "$IMG2SDAT_BIN"
-
-    # This is for compressing to .new.dat
-    echo "${BLUE}=== Converting IMG to SDAT ===${RESET}"
-
-    for f in "$IMG_DIR"/*.img; do
-        [[ -f "$f" ]] || continue
-        PARTITION="$(basename "$f" .img)"
-
-        (
-            echo "${GREEN}Converting $PARTITION.img...${RESET}"
-            "$IMG2SDAT_BIN" -o "$TMP_DIR" -B "$TMP_DIR/$PARTITION.map" "$f" > /dev/null 2>&1
-            touch "$TMP_DIR/$PARTITION.patch.dat"
-            echo "${GREEN}Created patch.dat for $PARTITION${RESET}"
-        ) &
-    done
-
-    wait
-
-    # Compress it to .new.dat.br to make later a .zip file
-    echo ""
-    echo "${BLUE}=== Compressing DAT files with Brotli (Parallel) ===${RESET}"
-
-    local JOBS=4 # Set to match vCPUs
-    for DAT in "$TMP_DIR"/*.new.dat; do
-        [[ -f "$DAT" ]] || continue
-        PARTITION="$(basename "$DAT" .new.dat)"
-        OUT_FILE="$TMP_DIR/$PARTITION.new.dat.br"
-
-        (
-            echo "${YELLOW}Compressing $PARTITION.new.dat...${RESET}"
-            brotli -f -q 1 --output="$OUT_FILE" "$DAT"
-            echo "${GREEN}Finished $PARTITION.new.dat.br${RESET}"
-        ) &
-
-        # Limit concurrent jobs
-        while [ $(jobs -r | wc -l) -ge "$JOBS" ]; do
-            sleep 1
-        done
-    done
-
-    wait
-    echo ""
-    echo "${GREEN}All partitions converted and compressed successfully.${RESET}"
+    echo "${GREEN}otacerts.zip replaced at $OUT_OTACERTS${RESET}"
+    unzip -l "$OUT_OTACERTS"
 }

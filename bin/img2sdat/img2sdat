@@ -6,57 +6,86 @@
 #          DATE: 2018-05-25 12:19:12 CEST
 #====================================================
 
+import argparse
+import errno
+import logging
 import os
+from pathlib import Path
+
 import common, blockimgdiff, images, sparse_img
 
-def main(INPUT_IMAGE, OUTDIR, CACHE_SIZE, BLOCK_MAP_FILE):
-    __version__ = '2.0'
+__version__ = "3.0"
 
-    print('img2sdat binary - version: %s\n' % __version__)
-        
-    if not os.path.isdir(OUTDIR):
-        os.makedirs(OUTDIR)
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
 
-    OUTDIR = OUTDIR + '/' + os.path.splitext(os.path.basename(INPUT_IMAGE))[0]
+def main(tgt_image, src_image, out_dir, cache_size, tgt_block_map, src_block_map):
+    if not tgt_image.is_file():
+        raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), str(tgt_image))
 
-    common.OPTIONS.cache_size = CACHE_SIZE
+    if src_image:
+        if not src_image.is_file():
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), str(src_image))
+        if not tgt_block_map.is_file():
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), str(tgt_block_map))
+        if not src_block_map.is_file():
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), str(src_block_map))
 
-    # Get image
-    if common.IsSparseImage(INPUT_IMAGE):
-        image = sparse_img.SparseImage(INPUT_IMAGE, BLOCK_MAP_FILE, clobbered_blocks='0')
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    common.OPTIONS.cache_size = cache_size
+
+    if common.IsSparseImage(str(tgt_image)):
+        block_map_str = str(tgt_block_map) if tgt_block_map else None
+        tgt_img = sparse_img.SparseImage(str(tgt_image), block_map_str, clobbered_blocks='0')
     else:
-        image = images.FileImage(INPUT_IMAGE)
+        tgt_img = images.FileImage(str(tgt_image))
 
-    # Generate output files
-    b = blockimgdiff.BlockImageDiff(image, version=4, disable_imgdiff=True)
-    b.Compute(OUTDIR)
+    if src_image:
+        if common.IsSparseImage(str(src_image)):
+            block_map_str = str(src_block_map) if src_block_map else None
+            src_img = sparse_img.SparseImage(str(src_image), block_map_str, clobbered_blocks='0')
+        else:
+            src_img = images.FileImage(str(src_image))
+    else:
+        src_img = None
 
-    print('Done! Output directory: %s' % os.path.dirname(OUTDIR))
-    return
+    b = blockimgdiff.BlockImageDiff(tgt_img, src=src_img, version=4, disable_imgdiff=True)
+    b.Compute(str(out_dir / tgt_image.stem))
+
+    if src_image:
+        (out_dir / f"{tgt_image.stem}.max_stashed_size").write_text(str(b.max_stashed_size))
+        if b.touched_src_ranges.data:
+            (out_dir / f"{tgt_image.stem}.touched_src_ranges").write_text(b.touched_src_ranges.to_string_raw())
+            (out_dir / f"{tgt_image.stem}.touched_src_sha1").write_text(b.touched_src_sha1)
+
+    common.Cleanup()
 
 if __name__ == '__main__':
-    import argparse
+    parser = argparse.ArgumentParser(description='A tool to convert filesystem images into Android data images.')
 
-    parser = argparse.ArgumentParser(description='Visit xda thread for more information.')
-    parser.add_argument('image', help='input partition image')
-    parser.add_argument('-B', '--block-list-file', help='block map file')
-    parser.add_argument('-c', '--cache-size', help='cache partition size')
-    parser.add_argument('-o', '--outdir', help='output directory (current directory by default)')
+    parser.add_argument('tgt_image', type=Path, metavar='TARGET_IMAGE', help='target partition image')
+    parser.add_argument('-s', '--src-image', type=Path, metavar='SOURCE_IMAGE', help='source partition image')
+    parser.add_argument('-B', '--tgt-block-map', type=Path, metavar='FILE', help='block map file for the target image')
+    parser.add_argument('--src-block-map', type=Path, metavar='FILE', help='block map file for the source image')
+    parser.add_argument('-c', '--cache-size', type=int, metavar='BYTES', help='cache partition size')
+    parser.add_argument('-o', '--outdir', type=Path, metavar='DIR', default=Path('.'), help='output directory (default: current directory)')
 
     args = parser.parse_args()
 
-    INPUT_IMAGE = args.image
-
-    if args.outdir:
-        OUTDIR = args.outdir
+    if args.src_image:
+        if args.cache_size is None:
+            parser.error('Cache partition size is required for generating incremental diff file')
+        if args.tgt_block_map is None:
+            parser.error('Target image block map file is required for generating incremental diff file')
+        if args.src_block_map is None:
+            parser.error('Source image block map file is required for generating incremental diff file')
     else:
-        OUTDIR = '.'
+        if args.cache_size is None:
+            args.cache_size = 16 * 1024
 
-    if args.cache_size:
-        CACHE_SIZE = int(args.cache_size)
-    else:
-        CACHE_SIZE = 4 * 4096
+    logger.debug(f'img2sdat binary - version: {__version__}')
 
-    BLOCK_MAP_FILE = args.block_list_file
+    main(args.tgt_image, args.src_image, args.outdir, args.cache_size, args.tgt_block_map, args.src_block_map)
 
-    main(INPUT_IMAGE, OUTDIR, CACHE_SIZE, BLOCK_MAP_FILE)
+    logger.debug(f'Done! Output directory: {args.outdir}')
